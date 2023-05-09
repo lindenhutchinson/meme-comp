@@ -1,0 +1,128 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="card text-center">
+	<div class="card-header">
+		<h2>{{ competition.theme }}</h2>
+		<small class="card-title"
+			>A meme competition by {{ competition.owner }}</small
+		>
+	</div>
+	<div class="card-body">
+		<p class="card-text" id="num_memes">
+			Memes submitted: {{ competition.memes.count }}
+		</p>
+		<button type="button" class="btn btn-success mb-4" onclick="copyLink()">
+			Copy invite link
+		</button>
+		{% if request.user == competition.owner %}
+            <p>
+                <button
+                    id="start-comp-btn"
+                    class="btn btn-warning"
+                    onclick="startCompetition()"
+                    {%if competition.started %}disabled{%endif%}
+                >
+                    {% if competition.started %} Competition started {% else %} Start
+                    Competition {% endif%}
+                </button>
+            </p>
+		{% endif %}
+	</div>
+</div>
+
+<div class="row my-5">
+	{% if competition.started %} Competition has started lol {% else %}
+	<div class="col-md-8">
+		<div class="card">
+			<div class="card-body">
+				<h5 class="card-title">Submit a meme</h5>
+				<form method="post" enctype="multipart/form-data">
+					{% csrf_token %}
+					<div class="mb-3">
+						<label for="image" class="form-label">Choose your meme:</label>
+						<input type="file" name="image" class="form-control" id="image" />
+					</div>
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</form>
+			</div>
+		</div>
+
+		<div class="card mt-5">
+			<div class="card-body">
+				<h5 class="card-title">Your submitted memes</h5>
+				{% for meme in competition.memes.all %}
+				<img
+					src="{{ meme.image.url }}"
+					alt="{{ meme.title }}"
+					class="img-fluid mb-3"
+				/>
+				{% empty %}
+				<p>No memes submitted yet.</p>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	{% endif %}
+
+	<div class="col-md-4">
+		<div class="card">
+			<div class="card-body">
+				<h5 class="card-title">Participants</h5>
+				<ul id="participants" class="list-group">
+					{% for participant in competition.participants.all %}
+					<li class="list-group-item">{{ participant.name }}</li>
+					{% endfor %}
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	// Open websocket connection
+	var socket = new WebSocket(
+		"ws://" + window.location.host + "/ws/competitions/{{ competition.name }}/"
+	);
+	socket.onopen = function (event) {
+		console.log("Websocket connection opened.");
+	};
+
+	// Handle received messages
+	socket.onmessage = function (event) {
+		var message = JSON.parse(event.data);
+		console.log(message);
+		var command = message.command;
+
+		if (command === "competition_started") {
+			location.reload();
+		} else if (command === "user_joined") {
+			var participantName = message.name;
+			var participantList = $("#participants");
+			if (
+				participantList.find("li:contains('" + participantName + "')")
+					.length === 0
+			) {
+				participantList.append(
+					"<li class='list-group-item'>" + participantName + "</li>"
+				);
+			} else {
+				console.log("nah nah nah");
+			}
+		}
+	};
+
+	// Send command to start competition
+	function startCompetition() {
+		console.log("start the game already!");
+		var data = {
+			command: "start_competition",
+		};
+		socket.send(JSON.stringify(data));
+	}
+
+	// Load memes and start voting
+	function loadMemes() {
+		// TODO: Implement meme loading and voting UI
+	}
+</script>
+{% endblock %}
