@@ -50,11 +50,16 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-    async def competition_started(self, event):
-        await self.toggle_competition_started()
+    async def next_meme(self, event):
         # Send a message to all users in the competition that the competition has started
         await self.send(text_data=json.dumps({
-            'command': 'competition_started',
+            'command': 'next_meme',
+            'data': event['data']
+        }))
+
+    async def cancel_competition(self, event):
+        await self.send(text_data=json.dumps({
+            'command': 'competition_cancelled',
         }))
         
     @database_sync_to_async
@@ -68,9 +73,13 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
         competition = Competition.objects.get(name=self.comp_name)
         return competition.num_memes
 
+    async def update_joined(self, event):
+        await self.send(text_data=json.dumps({
+            'command': 'user_joined',
+            'data':event['data']
+        }))
 
     async def update_uploaded(self, event):
-
         await self.send(text_data=json.dumps({
             'command': 'meme_uploaded',
             'data':event['data']
@@ -78,6 +87,6 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
         
     async def update_voted(self, event):
         await self.send(text_data=json.dumps({
-            'command': 'meme_uploaded',
+            'command': 'meme_voted',
             'data':event['data']
         }))

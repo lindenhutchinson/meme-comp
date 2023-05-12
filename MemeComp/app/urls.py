@@ -7,7 +7,6 @@ urlpatterns = [
     path('login', views.login_view, name='login'),
     path('logout', views.logout_view,name='logout'),
     path('competitions', views.joined_competitions, name='joined_competitions'),
-    # path('upload', views.upload_meme, name='upload'),
     path('competition/<str:comp_name>/memes/<int:meme_id>', views.serve_file, name='serve_file'),
     # path('delete_meme/<int:meme_id>', views.delete_meme, name='delete_meme'),
     # path('create/', views.create_competition, name='create_competition'),
@@ -21,7 +20,9 @@ urlpatterns = [
     path('api/competition/<str:comp_name>/upload', api.meme_upload, name='meme_upload'),
     path('api/meme/<int:meme_id>', api.meme_delete, name='meme_delete'),
     path('api/meme/vote/<int:meme_id>', api.meme_vote, name='meme_vote'),
-    path('api/competition/<str:comp_name>/start', api.start_competition, name="start_competition")
+    path('api/competition/<str:comp_name>/start', api.start_competition, name="start_competition"),
+    path('api/competition/<str:comp_name>/cancel', api.cancel_competition, name="cancel_competition")
+
 ]
 
 websocket_urlpatterns = routing.websocket_urlpatterns

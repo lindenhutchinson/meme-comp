@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404, HttpResponse
-from .utils import get_current_user, generate_random_string
+from .utils import get_current_user, generate_random_string, send_channel_message
 from .forms import CompetitionForm, JoinCompetitionForm, LoginForm, UserForm, UploadMemeForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -96,8 +96,6 @@ def lobby(request):
                 competition.name = generate_random_string(16)
                 competition.save()
                 _, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
-
-                
                 if created:
                     messages.success(request, 'Competition created successfully!')
                     return redirect('competition', comp_name=competition.name)
@@ -115,6 +113,8 @@ def lobby(request):
                     _, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
                     if created:
                         messages.success(request, 'You have joined the competition!')
+                        total_participants = competition.participants.count()
+                        send_channel_message(competition.name, 'update_joined', total_participants)
                     else:
                         messages.warning(request, 'You have already joined this competition.')
                         
