@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-
-
+from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404, HttpResponse
 from .utils import get_current_user, generate_random_string
-from .forms import CompetitionForm, JoinCompetitionForm, LoginForm, UserForm
+from .forms import CompetitionForm, JoinCompetitionForm, LoginForm, UserForm, UploadMemeForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from channels.layers import get_channel_layer
@@ -10,9 +10,8 @@ from asgiref.sync import async_to_sync
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
-from .models import Participant, Competition, User
+from .models import Participant, Competition, User, Meme
 from django.views.decorators.http import require_POST
-
 
 @require_POST
 @login_required
@@ -32,8 +31,6 @@ def login_view(request):
             login(request, user)
             messages.success(request, 'You have been logged in!')
             next_url = request.POST.get('next')
-            print(next_url)
-            print('blah blah')
             # if there is a next parameter, redirect the user to that URL
             if next_url:
                 return redirect(next_url)
@@ -69,8 +66,7 @@ def home(request):
             messages.success(request, 'Successfully created your account!')
             
             next_url = request.POST.get('next')
-            print(next_url)
-            print('blah blah')
+
             # if there is a next parameter, redirect the user to that URL
             if next_url:
                 return redirect(next_url)
@@ -99,7 +95,9 @@ def lobby(request):
                 competition.owner = request.user
                 competition.name = generate_random_string(16)
                 competition.save()
-                participant, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
+                _, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
+
+                
                 if created:
                     messages.success(request, 'Competition created successfully!')
                     return redirect('competition', comp_name=competition.name)
@@ -131,10 +129,15 @@ def lobby(request):
 @login_required
 def competition(request, comp_name):
     comp = Competition.objects.get(name=comp_name)
-    _, created = Participant.objects.get_or_create(name=request.user.username, user=request.user, competition=comp)
+    participant, created = Participant.objects.get_or_create(name=request.user.username, user=request.user, competition=comp)
     if created:
         messages.success(request, 'You have joined the competition!')
+    
+    request.session['competition_id'] = comp.id
+    request.session['participant_id'] = participant.id
+    
     context = {
+        'participant': participant,
         'competition': comp
     }
     return render(request, 'competition.html', context)
@@ -154,3 +157,79 @@ def joined_competitions(request):
         'competitions': competitions
     }
     return render(request, 'joined_competitions.html', context)
+
+# @login_required
+# @require_POST
+# def upload_meme(request):
+#     participant_id = request.session.get('participant_id')
+#     competition_id = request.session.get('competition_id')
+    
+#     if not (participant_id and competition_id):
+#         messages.error('Something went wrong, try again')
+#         return redirect('lobby')
+        
+#     try:
+#         participant = Participant.objects.get(id=participant_id)
+#         competition = Competition.objects.get(id=competition_id)
+        
+#         form = UploadMemeForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             image = form.cleaned_data['image']
+            
+#             if image.size > 4 * 1024 * 1024:
+#                 messages.warning('Your files are too powerful!')
+                
+#             else:
+#                 meme = Meme()
+#                 meme.image = image
+#                 meme.participant = participant
+#                 meme.competition = competition
+#                 meme.save()
+                
+#             channel_layer = get_channel_layer()
+            
+#             async_to_sync(channel_layer.group_send)(competition.name, {"type":"meme_uploaded", "data":competition.num_memes})
+            
+#         return redirect('competition', comp_name=competition.name)
+                     
+#     except (Participant.DoesNotExist, Competition.DoesNotExist):
+#         messages.error('Some went wrong, try again')
+#         return redirect('lobby')
+        
+#     return redirect('lobby')
+        
+
+def serve_file(request, comp_name, meme_id):
+    # Check if the user has joined the competition
+    competition = get_object_or_404(Competition, name=comp_name)
+    if not competition.participants.filter(user=request.user).exists():
+        return HttpResponse.HttpResponseForbidden()
+
+    # Get the file object
+    meme = get_object_or_404(Meme, id=meme_id, competition=competition)
+    file_data = ContentFile(meme.image.read(), name=meme.image.name)
+    file_data.content_type = 'image/*'
+    # Serve the file
+    response = HttpResponse(file_data, content_type=file_data.content_type)
+    response['Content-Disposition'] = f'attachment; filename="{meme.image.name}"'
+    return response
+ 
+# @login_required  
+# def delete_meme(request, meme_id):
+#     # Get the meme object
+#     meme = get_object_or_404(Meme, id=meme_id)
+#     # Verify if the authenticated user has a participant associated with the meme
+#     if meme.participant.user != request.user:
+#         # User is not authorized to delete the meme
+#         messages.error(request, "You are not authorized to delete this meme.")
+#         return redirect('competition', comp_name=meme.competition.name)
+    
+#     competition = meme.competition
+#     # Delete the meme
+#     meme.delete()
+
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(competition.name, {"type":"meme_uploaded", "data":competition.num_memes})
+#     messages.success(request, "Meme deleted successfully.")
+#     return redirect('competition', comp_name=meme.competition.name)
+    

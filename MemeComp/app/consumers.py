@@ -62,3 +62,22 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
         competition = Competition.objects.get(name=self.comp_name)
         competition.started = True
         competition.save()
+        
+    @database_sync_to_async
+    def get_num_memes(self):
+        competition = Competition.objects.get(name=self.comp_name)
+        return competition.num_memes
+
+
+    async def update_uploaded(self, event):
+
+        await self.send(text_data=json.dumps({
+            'command': 'meme_uploaded',
+            'data':event['data']
+        }))
+        
+    async def update_voted(self, event):
+        await self.send(text_data=json.dumps({
+            'command': 'meme_uploaded',
+            'data':event['data']
+        }))

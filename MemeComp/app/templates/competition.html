@@ -1,128 +1,517 @@
-{% extends 'base.html' %} {% block content %}
-
-<div class="card text-center">
-	<div class="card-header">
-		<h2>{{ competition.theme }}</h2>
-		<small class="card-title"
-			>A meme competition by {{ competition.owner }}</small
-		>
-	</div>
-	<div class="card-body">
-		<p class="card-text" id="num_memes">
-			Memes submitted: {{ competition.memes.count }}
-		</p>
-		<button type="button" class="btn btn-success mb-4" onclick="copyLink()">
-			Copy invite link
-		</button>
-		{% if request.user == competition.owner %}
-            <p>
-                <button
-                    id="start-comp-btn"
-                    class="btn btn-warning"
-                    onclick="startCompetition()"
-                    {%if competition.started %}disabled{%endif%}
-                >
-                    {% if competition.started %} Competition started {% else %} Start
-                    Competition {% endif%}
-                </button>
+{% extends "base.html" %}
+{% block content %}
+    <div class="card text-center">
+        <div class="card-header">
+            <h2>{{ competition.theme }}</h2>
+            <small class="card-title">A meme competition by {{ competition.owner }}</small>
+        </div>
+        <div class="card-body">
+            <p class="card-text">
+                Memes submitted: <span id="num_memes">{{ competition.memes.count }}</span>
             </p>
-		{% endif %}
-	</div>
-</div>
-
-<div class="row my-5">
-	{% if competition.started %} Competition has started lol {% else %}
-	<div class="col-md-8">
-		<div class="card">
-			<div class="card-body">
-				<h5 class="card-title">Submit a meme</h5>
-				<form method="post" enctype="multipart/form-data">
-					{% csrf_token %}
-					<div class="mb-3">
-						<label for="image" class="form-label">Choose your meme:</label>
-						<input type="file" name="image" class="form-control" id="image" />
-					</div>
-					<button type="submit" class="btn btn-primary">Submit</button>
-				</form>
-			</div>
-		</div>
-
-		<div class="card mt-5">
-			<div class="card-body">
-				<h5 class="card-title">Your submitted memes</h5>
-				{% for meme in competition.memes.all %}
-				<img
-					src="{{ meme.image.url }}"
-					alt="{{ meme.title }}"
-					class="img-fluid mb-3"
-				/>
-				{% empty %}
-				<p>No memes submitted yet.</p>
-				{% endfor %}
-			</div>
-		</div>
-	</div>
-	{% endif %}
-
-	<div class="col-md-4">
-		<div class="card">
-			<div class="card-body">
-				<h5 class="card-title">Participants</h5>
-				<ul id="participants" class="list-group">
-					{% for participant in competition.participants.all %}
-					<li class="list-group-item">{{ participant.name }}</li>
-					{% endfor %}
-				</ul>
-			</div>
-		</div>
-	</div>
-</div>
-
-<script>
-	// Open websocket connection
-	var socket = new WebSocket(
-		"ws://" + window.location.host + "/ws/competitions/{{ competition.name }}/"
-	);
-	socket.onopen = function (event) {
-		console.log("Websocket connection opened.");
-	};
-
-	// Handle received messages
-	socket.onmessage = function (event) {
-		var message = JSON.parse(event.data);
-		console.log(message);
-		var command = message.command;
-
-		if (command === "competition_started") {
-			location.reload();
-		} else if (command === "user_joined") {
-			var participantName = message.name;
-			var participantList = $("#participants");
-			if (
-				participantList.find("li:contains('" + participantName + "')")
-					.length === 0
-			) {
-				participantList.append(
-					"<li class='list-group-item'>" + participantName + "</li>"
-				);
-			} else {
-				console.log("nah nah nah");
-			}
+            <button type="button" class="btn btn-success mb-4" onclick="copyLink()">Copy invite link</button>
+            {% if request.user == competition.owner %}
+                <p>
+                    <button id="start-comp-btn"
+                            class="btn btn-warning"
+                            onclick="startCompetition()"
+                            {% if competition.started %}disabled{% endif %}>
+                        {% if competition.started %}
+                            Competition started
+                        {% else %}
+                            Start Competition
+                        {% endif %}
+                    </button>
+                    <button id="cancel-start-btn"
+                            class="btn btn-danger"
+                            onclick="cancelCompetition()"
+                            {% if not competition.started %}disabled{% endif %}>
+							<i class="bi bi-x-square"></i>
+					</button>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row my-5">
+            {% if competition.started %}
+                <div class="vote-container mt-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Vote:</h6>
+                    <form id="vote-form">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input vote-radio"
+                                   type="radio"
+                                   name="vote"
+                                   id="vote-option1"
+                                   value="1">
+                            <label class="form-check-label vote-label" for="vote-option1">1</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input vote-radio"
+                                   type="radio"
+                                   name="vote"
+                                   id="vote-option2"
+                                   value="2">
+                            <label class="form-check-label vote-label" for="vote-option2">2</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input vote-radio"
+                                   type="radio"
+                                   name="vote"
+                                   id="vote-option3"
+                                   value="3">
+                            <label class="form-check-label vote-label" for="vote-option3">3</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input vote-radio"
+                                   type="radio"
+                                   name="vote"
+                                   id="vote-option4"
+                                   value="4">
+                            <label class="form-check-label vote-label" for="vote-option4">4</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input vote-radio"
+                                   type="radio"
+                                   name="vote"
+                                   id="vote-option5"
+                                   value="5">
+                            <label class="form-check-label vote-label" for="vote-option5">5</label>
+                        </div>
+                    </form>
+                    <button class="btn btn-primary mt-3" onclick="submitVote()">Submit Vote</button>
+                </div>
+                {% if request.user == competition.owner %}
+                    <div class="next-meme-container card mt-5" style="display: none;">
+                        <div class="card-body">
+                            <h5 class="card-title">Next Meme</h5>
+                            <div class="next-meme-image-container">
+                                <img id="next-meme-image"
+                                     src=""
+                                     alt="Next Meme"
+                                     class="card-img-top square-image" />
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Submit a meme</h5>
+                            <form id="upload-form" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <input type="file" name="image" class="form-control" id="image" />
+									<input type="hidden" name="participant" value="{{ participant.id }}">
+									<input type="hidden" name="competition" value="{{ competition.id }}">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card mt-5">
+                        <div class="card-body">
+                            <h5 class="card-title">Your submitted memes</h5>
+                            <div class="row row-cols-1 row-cols-md-2 g-3"
+                                 id="submitted-memes-container">
+                                {% for meme in participant.memes.all %}
+                                    <div class="col">
+                                        <div class="card">
+                                            <div class="image-container">
+                                                <img src="{% url 'serve_file' competition.name meme.id %}"
+                                                     alt="{{ meme.title }}"
+                                                     height="100%"
+                                                     width="100%"
+                                                     class="card-img-top square-image" />
+                                                <form method="post" action="{% url 'meme_delete' meme.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="btn delete-button"
+                                                            onclick="return confirm('Are you sure you want to delete this meme?')">
+                                                        <i class="bi bi-x-square"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <p>No memes submitted yet.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Participants</h5>
+                        <ul id="participants" class="list-group">
+                            {% for participant in competition.participants.all %}
+                                <li class="list-group-item">{{ participant.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+	.image-container {
+		position: relative;
+		width: 100%;
+		padding-bottom: 100%; /* Creates a square aspect ratio */
+		.btn {
+			background-color: transparent;
 		}
-	};
-
-	// Send command to start competition
-	function startCompetition() {
-		console.log("start the game already!");
-		var data = {
-			command: "start_competition",
-		};
-		socket.send(JSON.stringify(data));
 	}
 
-	// Load memes and start voting
-	function loadMemes() {
-		// TODO: Implement meme loading and voting UI
+	.square-image {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		background-color: black;
 	}
-</script>
-{% endblock %}
+	.delete-button {
+		position: absolute;
+		top: 5px;
+		right: 5px;
+		z-index: 1;
+	}
+
+	.bi-x {
+		color: red;
+		font-size: 1.5rem;
+	}
+		.vote-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+	
+		.vote-radio {
+			display: none;
+		}
+	
+		.vote-label {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background-color: lightgray;
+			color: black;
+			font-size: 20px;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+		}
+	
+		.vote-label:hover {
+			background-color: lightgray;
+		}
+	
+		.vote-radio:checked + .vote-label {
+			background-color: #007bff;
+			color: white;
+		}
+        </style>
+        <!-- ajax -->
+        <script>
+		// Copy invite link
+		function copyLink() {
+			// Implement copy link logic here
+		}
+	
+		// Start competition
+		function startCompetition() {
+			$.ajax({
+				url: "{% url 'start_competition' competition.id %}",
+				type: "POST",
+				data: {},
+				success: function (response) {
+					// Handle success response
+					// Update necessary elements
+					$('#start-comp-btn').attr('disabled', 'disabled');
+					$('#start-comp-btn').text('Competition started');
+				},
+				error: function (xhr, status, error) {
+					// Handle error response
+					console.error(xhr.responseText);
+				}
+			});
+		}
+	
+		// Submit meme via AJAX
+		function submitMeme() {
+			var form = document.getElementById("upload-form");
+			var formData = new FormData(form);
+
+			$.ajax({
+				url: "{% url 'meme_upload' comp_name=competition.name %}",
+				type: "POST",
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function (response) {
+					// Handle success response
+					// Clear the input field
+					$('#image').val('');
+
+					// Update the number of memes
+					$('#num_memes').text(response.num_memes);
+
+					// Load submitted memes
+					loadSubmittedMemes();
+				},
+				error: function (xhr, status, error) {
+					// Handle error response
+					console.error(xhr.responseText);
+				}
+			});
+		}
+		// Submit meme via AJAX
+		function submitMeme() {
+			var form = document.getElementById("upload-form");
+			var formData = new FormData(form);
+
+			$.ajax({
+				url: "{% url 'meme_upload' comp_name=competition.name %}",
+				type: "POST",
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function (response) {
+					// Handle success response
+					// Clear the input field
+					$('#image').val('');
+
+					// Update the number of memes
+					$('#num_memes').text(response.num_memes);
+
+					// Load submitted memes
+					loadSubmittedMemes();
+				},
+				error: function (xhr, status, error) {
+					// Handle error response
+					console.error(xhr.responseText);
+				}
+			});
+		}
+			
+		// Submit vote via AJAX
+		function submitVote() {
+			// Get the selected vote option
+			var selectedOption = document.querySelector('input[name="vote"]:checked').value;
+
+			// Prepare the data to be sent in the AJAX request
+			var formData = new FormData();
+			formData.append('vote', selectedOption);
+
+			{% comment %} $.ajax({
+				url: "{% url 'meme_vote' %}",
+				type: "POST",
+				data: formData,
+				processData: false,
+				contentType: false,
+				success: function(response) {
+					// Handle success response
+					// Update the UI or perform any other necessary actions
+				},
+				error: function(xhr, status, error) {
+					// Handle error response
+					console.error(xhr.responseText);
+				}
+}); {% endcomment %}
+		}
+	
+		// WebSocket event listener for receiving next meme command
+		// Implement your WebSocket logic here
+	
+		// Function to handle displaying the next meme container
+		function showNextMemeContainer(url) {
+			// Set the image source of the next meme
+			var nextMemeImage = document.getElementById("next-meme-image");
+			nextMemeImage.src = url;
+	
+			// Show the next meme container
+			var nextMemeContainer = document.querySelector(".next-meme-container");
+			nextMemeContainer.style.display = "block";
+		}
+	
+		// Listen for the submit event of the upload form
+		$('#upload-form').on('submit', function (event) {
+			event.preventDefault();
+			submitMeme();
+		});
+
+		// Start competition button click event
+		$('#start-comp-btn').on('click', function () {
+			startCompetition();
+		});
+
+		
+    // Load submitted memes via AJAX
+    {% comment %} function loadSubmittedMemes() {
+        $.ajax({
+            url: "{% url 'current_meme' %}",
+            type: "GET",
+            success: function (response) {
+                // Handle success response
+                var submittedMemesContainer = document.getElementById("submitted-memes");
+                submittedMemesContainer.innerHTML = '';
+
+                for (var i = 0; i < response.length; i++) {
+                    var meme = response[i];
+
+                    // Create HTML elements for each meme
+                    var colDiv = document.createElement("div");
+                    colDiv.className = "col";
+
+                    var cardDiv = document.createElement("div");
+                    cardDiv.className = "card";
+
+                    var imageContainerDiv = document.createElement("div");
+                    imageContainerDiv.className = "image-container";
+
+                    var imgElement = document.createElement("img");
+                    imgElement.src = meme.image_url;
+                    imgElement.alt = meme.title;
+                    imgElement.className = "card-img-top square-image";
+
+                    var deleteForm = document.createElement("form");
+                    deleteForm.method = "post";
+                    deleteForm.action = meme.delete_url;
+
+                    var csrfInput = document.createElement("input");
+                    csrfInput.type = "hidden";
+                    csrfInput.name = "csrfmiddlewaretoken";
+                    csrfInput.value = "{{ csrf_token }}";
+
+                    var deleteButton = document.createElement("button");
+                    deleteButton.type = "submit";
+                    deleteButton.className = "btn delete-button";
+                    deleteButton.onclick = function() {
+                        return confirm('Are you sure you want to delete this meme?');
+                    };
+
+                    var deleteIcon = document.createElement("i");
+                    deleteIcon.className = "bi bi-x-square";
+
+                    // Append elements to their respective parents
+                    deleteButton.appendChild(deleteIcon);
+                    deleteForm.appendChild(csrfInput);
+                    deleteForm.appendChild(deleteButton);
+                    imageContainerDiv.appendChild(imgElement);
+                    imageContainerDiv.appendChild(deleteForm);
+                    cardDiv.appendChild(imageContainerDiv);
+                    colDiv.appendChild(cardDiv);
+                    submittedMemesContainer.appendChild(colDiv);
+                }
+            },
+            error: function (xhr, status, error) {
+                // Handle error response
+                console.error(xhr.responseText);
+            }
+        });
+} {% endcomment %}
+        </script>
+        <!-- web sockets-->
+    <script>
+		// Send command to start competition
+		function startCompetition() {
+			console.log("start the game already!");
+			var data = {
+				command: "start_competition",
+			};
+			socket.send(JSON.stringify(data));
+		}
+
+		// Open websocket connection
+		var socket = null; // Declare the socket variable outside the function
+
+		function connectWebSocket() {
+			socket = new WebSocket(
+				"ws://" +
+					window.location.host +
+					"/ws/competitions/{{ competition.name }}/"
+			);
+
+			socket.onopen = function (event) {
+				console.log("Websocket connection opened.");
+			};
+
+			// Handle received messages
+			socket.onmessage = function (event) {
+				var message = JSON.parse(event.data);
+				console.log(message);
+				var command = message.command;
+
+				if (command === "competition_started") {
+					location.reload();
+				} else if (command === "user_joined") {
+					var participantName = message.name;
+					var participantList = $("#participants");
+					if (
+						participantList.find("li:contains('" + participantName + "')")
+							.length === 0
+					) {
+						participantList.append(
+							`<li class='list-group-item'>${participantName}</li>`
+						); // Send command to start competition
+						function startCompetition() {
+							console.log("start the game already!");
+							var data = {
+								command: "start_competition",
+							};
+							socket.send(JSON.stringify(data));
+						}
+					}
+				} else if (command === "meme_uploaded") {
+					$("#num_memes").text(message.data);
+				}
+			};
+
+			socket.onclose = function (event) {
+				console.log("Websocket connection closed.");
+
+				// Attempt to reconnect after a delay
+				setTimeout(connectWebSocket, 2000); // Adjust the delay as needed
+			};
+
+			socket.onerror = function (error) {
+				console.error("Websocket error:", error);
+			};
+		}
+	
+		// Listen for the beforeunload event
+		window.addEventListener("beforeunload", function () {
+			// Save the WebSocket URL or other connection information to browser storage
+			localStorage.setItem(
+				"websocket_url",
+				"ws://" +
+					window.location.host +
+					"/ws/competitions/{{ competition.name }}/"
+			);
+		});
+
+		// Check if the page was reloaded or redirected
+		var websocketUrl = localStorage.getItem("websocket_url");
+		if (
+			(performance.navigation.type === 1 ||
+			performance.navigation.type === 0) && websocketUrl
+		) {
+			console.log("reconnected to websocket");
+			// Clear the saved WebSocket URL from browser storage
+			localStorage.removeItem("websocket_url");
+
+			// Establish a new WebSocket connection
+			connectWebSocket();
+		} else {
+			// Call the connectWebSocket function to establish the initial WebSocket connection
+			connectWebSocket();
+		}
+        </script>
+    {% endblock content %}

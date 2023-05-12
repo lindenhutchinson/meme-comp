@@ -9,6 +9,9 @@ class Competition(models.Model):
     owner = models.ForeignKey(
         'User', on_delete=models.CASCADE, related_name="created_competition"
     )
+    current_meme = models.ForeignKey(
+        'Meme', null=True, on_delete=models.SET_NULL, related_name="current"
+    )
     
     @property
     def num_memes(self):

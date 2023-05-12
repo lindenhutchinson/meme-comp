@@ -20,3 +20,6 @@ class CompetitionForm(forms.ModelForm):
 
 class JoinCompetitionForm(forms.Form):
     name = forms.CharField(max_length=16)
+    
+class UploadMemeForm(forms.Form):
+    image = forms.ImageField()

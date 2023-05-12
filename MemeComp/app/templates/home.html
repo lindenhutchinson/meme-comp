@@ -1,100 +1,73 @@
-{% extends 'base.html' %} {% block content %}
-
-<h1>Welcome to the Competition App</h1>
-<div class="row mt-4 justify-content-center">
-	<div class="col-md-6">
-		<div class="card">
-			<div class="card-header">
-				<ul class="nav nav-tabs card-header-tabs">
-					<li class="nav-item">
-						<a class="nav-link active" href="#signup" data-toggle="tab"
-							>Sign Up</a
-						>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" href="#login" data-toggle="tab">Log In</a>
-					</li>
-				</ul>
-			</div>
-			<div class="card-body">
-				<div class="tab-content">
-					<div class="tab-pane active" id="signup">
-						<form method="post" id="signup-form">
-							{% csrf_token %}
-							<div class="mb-3">
-								<label for="username" class="form-label">Name</label>
-								<input
-									type="text"
-									class="form-control"
-									id="username"
-									name="username"
-									required
-								/>
-								<label for="password" class="form-label">Password</label>
-								<input
-									type="password"
-									class="form-control"
-									id="password"
-									name="password"
-									required
-								/>
-								<input
-									type="hidden"
-									name="next"
-									value="{{ request.GET.next }}"
-								/>
-							</div>
-							<div class="mb-3">
-								<button
-									type="submit"
-									class="btn btn-primary"
-									form="signup-form"
-								>
-									Create User
-								</button>
-							</div>
-						</form>
-					</div>
-					<div class="tab-pane" id="login">
-						<form method="post" action="{% url 'login' %}" id="login-form">
-							{% csrf_token %}
-							<div class="mb-3">
-								<label for="username" class="form-label">Name</label>
-								<input
-									type="text"
-									class="form-control"
-									id="username"
-									name="username"
-									required
-								/>
-								<label for="password" class="form-label">Password</label>
-								<input
-									type="password"
-									class="form-control"
-									id="password"
-									name="password"
-									required
-								/>
-								<input
-									type="hidden"
-									name="next"
-									value="{{ request.GET.next }}"
-								/>
-							</div>
-							<div class="mb-3">
-								<button type="submit" class="btn btn-primary" form="login-form">
-									Log In
-								</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-
-<script>
+{% extends "base.html" %}
+{% block content %}
+    <h1>Welcome to the Competition App</h1>
+    <div class="row mt-4 justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#signup" data-toggle="tab">Sign Up</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#login" data-toggle="tab">Log In</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="signup">
+                            <form method="post" id="signup-form">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Name</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="username"
+                                           name="username"
+                                           required />
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password"
+                                           class="form-control"
+                                           id="password"
+                                           name="password"
+                                           required />
+                                    <input type="hidden" name="next" value="{{ request.GET.next }}" />
+                                </div>
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-primary" form="signup-form">Create User</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane" id="login">
+                            <form method="post" action="{% url 'login' %}" id="login-form">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Name</label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="username"
+                                           name="username"
+                                           required />
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password"
+                                           class="form-control"
+                                           id="password"
+                                           name="password"
+                                           required />
+                                    <input type="hidden" name="next" value="{{ request.GET.next }}" />
+                                </div>
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-primary" form="login-form">Log In</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
 	$(document).ready(function () {
 		// Hide the "join" pane on page load
 		$("#login").hide();
@@ -115,5 +88,5 @@
 			$(this).addClass("active");
 		});
 	});
-</script>
-{% endblock %}
+    </script>
+{% endblock content %}
