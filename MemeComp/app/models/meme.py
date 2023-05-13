@@ -24,3 +24,11 @@ class Meme(models.Model):
                 os.remove(file_path)
 
         super().delete(*args, **kwargs)
+
+    @property
+    def num_votes(self):
+        return self.votes.count()
+    
+    @property
+    def total_score(self):
+        return self.votes.aggregate(models.Sum('score')).get('score__sum') or 0

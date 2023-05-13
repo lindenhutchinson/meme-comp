@@ -10,7 +10,7 @@ class Vote(models.Model):
         (5, "5 - Excellent"),
     ]
 
-    meme = models.ForeignKey('Meme', on_delete=models.CASCADE)
+    meme = models.ForeignKey('Meme', on_delete=models.CASCADE, related_name="votes")
     participant = models.ForeignKey('Participant', on_delete=models.CASCADE)
     score = models.IntegerField(choices=VOTE_CHOICES)
 

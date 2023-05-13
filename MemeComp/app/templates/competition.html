@@ -1,48 +1,74 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card text-center">
-	<div class="card-header">
-		<h2>{{ competition.theme }}</h2>
-		<small class="card-title">A meme competition by {{ competition.owner }}</small>
-	</div>
-	<div class="card-body">
-		<p class="card-text">
-			Memes submitted: <span id="num_memes">{{ competition.memes.count }}</span>
-		</p>
-		<button type="button" class="btn btn-success mb-4" onclick="copyLink()">Copy invite link</button>
-		{% if request.user == competition.owner %}
-		<p>
-			<button id="start-comp-btn" class="btn btn-warning" onclick=startCompetition() {% if competition.started %}disabled{% endif %}>
-				{% if competition.started %}
-				Competition started
-				{% else %}
-				Start Competition
-				{% endif %}
-			</button>
-			<button id="cancel-comp-btn" class="btn btn-danger" onclick="cancelCompetition()" {% if not competition.started %}disabled{% endif %}>
-				<i class="bi bi-x-square"></i>
-			</button>
-		</p>
-		{% endif %}
+<div class="row">
+	<div class="card text-center">
+		<div class="card-header">
+			<h2>{{ competition.theme }}</h2>
+			<small class="card-title">A meme competition by {{ competition.owner }}</small>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<div class="col-md-4 col-sm-12">
+					<p class="card-text">
+						Memes submitted: <span id="num_memes">{{ competition.memes.count }}</span>
+					</p>
+				</div>
+				<div class="col-md-4 col-sm-12 text-center">
+					<button type="button" class="btn btn-success mb-4" onclick="copyLink()">Copy invite link</button>
+					{% if request.user == competition.owner %}
+					<p>
+						<button id="start-comp-btn" class="btn btn-warning" onclick=startCompetition() {% if competition.started %}disabled{% endif %}>
+							{% if competition.started %}
+							Competition started
+							{% else %}
+							Start Competition
+							{% endif %}
+						</button>
+						<button id="cancel-comp-btn" class="btn btn-danger" onclick="cancelCompetition()" {% if not competition.started %}disabled{% endif %}>
+							<i class="bi bi-x-square"></i>
+						</button>
+					</p>
+					{% endif %}
+				</div>
+				<div class="col-md-4 col-sm-12">
+					<div class="card-body">
+						<div class="overflow-auto" style="max-height: 200px;">
+							<ul id="participants" class="list-group">
+								{% for participant in competition.participants.all %}
+								<li class="list-group-item">{{ participant.name }}</li>
+								{% endfor %}
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>			
 	</div>
 </div>
-<div class="mt-3 row">
-	<div class="col-2 col-sm-12 mb-3">
-		<div class="card">
-			<div class="card-body">
-				<h5 class="card-title">Participants</h5>
-				<ul id="participants" class="list-group">
-					{% for participant in competition.participants.all %}
-					<li class="list-group-item">{{ participant.name }}</li>
-					{% endfor %}
-				</ul>
+<div class="mt-3 row text-center">
+	<div id="comp-finished" class="col row" {% if not competition.finished %} style="display:none" {% endif %} >
+		{% for meme in top_memes %}
+		<div class="col-4">
+			<div class="meme-item card">
+				<div class="card-header">
+					<h5 class="card-title">{{meme.participant}}</h5>
+					<h6 class="card-subtitle mb-2 text-muted">Score: {{meme.score}}</h6>
+				</div>
+				<div class="card-body">
+					<img src="/competition/{{competition.name}}/memes/{{meme.id}}" alt="Meme Image" class="card-img-top">
+				</div>
 			</div>
 		</div>
+		{% endfor %}
 	</div>
-	<div id="comp-started" class="col" {% if not competition.started %} style="display:none" {% endif %} >
+	<div id="comp-started" class="col text-center" {% if not competition.started or not competition.current_meme %} style="display:none" {% endif %} >
 		<div class="vote-container">
-
 			<div class="card">
+				<div class="card-header">
+					<button class="btn btn-primary" onclick="advanceCompetition()">Next meme</button>
+					Votes submitted: <span id="num_votes">{{competition.current_meme.num_votes}}</span>
+				</div>
+
 				<div class="pt-2 card-title d-flex align-items-center justify-content-center">
 					<form id="vote-form">
 						<div class="form-check form-check-inline">
@@ -73,7 +99,7 @@
 			</div>
 		</div>
 	</div>
-	<div id="comp-waiting" class="col" {% if competition.started %} style="display:none" {% endif %}>
+	<div id="comp-waiting" class="col" {% if competition.started or competition.finished %} style="display:none" {% endif %}>
 		<div class="card">
 			<div class="card-body">
 				<h5 class="card-title">Submit a meme</h5>
@@ -237,6 +263,24 @@
 		});
 	}
 
+	function advanceCompetition() {
+		$.ajax({
+			url: "{% url 'advance_competition' competition.name %}",
+			type: "POST",
+			data: {},
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader("X-CSRFToken", csrfToken);
+			},
+			success: function (response) {
+				console.log(response)
+			},
+			error: function (xhr, status, error) {
+				// Handle error response
+				console.error(xhr.responseText);
+			}
+		});
+	}
+
 	// Submit meme via AJAX
 	function submitMeme() {
 		var form = document.getElementById("upload-form");
@@ -285,15 +329,16 @@
 	}
 	// Submit vote via AJAX
 	function submitVote() {
+
 		// Get the selected vote option
 		var selectedOption = document.querySelector('input[name="vote"]:checked').value;
 		console.log(selectedOption)
 		// Prepare the data to be sent in the AJAX request
 		var formData = new FormData();
 		formData.append('vote', selectedOption);
-
+		
 		$.ajax({
-			url: "#",
+			url: `/api/competition/{{competition.name}}/vote`,
 			type: "POST",
 			data: formData,
 			processData: false,
@@ -302,6 +347,7 @@
 				xhr.setRequestHeader("X-CSRFToken", csrfToken);
 			},
 			success: function (response) {
+				console.log(response)
 				// Handle success response
 				// Update the UI or perform any other necessary actions
 			},
@@ -345,10 +391,12 @@
 	});
 
 	$('input[type=radio][name=vote]').on('change', function() {
-		submitVote();
+		const memeId = $(this).data('meme-id');
+		submitVote(memeId);
 	});
 </script>
 
+<!-- web sockets-->
 <script>
 	// Open websocket connection
 	var socket = null; // Declare the socket variable outside the function
@@ -385,15 +433,48 @@
 				$("#num_memes").text(message.data);
 			} else if (command === "competition_cancelled") {
 				$("#comp-started").css('display', 'none')
+				$("#comp-finished").css('display', 'none')
 				$("#comp-waiting").css('display', '')
 				$("#current-meme-image").attr('src', '')
 				$('input[name="vote"]').prop('checked', false);
+				$("#num_votes").text('0');
+
 			} else if (command === "next_meme") {
 				$("#comp-started").css('display', '')
 				$("#comp-waiting").css('display', 'none')
 				$('input[name="vote"]').prop('checked', false);
-				console.log(message.data)
+				$("#num_votes").text('0');
 				$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${message.data}`)
+			} else if (command === "meme_voted") {
+				$("#num_votes").text(message.data)
+			} else if (command === "competition_results") {
+				$("#comp-started").css('display', 'none')
+				$("#comp-waiting").css('display', 'none')
+				$("#comp-finished").css('display', '')
+
+				const results = message.data;
+				 // Iterate through the sorted results and generate HTML
+				var html = '';
+				for (var i = 0; i < results.length; i++) {
+				var meme = results[i];
+				html += `
+					<div class="col-4">
+						<div class="meme-item card">
+							<div class="card-header">
+								<h5 class="card-title">${meme.participant}</h5>
+								<h6 class="card-subtitle mb-2 text-muted">Score: ${meme.score}</h6>
+							</div>
+							<div class="card-body">
+								<img src="/competition/{{competition.name}}/memes/${meme.id}" alt="Meme Image" class="card-img-top">
+							</div>
+						</div>
+					</div>
+				`;
+				}
+
+				// Append the generated HTML to the 'top-memes-container' element
+				$('#comp-finished').html(html);
+				console.log(message.data)
 			}
 		};
 

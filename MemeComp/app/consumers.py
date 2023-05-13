@@ -90,3 +90,9 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
             'command': 'meme_voted',
             'data':event['data']
         }))
+
+    async def competition_results(self, event):
+        await self.send(text_data=json.dumps({
+            'command': 'competition_results',
+            'data':event['data']
+        }))

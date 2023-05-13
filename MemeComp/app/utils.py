@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 import random
 import string
-
-from .models import Competition, SeenMeme
+from django.db.models import Sum
+from .models import Competition, SeenMeme, Meme
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
@@ -47,13 +47,33 @@ def set_next_meme_for_competition(competition_id):
         random_meme = random.choice(available_memes)
         # Set the competition's current_meme to the randomly selected meme
         competition.current_meme = random_meme
-        competition.save()
 
         # Create a SeenMeme object for the selected meme and competition
         seen_meme = SeenMeme.objects.create(meme=random_meme, competition=competition)
         seen_meme.save()
-        print('set new meme')
     else:
-        print('no available memes!')
-        
+        competition.current_meme = None
+    
+    competition.save()
+
     return competition
+
+def get_top_memes(competition_name, num=3):
+    # Get the competition instance
+    competition = Competition.objects.get(name=competition_name)
+
+    # Aggregate the total vote scores for each meme in the competition
+    memes = Meme.objects.filter(competition=competition)
+    sorted_memes = sorted(memes, key=lambda meme: meme.total_score, reverse=True)
+
+    # Order the memes by total score in descending order and get the top three
+    top_memes = sorted_memes[:num]
+    print('top_memes are')
+    results = [
+        {
+            'id':meme.id,
+            'participant':meme.participant.name,
+            'score':meme.total_score
+        } for meme in top_memes
+    ]
+    return results

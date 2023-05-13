@@ -12,6 +12,7 @@ class Competition(models.Model):
     current_meme = models.ForeignKey(
         'Meme', null=True, on_delete=models.SET_NULL, related_name="current"
     )
+    finished = models.BooleanField(default=False)
     
     @property
     def num_memes(self):

@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Count
 
 
-from .utils import set_next_meme_for_competition, send_channel_message
+from .utils import get_top_memes, set_next_meme_for_competition, send_channel_message
 from .models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
 
@@ -78,16 +78,12 @@ def start_competition(request, comp_name):
 
         # Check if the request user is the owner of the competition
         if competition.owner == request.user:
-            print('got here at least')
-            # Set the competition as started, set the current meme, etc.
-            # Perform your desired logic here
-
-            # Send channel update
             if competition.started:
                     return Response(
                     {"detail": "You have already started this competition"},
                     status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
+            
             competition = set_next_meme_for_competition(competition.id)
             competition.started = True
             competition.save()
@@ -96,6 +92,43 @@ def start_competition(request, comp_name):
         else:
             return Response(
                 {"detail": "You are not authorized to start this competition."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+    except Competition.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def advance_competition(request, comp_name):  
+ # Process the competition advance request
+    try:
+        competition = Competition.objects.get(name=comp_name)
+
+        # Check if the request user is the owner of the competition
+        if competition.owner == request.user:
+            # Set the competition as started, set the current meme, etc.
+            # Perform your desired logic here
+
+            # Send channel update
+            if not competition.started:
+                    return Response(
+                    {"detail": "You cannot advance a competition that hasnt started"},
+                    status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
+            competition = set_next_meme_for_competition(competition.id)
+            if competition.current_meme:
+                send_channel_message(competition.name, 'next_meme', competition.current_meme.id)
+            else:
+                competition.finished = True
+                competition.save()
+                results = get_top_memes(competition.name, 3)
+                send_channel_message(competition.name, 'competition_results', results)
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"detail": "You are not authorized to advance this competition."},
                 status=status.HTTP_403_FORBIDDEN,
             )
     except Competition.DoesNotExist:
@@ -122,10 +155,14 @@ def cancel_competition(request, comp_name):
             )
             competition.current_meme = None 
             competition.started = False
+            competition.finished = False
             competition.save()  
 
-            seen_memes = SeenMeme.objects.filter(competition=competition)    
-            seen_memes.delete()         
+            SeenMeme.objects.filter(competition=competition).delete()   
+            comp_memes = competition.memes.all()
+            votes = Vote.objects.filter(meme__in=comp_memes)
+            print(votes)
+            votes.delete()       
 
             send_channel_message(competition.name, 'cancel_competition', '')
             return Response(status=status.HTTP_200_OK)
@@ -141,23 +178,27 @@ def cancel_competition(request, comp_name):
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
-def meme_vote(request,meme_id):
-    if request.method == 'POST':
-        score = request.data.get('score')
-        participant = request.user.participant
-        meme = get_object_or_404(Meme, id=meme_id)
-        vote, created = Vote.objects.get_or_create(meme=meme, participant=participant)
+def meme_vote(request, comp_name):
+    print(request.data)
+    score = request.data.get('vote')
+    print('this my score!', score)
+    competition = Competition.objects.get(name=comp_name)
+    participant = Participant.objects.get(user=request.user, competition=competition)
+    meme = competition.current_meme
+    try:
+        vote = Vote.objects.get(meme=meme, participant=participant)
         vote.score = score
-        vote.save()
-        total_votes = Vote.objects.filter(meme_id=meme_id).aggregate(total_votes=Count('id'))
-        # Send channel update with "num_voted" command
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"competition_{meme.competition.id}",
-            {
-                'type': 'update_voted',
-                'data': total_votes,
-            }
-        )
+    except Vote.DoesNotExist:
+        vote = Vote.objects.create(meme=meme, participant=participant, score=score)
 
-        return Response({'success': True}, status=status.HTTP_200_OK)
+    
+    vote.save()
+    print('got here')
+
+    total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
+    total_participants = competition.participants.count()
+    # Send channel update with "num_voted" command
+    print(total_votes)
+    send_channel_message(competition.name, 'update_voted', total_votes['total_votes'])
+
+    return Response({'success': True}, status=status.HTTP_200_OK)
