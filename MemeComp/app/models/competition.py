@@ -22,5 +22,22 @@ class Competition(models.Model):
         self.started = True
         self.save()
 
+    @property
+    def num_participants(self):
+        return self.participants.count()
+    
+    @property
+    def num_uploaders(self):
+        return self.memes.values('participant').distinct().count()
+
+    @property
+    def num_voters(self):
+        return self.votes.values('participant').distinct().count()
+
+    @property
+    def meme_ctr(self):
+        return self.seen_memes.count()
+
+
     def __str__(self):
         return f"Competition {self.id} ({self.theme}) {self.name}"

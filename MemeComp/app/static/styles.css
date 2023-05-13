@@ -1,0 +1,127 @@
+.carousel-inner .carousel-item {
+    transition: transform 0.6s ease-in;
+    display: flex;
+    justify-content: center;
+}
+
+.carousel-inner .card {
+    width: 100%;
+    max-width: 300px;
+}
+#submitted-memes-container {
+    background-color:black;
+    
+}
+.image-card {
+    border-width:0;
+}
+.participants-box {
+    border-top: lightgrey solid;
+    border-bottom: lightgrey solid;
+    border-width: 0.3px
+}
+.image-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    border-width:0;
+}
+
+.square-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: black;
+}
+.current-meme {
+    width: 100%;
+    height: auto;
+    max-width: 500px; /* Adjust the maximum width as needed */
+    margin: 0 auto; /* Center the image horizontally */
+}
+.delete-button {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    z-index: 5;
+}
+
+.bi-x {
+    color: red;
+    font-size: 1.5rem;
+}
+
+.vote-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.vote-radio {
+    display: none;
+}
+
+.vote-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: lightgray;
+    color: black;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.vote-label:hover {
+    background-color: lightgray;
+}
+
+.vote-radio:checked+.vote-label {
+    background-color: #007bff;
+    color: white;
+}
+#snackbar {
+    visibility: hidden;
+    min-width: 100%;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    top: 45px;
+    transform: translateX(-50%);
+    }
+
+#snackbar.show {
+    visibility: visible;
+    animation: fadein 0.5s, fadeout 0.5s 1.5s;
+    }
+
+    @keyframes fadein {
+    from {
+        top: 0;
+        opacity: 0;
+    }
+    to {
+        top: 45px;
+        opacity: 1;
+    }
+}
+
+@keyframes fadeout {
+    from {
+        top: 45px;
+        opacity: 1;
+    }
+    to {
+        top: 0;
+        opacity: 0;
+    }
+}

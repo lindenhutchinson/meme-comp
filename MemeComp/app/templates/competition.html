@@ -1,107 +1,131 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row">
-	<div class="card text-center">
+<div id="snackbar"></div>
+<div class="row text-center g-0">
+	<!-- TOP CARD (competition details/owner controls) -->
+	<div class="col-lg-3 col-12 card text-center m-2" style="height:fit-content">
 		<div class="card-header">
 			<h2>{{ competition.theme }}</h2>
 			<small class="card-title">A meme competition by {{ competition.owner }}</small>
 		</div>
 		<div class="card-body">
+			<div class="row mb-2">
+				<div class="input-group" style="z-index:0">
+					<input id="room-url" type="text" class="form-control" value="Competition ID: {{ competition.name }}" disabled>
+					<button class="btn btn-primary" onclick="copyLink()">Copy</button>
+				</div>
+			</div>
 			<div class="row">
-				<div class="col-md-4 col-sm-12">
-					<p class="card-text">
-						Memes submitted: <span id="num_memes">{{ competition.memes.count }}</span>
-					</p>
+				<p id="num_memes">{{competition.num_memes}} meme{{competition.num_memes|pluralize}} submitted by {{competition.num_uploaders}} {{competition.num_uploaders|pluralize:'person,people'}}
+				</p>
+			</div>
+			
+			<div class="row">
+				<button class="btn btn-light btn-sm d-flex mr-3 ml-3 justify-content-center" type="button" onclick="toggleShowParticipants()">
+					Participants &nbsp;<span id="num-participants">({{competition.num_participants}})</span>
+				</button>
+				<div class="overflow-auto participants-box p-1" style="max-height: 200px;">
+					<ul id="participants" class="list-group">
+						{% for participant in competition.participants.all %}
+						<li class="list-group-item">{{ participant.name }}</li>
+						{% endfor %}
+					</ul>
 				</div>
-				<div class="col-md-4 col-sm-12 text-center">
-					<button type="button" class="btn btn-success mb-4" onclick="copyLink()">Copy invite link</button>
-					{% if request.user == competition.owner %}
-					<p>
-						<button id="start-comp-btn" class="btn btn-warning" onclick=startCompetition() {% if competition.started %}disabled{% endif %}>
-							{% if competition.started %}
-							Competition started
-							{% else %}
-							Start Competition
-							{% endif %}
-						</button>
-						<button id="cancel-comp-btn" class="btn btn-danger" onclick="cancelCompetition()" {% if not competition.started %}disabled{% endif %}>
-							<i class="bi bi-x-square"></i>
-						</button>
-					</p>
-					{% endif %}
+			</div>
+			
+			<div class="row text-center">
+				{% if request.user == competition.owner %}
+				<div class="d-flex justify-content-between my-3">
+					<button id="start-comp-btn" class="btn btn-success" style="width:100%" onclick="startCompetition()" {% if competition.started %}disabled{% endif %}>
+						{% if competition.started %}
+						Competition started
+						{% else %}
+						Start Competition
+						{% endif %}
+					</button>
+					<button id="cancel-comp-btn" class="btn btn-danger" onclick="cancelCompetition()" {% if not competition.started %}disabled{% endif %}>
+						<i class="bi bi-x-square"></i>
+					</button>
 				</div>
-				<div class="col-md-4 col-sm-12">
-					<div class="card-body">
-						<div class="overflow-auto" style="max-height: 200px;">
-							<ul id="participants" class="list-group">
-								{% for participant in competition.participants.all %}
-								<li class="list-group-item">{{ participant.name }}</li>
-								{% endfor %}
-							</ul>
+				<p>
+					<button id="next-meme-btn" class="btn btn-primary mx-auto col-6" onclick="advanceCompetition()" {% if not competition.started or competition.finished %}style="display:none"{% endif %}>Next meme</button>
+				</p>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+	<!-- COMPETITION FINISHED (winning memes) -->
+	<div id="comp-finished" class="col row g-0" {% if not competition.finished %} style="display:none" {% endif %} >
+		<div class="card">
+			<div class="card-header">
+				<div class="card-title">
+					<h2>Winning Memes</h2>
+				</div>
+			</div>
+			<div class="card-body">
+				{% for meme in top_memes %}
+				<div class="col-md-4 col-12">
+					<div class="meme-item card">
+						<div class="card-header">
+							<h5 class="card-title">{{meme.participant}}</h5>
+							<h6 class="card-subtitle mb-2 text-muted">Score: {{meme.score}}</h6>
+						</div>
+						<div class="card-body">
+							<img src="/competition/{{competition.name}}/memes/{{meme.id}}" alt="Meme Image" class="card-img-top">
 						</div>
 					</div>
 				</div>
-			</div>
-		</div>			
-	</div>
-</div>
-<div class="mt-3 row text-center">
-	<div id="comp-finished" class="col row" {% if not competition.finished %} style="display:none" {% endif %} >
-		{% for meme in top_memes %}
-		<div class="col-4">
-			<div class="meme-item card">
-				<div class="card-header">
-					<h5 class="card-title">{{meme.participant}}</h5>
-					<h6 class="card-subtitle mb-2 text-muted">Score: {{meme.score}}</h6>
-				</div>
-				<div class="card-body">
-					<img src="/competition/{{competition.name}}/memes/{{meme.id}}" alt="Meme Image" class="card-img-top">
-				</div>
+				{% endfor %}
 			</div>
 		</div>
-		{% endfor %}
 	</div>
-	<div id="comp-started" class="col text-center" {% if not competition.started or not competition.current_meme %} style="display:none" {% endif %} >
+	<!-- COMPETITION VOTING (display current meme) -->
+	<div id="comp-started" class="col text-center m-2" {% if not competition.started or not competition.current_meme %} style="display:none" {% endif %} >
 		<div class="vote-container">
-			<div class="card">
+			<div class="card" style="width:100%"">
 				<div class="card-header">
-					<button class="btn btn-primary" onclick="advanceCompetition()">Next meme</button>
-					Votes submitted: <span id="num_votes">{{competition.current_meme.num_votes}}</span>
+					Total votes: <span id="num_votes">{{competition.current_meme.num_votes}}</span>
+					<div class="pt-2 card-title d-flex align-items-center justify-content-center">
+						<form id="vote-form">
+							<div class="form-check form-check-inline">
+								<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option1" value="1">
+								<label class="form-check-label vote-label" for="vote-option1">1</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option2" value="2">
+								<label class="form-check-label vote-label" for="vote-option2">2</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option3" value="3">
+								<label class="form-check-label vote-label" for="vote-option3">3</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option4" value="4">
+								<label class="form-check-label vote-label" for="vote-option4">4</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option5" value="5">
+								<label class="form-check-label vote-label" for="vote-option5">5</label>
+							</div>
+						</form>
+					</div>
 				</div>
 
-				<div class="pt-2 card-title d-flex align-items-center justify-content-center">
-					<form id="vote-form">
-						<div class="form-check form-check-inline">
-							<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option1" value="1">
-							<label class="form-check-label vote-label" for="vote-option1">1</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option2" value="2">
-							<label class="form-check-label vote-label" for="vote-option2">2</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option3" value="3">
-							<label class="form-check-label vote-label" for="vote-option3">3</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option4" value="4">
-							<label class="form-check-label vote-label" for="vote-option4">4</label>
-						</div>
-						<div class="form-check form-check-inline">
-							<input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option5" value="5">
-							<label class="form-check-label vote-label" for="vote-option5">5</label>
-						</div>
-					</form>
-				</div>
+
 				<div class="card-body g-0">
 					<img id="current-meme-image" src="/competition/{{competition.name}}/memes/{{competition.current_meme.id}}" alt="Current Meme" class="current-meme" />
 				</div>
+
 			</div>
 		</div>
 	</div>
-	<div id="comp-waiting" class="col" {% if competition.started or competition.finished %} style="display:none" {% endif %}>
-		<div class="card">
-			<div class="card-body">
+	<!-- COMPETITION WAITING (upload memes, uploaded carousel) -->
+	<div id="comp-waiting" class="col m-2" {% if competition.started or competition.finished %} style="display:none" {% endif %}>
+		<div class="card mt-3">
+			<div class="card-header">
+				<h4 class="card-title">Memes</h4>
+			</div>
+			<div class="row mt-2 px-2">
 				<h5 class="card-title">Submit a meme</h5>
 				<form id="upload-form" enctype="multipart/form-data">
 					{% csrf_token %}
@@ -113,112 +137,113 @@
 					<button type="submit" class="btn btn-primary">Submit</button>
 				</form>
 			</div>
-		</div>
-		<div class="card mt-3">
 			<div class="card-body">
-				<h5 class="card-title">Your submitted memes</h5>
-				<div class="row row-cols-1 row-cols-md-2 g-3" id="submitted-memes-container">
-					{% for meme in participant.memes.all %}
-					<div class="col" id="meme-{{meme.id}}">
-						<div class="card">
+				<div id="carouselExample" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="false">
+					<div class="carousel-inner" id="submitted-memes-container">
+						{% for meme in participant.memes.all %}
+						<div id="meme-{{meme.id}}" class="item carousel-item {% if forloop.first %}active{% endif %}">
+							<div class="card image-card">
 							<div class="image-container">
 								<img src="{% url 'serve_file' competition.name meme.id %}" alt="{{ meme.title }}"
-									class="card-img-top square-image" />
-								<button type="submit" class="btn delete-button" onclick="deleteMeme(this)"
+									class="card-img-top square-image d-block" />
+								<button type="submit" class="btn btn-outline-danger delete-button" onclick="deleteMeme(this)"
 									data-meme-id="{{ meme.id }}">
-									<i class="bi bi-x-square" style="color:red"></i>
+									X
 								</button>
 							</div>
 						</div>
+						</div>
+						{% endfor %}
 					</div>
-					{% endfor %}
+					<div id="carousel-controls" {% if participant.num_memes == 1 %} style="display:none" {% endif %}>
+						<button style="background-color:black" class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+							<span class="visually-hidden">Previous</span>
+						</button>
+						<button style="background-color:black" class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+							<span class="carousel-control-next-icon" aria-hidden="true"></span>
+							<span class="visually-hidden">Next</span>
+						</button>
+					</div>
 				</div>
-			</div>
+			</div>		
 		</div>
 	</div>
 </div>
-<style>
-	.image-container {
-		position: relative;
-		width: 100%;
-		padding-bottom: 100%;
 
-		/* Creates a square aspect ratio */
-		.btn {
-			background-color: transparent;
+<style>
+	
+</style>
+
+<script>
+	$(document).ready(function() {
+		$('#carouselExample').on('slide.bs.carousel', function (e) {
+			var $e = $(e.relatedTarget);
+			var idx = $e.index();
+			var itemsPerSlide = 1;
+			var totalItems = $('.carousel-item').length;
+	
+			if (idx >= totalItems - (itemsPerSlide - 1)) {
+				var it = itemsPerSlide - (totalItems - idx);
+				for (var i = 0; i < it; i++) {
+					if (e.direction == "left") {
+						$('.carousel-item').eq(i).appendTo('.carousel-inner');
+					}
+					else {
+						$('.carousel-item').eq(0).appendTo('.carousel-inner');
+					}
+				}
+			}
+		});
+	});
+
+	function toggleShowParticipants() {
+		const box = $('.participants-box');
+		if(box.hasClass('collapse')) {
+			box.removeClass('collapse')
+		} else {
+			box.addClass('collapse')
 		}
 	}
+	var snackbarTimeout;
+	var prevColour;
+	function showSnackbar(message, colour) {
+		var snackbar = $("#snackbar");
+		if (snackbarTimeout) {
+			clearTimeout(snackbarTimeout);
+			snackbarTimeout = null;
+			snackbar.removeClass("show");
+		}
+		if (prevColour !== colour) {
+			snackbar.removeClass(`btn-${prevColour}`)
+			prevColour = null;
+		}
+	
+		snackbar.text(message);
+		snackbar.addClass(`btn-${colour}`)
+	
+		prevColour = colour;
+		snackbar.addClass("show");
 
-	.square-image {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		background-color: black;
-	}
-	.current-meme {
-		width: 100%;
-		height: auto;
-		max-width: 500px; /* Adjust the maximum width as needed */
-		margin: 0 auto; /* Center the image horizontally */
-	}
-	.delete-button {
-		position: absolute;
-		top: 5px;
-		right: 5px;
-		z-index: 1;
-	}
-
-	.bi-x {
-		color: red;
-		font-size: 1.5rem;
+		snackbarTimeout = setTimeout(function() {
+			snackbar.removeClass("show");
+		}, 2000); // Adjust the timeout duration as needed
 	}
 
-	.vote-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-	}
-
-	.vote-radio {
-		display: none;
-	}
-
-	.vote-label {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		background-color: lightgray;
-		color: black;
-		font-size: 20px;
-		cursor: pointer;
-		transition: background-color 0.3s ease;
-	}
-
-	.vote-label:hover {
-		background-color: lightgray;
-	}
-
-	.vote-radio:checked+.vote-label {
-		background-color: #007bff;
-		color: white;
-	}
-</style>
-<!-- ajax -->
-<script>
 	const csrfToken = "{{csrf_token}}";
 
-	// Copy invite link
 	function copyLink() {
-		// Implement copy link logic here
-	}
+		// Get the text field
+		var compLink = "{{ request.get_host }}{% url 'competition' competition.name %}";
+		navigator.clipboard.writeText(compLink)
+		console.log('copied', compLink)
 
-	// Start competition
+		// Copy the text inside the text field
+		// Alert the copied text
+		showSnackbar("Competition URL has been copied", 'primary');
+} 
+
+	// Start competition via AJAX
 	function startCompetition() {
 		$.ajax({
 			url: "{% url 'start_competition' competition.name %}",
@@ -233,14 +258,17 @@
 				$('#start-comp-btn').attr('disabled', true);
 				$('#cancel-comp-btn').attr('disabled', false);
 				$('#start-comp-btn').text('Competition started');
+				$("#next-meme-btn").css('display', 'inline');
 			},
 			error: function (xhr, status, error) {
+				showSnackbar('Add some memes before starting the competition', 'danger')
 				// Handle error response
 				console.error(xhr.responseText);
 			}
 		});
 	}
 
+	// restart the competition via AJAX
 	function cancelCompetition() {
 		$.ajax({
 			url: "{% url 'cancel_competition' competition.name %}",
@@ -255,6 +283,8 @@
 				$('#start-comp-btn').attr('disabled', false);
 				$('#cancel-comp-btn').attr('disabled', true);
 				$('#start-comp-btn').text('Start Competition');
+				$("#next-meme-btn").css('display', 'none');
+
 			},
 			error: function (xhr, status, error) {
 				// Handle error response
@@ -263,6 +293,7 @@
 		});
 	}
 
+	// load next meme via AJAX
 	function advanceCompetition() {
 		$.ajax({
 			url: "{% url 'advance_competition' competition.name %}",
@@ -298,15 +329,44 @@
 				$('#image').val('');
 				console.log(response)
 				// Load submitted memes
+				showSnackbar('Meme uploaded', 'success');
 				memeSubmitted(response.id);
 			},
 			error: function (xhr, status, error) {
+				showSnackbar('Error uploading your meme :(', 'danger')
 				// Handle error response
 				console.error(xhr.responseText);
 			}
 		});
 	}
 
+	// load the submitted meme onto the page
+	function memeSubmitted(id) {
+		var memes = $("#submitted-memes-container").find('.item');
+		if(memes.length >= 1) {
+			$('#carousel-controls').css('display', 'inline')
+		}
+		var current = $("#submitted-memes-container").find('.active').first();
+		current.removeClass('active');
+		element = `
+			<div id="meme-${id}" class="item carousel-item active">
+				<div class="card image-card">
+					<div class="image-container">
+						<img src="/competition/{{competition.name}}/memes/${id}" alt="Dank memez yeeeea boii"
+							class="card-img-top square-image" />
+						<button type="submit" class="btn btn-outline-danger delete-button" onclick="deleteMeme(this)"
+							data-meme-id="${id}">
+							X
+						</button>
+					</div>
+				</div>
+			</div>
+			`
+		$('#submitted-memes-container').append(element);
+
+	}
+
+	// delete meme via AJAX
 	function deleteMeme(button) {
 		const memeId = $(button).data('meme-id');
 		$.ajax({
@@ -319,6 +379,7 @@
 			},
 			success: function (response) {
 				// Load submitted memes
+				showSnackbar('Meme deleted', 'success')
 				memeDeleted(memeId);
 			},
 			error: function (xhr, status, error) {
@@ -327,9 +388,22 @@
 			}
 		});
 	}
-	// Submit vote via AJAX
-	function submitVote() {
 
+	// remove the delete meme from the page
+	function memeDeleted(memeId) {
+		var memes = $("#submitted-memes-container").find('.item');
+		if(memes.length <= 2) {
+			$('#carousel-controls').css('display', 'none')
+		}
+		const carousel = $('#submitted-memes-container')
+
+		carousel.find(`[id="meme-${memeId}"]`).remove()
+		var next = carousel.find('.item').first();
+		next.addClass('active');
+	}
+
+	// submit vote via AJAX
+	function submitVote() {
 		// Get the selected vote option
 		var selectedOption = document.querySelector('input[name="vote"]:checked').value;
 		console.log(selectedOption)
@@ -347,41 +421,17 @@
 				xhr.setRequestHeader("X-CSRFToken", csrfToken);
 			},
 			success: function (response) {
-				console.log(response)
-				// Handle success response
-				// Update the UI or perform any other necessary actions
+				if(Math.random() < 0.05 && selectedOption == 1) {
+					showSnackbar('Really? a one?? Thats harsh', 'success')
+				} else {
+					showSnackbar('Vote submitted', 'success')
+				}
 			},
 			error: function (xhr, status, error) {
 				// Handle error response
 				console.error(xhr.responseText);
 			}
 		});
-	}
-
-	function memeSubmitted(id) {
-		element = `
-			<div class="col" id="meme-${id}">
-				<div class="card">
-					<div class="image-container">
-						<img src="/competition/{{competition.name}}/memes/${id}"
-							alt="Dank meme"
-							class="card-img-top square-image" />
-						<button type="submit"
-								class="btn delete-button"
-								data-meme-id="${id}"
-								onclick="deleteMeme(this)">
-							<i class="bi bi-x-square" style="color:red"></i>
-						</button>
-					</div>
-				</div>
-			</div>
-			`
-		$('#submitted-memes-container').append(element);
-
-	}
-
-	function memeDeleted(memeId) {
-		$('#submitted-memes-container').find(`[id="meme-${memeId}"]`).remove()
 	}
 
 	// Listen for the submit event of the upload form
@@ -394,13 +444,11 @@
 		const memeId = $(this).data('meme-id');
 		submitVote(memeId);
 	});
-</script>
 
-<!-- web sockets-->
-<script>
+
+	// ------------------------ WEB SOCKETS -----------------------------------	
 	// Open websocket connection
 	var socket = null; // Declare the socket variable outside the function
-
 	function connectWebSocket() {
 		socket = new WebSocket(
 			"ws://" +
@@ -417,9 +465,10 @@
 			var message = JSON.parse(event.data);
 			console.log(message);
 			var command = message.command;
-
+	
 			if (command === "user_joined") {
-				var participantName = message.name;
+				var participantName = message.data.name;
+				const numParticipants = message.data.num_participants
 				var participantList = $("#participants");
 				if (
 					participantList.find("li:contains('" + participantName + "')")
@@ -429,28 +478,43 @@
 						`<li class='list-group-item'>${participantName}</li>`
 					);
 				}
+				$('#num-participants').text(`(${numParticipants})`);
+				
+				showSnackbar(`${participantName} joined`, 'success');
 			} else if (command === "meme_uploaded") {
-				$("#num_memes").text(message.data);
+				const num_uploaders = message.data.num_uploaders;
+				const num_memes = message.data.num_memes;
+				const text = `${num_memes} meme${num_memes > 1 ? 's':''} submitted by ${num_uploaders} ${num_uploaders > 1 ? 'people':'person'}`
+				$("#num_memes").text(text);
+
 			} else if (command === "competition_cancelled") {
 				$("#comp-started").css('display', 'none')
 				$("#comp-finished").css('display', 'none')
-				$("#comp-waiting").css('display', '')
+				$("#comp-waiting").css('display', 'inline')
 				$("#current-meme-image").attr('src', '')
 				$('input[name="vote"]').prop('checked', false);
 				$("#num_votes").text('0');
+				showSnackbar('Competition cancelled', 'info');
 
 			} else if (command === "next_meme") {
+				const memeId = message.data.id;
+				const memeCtr = message.data.ctr;
+				const numMemes = message.data.num_memes
 				$("#comp-started").css('display', '')
 				$("#comp-waiting").css('display', 'none')
 				$('input[name="vote"]').prop('checked', false);
 				$("#num_votes").text('0');
-				$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${message.data}`)
+				$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
+				showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
+
 			} else if (command === "meme_voted") {
 				$("#num_votes").text(message.data)
 			} else if (command === "competition_results") {
 				$("#comp-started").css('display', 'none')
 				$("#comp-waiting").css('display', 'none')
 				$("#comp-finished").css('display', '')
+				$("#next-meme-btn").css('display', 'none');
+				showSnackbar('Competition has finished', 'info')
 
 				const results = message.data;
 				 // Iterate through the sorted results and generate HTML
@@ -474,7 +538,6 @@
 
 				// Append the generated HTML to the 'top-memes-container' element
 				$('#comp-finished').html(html);
-				console.log(message.data)
 			}
 		};
 
@@ -503,17 +566,14 @@
 
 	// Check if the page was reloaded or redirected
 	var websocketUrl = localStorage.getItem("websocket_url");
-	if (
-		(performance.navigation.type === 1 ||
-			performance.navigation.type === 0) && websocketUrl
-	) {
+	if ((performance.navigation.type === 1 || performance.navigation.type === 0) && websocketUrl) {
 		console.log("reconnected to websocket");
 		// Clear the saved WebSocket URL from browser storage
 		localStorage.removeItem("websocket_url");
-
 		// Establish a new WebSocket connection
 		connectWebSocket();
-	} else {
+	}
+	else {
 		// Call the connectWebSocket function to establish the initial WebSocket connection
 		connectWebSocket();
 	}

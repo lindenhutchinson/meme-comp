@@ -6,7 +6,7 @@ from .models import Competition, SeenMeme, Meme
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-def send_channel_message(comp_name, consumer, data):
+def send_channel_message(comp_name, consumer, data=None):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         comp_name, {"type": consumer, "data": data}
@@ -14,7 +14,9 @@ def send_channel_message(comp_name, consumer, data):
 
 def generate_random_string(length):
     """Generate a random string up to the given maximum length."""
-    return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
+    valid_chars = [c for c in string.ascii_letters if c not in ['l', 'I', 'i', 'O', 'o']]
+    return ''.join(random.choice(valid_chars) for _ in range(length))
+
 
 def get_current_user(request):
     user_id = request.session.get('user_id')

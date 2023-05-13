@@ -29,7 +29,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            messages.success(request, 'You have been logged in!')
+            # messages.success(request, 'You have been logged in!')
             next_url = request.POST.get('next')
             # if there is a next parameter, redirect the user to that URL
             if next_url:
@@ -63,7 +63,7 @@ def home(request):
 
             user = authenticate(request, username=username, password=password)
             login(request, user)
-            messages.success(request, 'Successfully created your account!')
+            # messages.success(request, 'Successfully created your account!')
             
             next_url = request.POST.get('next')
 
@@ -97,8 +97,7 @@ def lobby(request):
                 competition.save()
                 _, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
                 if created:
-                    messages.success(request, 'Competition created successfully!')
-                    return redirect('competition', comp_name=competition.name)
+                        return redirect('competition', comp_name=competition.name)
 
         elif 'join' in request.POST:
             join_competition_form = JoinCompetitionForm(request.POST)
@@ -110,11 +109,13 @@ def lobby(request):
                     messages.error(request, 'Invalid competition ID')
                 else:
                     request.session['competition_id'] = competition.id
-                    _, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
+                    participant, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
                     if created:
-                        messages.success(request, 'You have joined the competition!')
-                        total_participants = competition.participants.count()
-                        send_channel_message(competition.name, 'update_joined', total_participants)
+                        data = {
+                            'num_participants':competition.participants.count(),
+                            'name':participant.name
+                        }
+                        send_channel_message(competition.name, 'update_joined', data)
                     else:
                         messages.warning(request, 'You have already joined this competition.')
                         
@@ -131,7 +132,11 @@ def competition(request, comp_name):
     comp = Competition.objects.get(name=comp_name)
     participant, created = Participant.objects.get_or_create(name=request.user.username, user=request.user, competition=comp)
     if created:
-        messages.success(request, 'You have joined the competition!')
+        data = {
+            'num_participants':comp.participants.count(),
+            'name':participant.name
+        }
+        send_channel_message(comp.name, 'update_joined', data)
     
     request.session['competition_id'] = comp.id
     request.session['participant_id'] = participant.id
@@ -162,46 +167,6 @@ def joined_competitions(request):
     }
     return render(request, 'joined_competitions.html', context)
 
-# @login_required
-# @require_POST
-# def upload_meme(request):
-#     participant_id = request.session.get('participant_id')
-#     competition_id = request.session.get('competition_id')
-    
-#     if not (participant_id and competition_id):
-#         messages.error('Something went wrong, try again')
-#         return redirect('lobby')
-        
-#     try:
-#         participant = Participant.objects.get(id=participant_id)
-#         competition = Competition.objects.get(id=competition_id)
-        
-#         form = UploadMemeForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             image = form.cleaned_data['image']
-            
-#             if image.size > 4 * 1024 * 1024:
-#                 messages.warning('Your files are too powerful!')
-                
-#             else:
-#                 meme = Meme()
-#                 meme.image = image
-#                 meme.participant = participant
-#                 meme.competition = competition
-#                 meme.save()
-                
-#             channel_layer = get_channel_layer()
-            
-#             async_to_sync(channel_layer.group_send)(competition.name, {"type":"meme_uploaded", "data":competition.num_memes})
-            
-#         return redirect('competition', comp_name=competition.name)
-                     
-#     except (Participant.DoesNotExist, Competition.DoesNotExist):
-#         messages.error('Some went wrong, try again')
-#         return redirect('lobby')
-        
-#     return redirect('lobby')
-        
 
 def serve_file(request, comp_name, meme_id):
     # Check if the user has joined the competition
@@ -217,23 +182,3 @@ def serve_file(request, comp_name, meme_id):
     response = HttpResponse(file_data, content_type=file_data.content_type)
     response['Content-Disposition'] = f'attachment; filename="{meme.image.name}"'
     return response
- 
-# @login_required  
-# def delete_meme(request, meme_id):
-#     # Get the meme object
-#     meme = get_object_or_404(Meme, id=meme_id)
-#     # Verify if the authenticated user has a participant associated with the meme
-#     if meme.participant.user != request.user:
-#         # User is not authorized to delete the meme
-#         messages.error(request, "You are not authorized to delete this meme.")
-#         return redirect('competition', comp_name=meme.competition.name)
-    
-#     competition = meme.competition
-#     # Delete the meme
-#     meme.delete()
-
-#     channel_layer = get_channel_layer()
-#     async_to_sync(channel_layer.group_send)(competition.name, {"type":"meme_uploaded", "data":competition.num_memes})
-#     messages.success(request, "Meme deleted successfully.")
-#     return redirect('competition', comp_name=meme.competition.name)
-    

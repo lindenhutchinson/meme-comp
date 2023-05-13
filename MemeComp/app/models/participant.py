@@ -8,6 +8,10 @@ class Participant(models.Model):
     def __str__(self):
         return self.name
     
+    @property
+    def num_memes(self):
+        return self.memes.count()
+
     class Meta:
         constraints = [
         models.UniqueConstraint(fields=['user', 'competition'], name='competition_user')

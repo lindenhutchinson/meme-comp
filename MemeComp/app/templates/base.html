@@ -19,7 +19,10 @@
               integrity="sha384-b6lVK+yci+bfDmaY1u0zE8YYJt0TZxLEAFyYSLHId4xoVvsrQu3INevFKo+Xir8e"
               crossorigin="anonymous">
         {% block css %}
+       
         {% endblock css %}
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'styles.css' %}">
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -76,7 +79,8 @@
             </div>
         {% endif %}
         <div class="container mt-5">
-            {% block content %}{% endblock content %}
+            {% block content %}
+            {% endblock content %}
         </div>
         <!-- Bootstrap 5 JavaScript dependencies -->
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"
@@ -85,4 +89,13 @@
                 crossorigin="anonymous"></script>
         {% block js %}{% endblock js %}
     </body>
+    <script>
+        $(document).ready(function() {
+        // Set the timeout duration in milliseconds (e.g., 3000ms for 3 seconds)
+        var timeoutDuration = 3000;
+        
+        // Find the success message element and fade it out after the timeout duration
+        $('.alert').delay(timeoutDuration).fadeOut('slow');
+    });
+    </script>
 </html>
