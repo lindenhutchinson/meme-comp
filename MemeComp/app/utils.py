@@ -45,7 +45,6 @@ def set_next_meme_for_competition(competition_id):
 
     # Select a random meme from the available memes
     if available_memes.exists():
-        print(available_memes)
         random_meme = random.choice(available_memes)
         # Set the competition's current_meme to the randomly selected meme
         competition.current_meme = random_meme
@@ -60,7 +59,7 @@ def set_next_meme_for_competition(competition_id):
 
     return competition
 
-def get_top_memes(competition_name, num=3):
+def get_top_memes(competition_name):
     # Get the competition instance
     competition = Competition.objects.get(name=competition_name)
 
@@ -69,12 +68,11 @@ def get_top_memes(competition_name, num=3):
     sorted_memes = sorted(memes, key=lambda meme: meme.total_score, reverse=True)
 
     # Order the memes by total score in descending order and get the top three
-    top_memes = sorted_memes[:num]
     results = [
         {
             'id':meme.id,
             'participant':meme.participant.name,
             'score':meme.total_score
-        } for meme in top_memes
+        } for meme in sorted_memes
     ]
     return results

@@ -79,10 +79,10 @@
 		<div class="card">
 			<div class="card-header">
 				<div class="card-title">
-					<h2>Winning Memes</h2>
+					<h2>Competition Results</h2>
 				</div>
 			</div>
-			<div id="winning-memes" class="card-body row">
+			<div id="winning-memes" class="overflow-auto card-body row" style="max-height:400px">
 				{% for meme in top_memes %}
 					<div class="col-lg-4 col-12 mb-2">
 						<div class="meme-item card">
@@ -171,14 +171,19 @@
 			</div>
 			<div class="row mt-2 px-2">
 				<h5 class="card-title">Submit a meme</h5>
-				<form id="upload-form" enctype="multipart/form-data">
+				<form id="upload-form" enctype="multipart/form-data" onchange="submitMeme()">
 					{% csrf_token %}
-					<div class="mb-3">
-						<input type="file" name="image" class="form-control" id="image" />
+					<div class="mb-3 row g-0">
+						<div class="col mb-2">
+							<input type="file" name="image" class="form-control" id="image" />
+						</div>
+						<div class="col-12 col-lg-1">
+							<button style="width:100%" class="btn btn-block btn-primary" type="submit">Submit</button>
+						</div>
 						<input type="hidden" name="participant" value="{{ participant.id }}">
 						<input type="hidden" name="competition" value="{{ competition.id }}">
 					</div>
-					<button type="submit" class="btn btn-primary">Submit</button>
+					
 				</form>
 			</div>
 			<div class="card-body">
@@ -352,15 +357,20 @@
 				$("#next-meme-btn").css('display', 'inline');
 			},
 			error: function (xhr, status, error) {
-				showSnackbar('Add some memes before starting the competition', 'danger')
-				// Handle error response
-				console.error(xhr.responseText);
+				showSnackbar(xhr.responseJSON.detail, 'danger')
 			}
 		});
 	}
 
 	// restart the competition via AJAX
 	function cancelCompetition() {
+		var cancelCheck = 'Are you sure you want to cancel the competition? This will erase all votes.'
+		if(Math.random() < 0.01) {
+			cancelCheck = "Go ahead, cancel it. See if I care. I'm gonna delete all your votes if you do"
+		}
+		if(!confirm(cancelCheck)) {
+			return
+		}
 		$.ajax({
 			url: "{% url 'cancel_competition' competition.name %}",
 			type: "POST",
@@ -378,8 +388,7 @@
 
 			},
 			error: function (xhr, status, error) {
-				// Handle error response
-				console.error(xhr.responseText);
+				showSnackbar('Unable to cancel competition', 'danger');
 			}
 		});
 	}
@@ -396,8 +405,7 @@
 			success: function (response) {
 			},
 			error: function (xhr, status, error) {
-				// Handle error response
-				console.error(xhr.responseText);
+				showSnackbar('Unable to advance competition', 'danger');
 			}
 		});
 	}
@@ -426,9 +434,11 @@
 				memeSubmitted(response.id);
 			},
 			error: function (xhr, status, error) {
-				showSnackbar('Error uploading your meme :(', 'danger')
-				// Handle error response
-				console.error(xhr.responseText);
+				if(xhr.status === 403) {
+					showSnackbar(xhr.responseJSON.detail, 'danger')
+				} else {
+					showSnackbar('Error uploading your meme :(', 'danger')
+				}
 			}
 		});
 	}
@@ -482,8 +492,11 @@
 				memeDeleted(memeId);
 			},
 			error: function (xhr, status, error) {
-				// Handle error response
-				console.error(xhr.responseText);
+				if(xhr.status === 403) {
+					showSnackbar(xhr.responseJSON.detail, 'danger')
+				} else {
+					showSnackbar('Unable to delete meme', 'danger')
+				}
 			}
 		});
 	}
@@ -528,13 +541,16 @@
 				}
 			},
 			error: function (xhr, status, error) {
-				// Handle error response
-				console.error(xhr.responseText);
+				if(xhr.status === 403) {
+					showSnackbar(xhr.responseJSON.detail, 'danger')
+				} else {
+					showSnackbar('Unable to submit vote', 'danger')
+				}
 			}
 		});
 	}
 
-	// Listen for the submit event of the upload form
+	
 	$('#upload-form').on('submit', function (event) {
 		event.preventDefault();
 		submitMeme();
@@ -580,8 +596,16 @@
 					);
 				}
 				$('#num-participants').text(`(${numParticipants})`);
-				
-				showSnackbar(`${participantName} joined`, 'success');
+
+				if(Math.random() < 0.05) {
+					showSnackbar(`Oh look, ${participantName} is here!`, 'success')
+				} else if (Math.random() < 0.05) {
+					showSnackbar(`Look who showed up, it's ${participantName}`, 'success')
+				} else if (Math.random() < 0.05) {
+					showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`)
+				} else {
+					showSnackbar(`${participantName} joined`, 'success');
+				}
 			} else if (command === "meme_uploaded") {
 				const num_uploaders = message.data.num_uploaders;
 				const num_memes = message.data.num_memes;
@@ -657,29 +681,9 @@
 		};
 	}
 
-	// Listen for the beforeunload event
-	window.addEventListener("beforeunload", function () {
-		// Save the WebSocket URL or other connection information to browser storage
-		localStorage.setItem(
-			"websocket_url",
-			"{{websocket_scheme}}://" +
-			window.location.host +
-			"/{{websocket_scheme}}/competitions/{{ competition.name }}/"
-		);
-	});
-
-	// Check if the page was reloaded or redirected
-	var websocketUrl = localStorage.getItem("websocket_url");
-	if ((performance.navigation.type === 1 || performance.navigation.type === 0) && websocketUrl) {
-		console.log("reconnected to websocket");
-		// Clear the saved WebSocket URL from browser storage
-		localStorage.removeItem("websocket_url");
-		// Establish a new WebSocket connection
-		connectWebSocket();
-	}
-	else {
-		// Call the connectWebSocket function to establish the initial WebSocket connection
-		connectWebSocket();
-	}
+	
+	// Call the connectWebSocket function to establish the initial WebSocket connection
+	connectWebSocket();
+	
 </script>
 {% endblock content %}

@@ -29,7 +29,3 @@ primary_region = "syd"
     type = "connections"
     hard_limit = 25
     soft_limit = 20
-
-[processes]
-  app = ""
-  cron = "cron -f"

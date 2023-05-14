@@ -1,85 +1,85 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#create">Create Competition</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#join">Join Competition</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="tab-content">
-                        <div class="tab-pane container active" id="create">
-                            <form method="post" name="create">
-                                {% csrf_token %}
-                                <div class="form-group mb-3">
-                                    <label for="theme">Theme:</label>
-                                    <input type="text" name="theme" id="theme" class="form-control" required />
-                                </div>
-                                <button type="submit" name="create" class="btn btn-primary">Create</button>
-                            </form>
-                        </div>
-                        <div class="tab-pane container" id="join">
-                            <form method="post" name="join">
-                                {% csrf_token %}
-                                <div class="form-group mb-3">
-                                    <label for="name">Competition ID:</label>
-                                    <input type="text" name="name" id="name" class="form-control" required />
-                                </div>
-                                <button type="submit" name="join" class="btn btn-primary">Join</button>
-                            </form>
-                        </div>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#create">Create Competition</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#join">Join Competition</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane container active" id="create">
+                        <form method="post" name="create">
+                            {% csrf_token %}
+                            <div class="form-group mb-3">
+                                <label for="theme">Theme:</label>
+                                <input type="text" name="theme" id="theme" class="form-control" required />
+                            </div>
+                            <button type="submit" name="create" class="btn btn-primary">Create</button>
+                        </form>
+                    </div>
+                    <div class="tab-pane container" id="join">
+                        <form method="post" name="join">
+                            {% csrf_token %}
+                            <div class="form-group mb-3">
+                                <label for="name">Competition ID:</label>
+                                <input type="text" name="name" id="name" class="form-control" required />
+                            </div>
+                            <button type="submit" name="join" class="btn btn-primary">Join</button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row justify-content-center mt-3">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">Your Competitions</h5>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% if competitions %}
-                        {% for competition in competitions %}
-                            <li class="list-group-item">
-                                <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a>
-                            </li>
-                        {% endfor %}
-                    {% else %}
-                        <li class="list-group-item">You haven't joined any competitions yet.</li>
-                    {% endif %}
-                </ul>
+</div>
+<div class="row justify-content-center mt-3">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Your Competitions</h5>
             </div>
+            <ul class="list-group list-group-flush">
+                {% if competitions %}
+                {% for competition in competitions %}
+                <li class="list-group-item">
+                    <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a>
+                </li>
+                {% endfor %}
+                {% else %}
+                <li class="list-group-item">You haven't joined any competitions yet.</li>
+                {% endif %}
+            </ul>
         </div>
     </div>
-    <script>
-	$(document).ready(function () {
-		// Hide the "join" pane on page load
-		$("#join").hide();
+</div>
+<script>
+    $(document).ready(function () {
+        // Hide the "join" pane on page load
+        $("#join").hide();
 
-		// Add a click event listener to each nav link
-		$(".nav-link").click(function () {
-			// Get the href of the clicked nav link
-			var target = $(this).attr("href");
+        // Add a click event listener to each nav link
+        $(".nav-link").click(function () {
+            // Get the href of the clicked nav link
+            var target = $(this).attr("href");
 
-			// Hide all tab panes
-			$(".tab-pane").hide();
+            // Hide all tab panes
+            $(".tab-pane").hide();
 
-			// Show the target tab pane
-			$(target).show();
+            // Show the target tab pane
+            $(target).show();
 
-			// Add the "active" class to the clicked nav link
-			$(".nav-link").removeClass("active");
-			$(this).addClass("active");
-		});
-	});
-    </script>
+            // Add the "active" class to the clicked nav link
+            $(".nav-link").removeClass("active");
+            $(this).addClass("active");
+        });
+    });
+</script>
 {% endblock content %}

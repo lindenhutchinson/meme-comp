@@ -151,7 +151,7 @@ def competition(request, comp_name):
     request.session['competition_id'] = comp.id
     request.session['participant_id'] = participant.id
     if comp.started and not comp.current_meme:
-        top_memes = get_top_memes(comp.name, 3)
+        top_memes = get_top_memes(comp.name)
     else:
         top_memes = []
     context = {
@@ -162,6 +162,7 @@ def competition(request, comp_name):
     }
     return render(request, 'competition.html', context)
 
+@login_required
 def serve_file(request, comp_name, meme_id):
     # Check if the user has joined the competition
     competition = get_object_or_404(Competition, name=comp_name)

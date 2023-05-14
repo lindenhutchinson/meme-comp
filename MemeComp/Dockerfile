@@ -30,11 +30,9 @@ RUN python manage.py migrate
 RUN python manage.py migrate app
 
 # Copy the cron definition file
-COPY cron /etc/cron.d/cron
-# Give execute permissions to the cron definition file
-RUN chmod 0644 /etc/cron.d/cron
-# Apply the cron job
-RUN crontab /etc/cron.d/cron
+# COPY cron /etc/cron.d/cron
+# # Give execute permissions to the cron definition file
+# RUN chmod 0644 /etc/cron.d/cron
 
 # Expose the HTTP port
 EXPOSE 8000

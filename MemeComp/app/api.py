@@ -25,7 +25,7 @@ def meme_delete(request, meme_id):
     # Verify if the authenticated user has a participant associated with the meme
     if meme.participant.user != request.user:
         # User is not authorized to delete the meme
-        return Response({"detail": "You are not authorized to delete this meme."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"detail": "Delete your own memes, you donkey"}, status=status.HTTP_403_FORBIDDEN)
 
     meme.image.close()
     # Delete the file from the file system
@@ -51,18 +51,24 @@ def meme_delete(request, meme_id):
 @authentication_classes([SessionAuthentication])  # Use appropriate authentication classes
 @permission_classes([IsAuthenticated])  # Use appropriate permission classes
 def meme_upload(request, comp_name):
-    competition = Competition.objects.get(name=comp_name)
+    competition = get_object_or_404(Competition, name=comp_name)
     participant = Participant.objects.get(competition=competition, user=request.user)
     if not participant:
-        return Response({'detail':'Cannot access private competition'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'detail':"Smart guy aye? Try again buddy"}, status=status.HTTP_403_FORBIDDEN)
 
     serializer = MemeSerializer(data=request.data)
+    print(request.data)
     if serializer.is_valid():
-        meme = serializer.save()
+        print(serializer.validated_data)
+        if serializer.validated_data['competition'] != competition or serializer.validated_data['participant'] != participant:
+            return Response({'detail':"You think you're so clever"}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer.save()
 
         # Update total memes count
         competition = serializer.validated_data['competition']
         total_memes = competition.memes.count()
+        print(competition)
         send_channel_message(competition.name, 'update_uploaded', {
             'num_memes':total_memes,
             'num_uploaders':competition.num_uploaders
@@ -147,7 +153,7 @@ def advance_competition(request, comp_name):
             # if all memes have ben seen, update the channel to show the competition results info
                 competition.finished = True
                 competition.save()
-                results = get_top_memes(competition.name, 3)
+                results = get_top_memes(competition.name)
                 send_channel_message(competition.name, 'competition_results', results)
             return Response(status=status.HTTP_200_OK)
         else:
