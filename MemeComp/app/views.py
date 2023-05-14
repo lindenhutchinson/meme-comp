@@ -120,8 +120,18 @@ def lobby(request):
                         messages.warning(request, 'You have already joined this competition.')
                         
                     return redirect('competition', comp_name=competition.name)
+    
+    participant_list = Participant.objects.filter(user=request.user)
+    competitions = []
+    for participant in participant_list:
+        competitions.append({
+            'name': participant.competition.name,
+            'theme': participant.competition.theme,
+        })
+    
 
     return render(request, 'lobby.html', {
+        'competitions': competitions,
         'competition_form': competition_form,
         'join_competition_form': join_competition_form,
     })
@@ -151,23 +161,6 @@ def competition(request, comp_name):
         'websocket_scheme': settings.WEBSOCKET_SCHEME
     }
     return render(request, 'competition.html', context)
-
-
-@login_required
-def joined_competitions(request):
-    participant_list = Participant.objects.filter(user=request.user)
-    competitions = []
-    for participant in participant_list:
-        competitions.append({
-            'name': participant.competition.name,
-            'theme': participant.competition.theme,
-        })
-
-    context = {
-        'competitions': competitions
-    }
-    return render(request, 'joined_competitions.html', context)
-
 
 def serve_file(request, comp_name, meme_id):
     # Check if the user has joined the competition

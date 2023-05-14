@@ -7,7 +7,7 @@
 			style="height:fit-content">
 		<div class="card-header">
 			<h2>{{ competition.theme }}</h2>
-			<small class="card-title">A meme competition by {{ competition.owner }}</small>
+			<small class="card-title">Hosted by {{ competition.owner }}</small>
 		</div>
 		<div class="card-body">
 			<div class="row mb-2">
@@ -74,7 +74,7 @@
 	</div>
 	<!-- COMPETITION FINISHED (winning memes) -->
 	<div id="comp-finished"
-			class="col row g-0"
+			class="col row g-0 m-2"
 			{% if not competition.finished %}style="display:none"{% endif %}>
 		<div class="card">
 			<div class="card-header">
@@ -82,9 +82,9 @@
 					<h2>Winning Memes</h2>
 				</div>
 			</div>
-			<div class="card-body">
+			<div id="winning-memes" class="card-body row">
 				{% for meme in top_memes %}
-					<div class="col-md-4 col-12">
+					<div class="col-lg-4 col-12 mb-2">
 						<div class="meme-item card">
 							<div class="card-header">
 								<h5 class="card-title">{{ meme.participant }}</h5>
@@ -165,7 +165,7 @@
 	<div id="comp-waiting"
 			class="col m-2"
 			{% if competition.started or competition.finished %}style="display:none"{% endif %}>
-		<div class="card mt-3">
+		<div class="card">
 			<div class="card-header">
 				<h4 class="card-title">Memes</h4>
 			</div>
@@ -196,11 +196,12 @@
 												alt="{{ meme.title }}"
 												class="card-img-top square-image d-block" />
 										<button type="submit"
-												class="btn btn-outline-danger delete-button"
+												class="btn btn-sm btn-danger delete-button"
 												onclick="deleteMeme(this)"
-												data-meme-id="{{ meme.id }}">X</button>
+												data-meme-id="{{ meme.id }}">Delete</button>
 									</div>
 								</div>
+								
 							</div>
 						{% endfor %}
 					</div>
@@ -229,7 +230,42 @@
 	</div>
 </div>
 
+<style>
+	.carousel-fade .carousel-item {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
 
+.carousel-fade .carousel-item.active {
+  opacity: 1;
+}
+
+.carousel-fade .carousel-item-next.carousel-item-left,
+.carousel-fade .carousel-item-prev.carousel-item-right,
+.carousel-fade .carousel-item-next.carousel-item-right,
+.carousel-fade .carousel-item-prev.carousel-item-left {
+  opacity: 0;
+}
+
+.carousel-fade .carousel-item-next,
+.carousel-fade .carousel-item-prev,
+.carousel-fade .carousel-item.active.carousel-item-left,
+.carousel-fade .carousel-item.active.carousel-item-right {
+  transform: translate3d(0, 0, 0);
+}
+
+.carousel-fade .carousel-control-prev,
+.carousel-fade .carousel-control-next {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.carousel-fade:hover .carousel-control-prev,
+.carousel-fade:hover .carousel-control-next {
+  opacity: 1;
+}
+
+</style>
 <script>
 	$(document).ready(function() {
 		$('#carouselExample').on('slide.bs.carousel', function (e) {
@@ -358,7 +394,6 @@
 				xhr.setRequestHeader("X-CSRFToken", csrfToken);
 			},
 			success: function (response) {
-				console.log(response)
 			},
 			error: function (xhr, status, error) {
 				// Handle error response
@@ -382,9 +417,12 @@
 				// Handle success response
 				// Clear the input field
 				$('#image').val('');
-				console.log(response)
 				// Load submitted memes
-				showSnackbar('Meme uploaded', 'success');
+				if(Math.random() < 0.01) {
+					showSnackbar("lol that's a good one", "success");
+				} else {
+					showSnackbar('Meme uploaded', 'success');
+				}
 				memeSubmitted(response.id);
 			},
 			error: function (xhr, status, error) {
@@ -408,8 +446,8 @@
 				<div class="card image-card">
 					<div class="image-container">
 						<img src="/competition/{{competition.name}}/memes/${id}" alt="Dank memez yeeeea boii" class="card-img-top square-image" />
-						<button type="submit" class="btn btn-outline-danger delete-button" onclick="deleteMeme(this)" data-meme-id="${id}">
-							X
+						<button type="submit" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="${id}">
+							Delete
 						</button>
 					</div>
 				</div>
@@ -421,6 +459,14 @@
 
 	// delete meme via AJAX
 	function deleteMeme(button) {
+		var deleteCheck = 'Are you sure you want to delete that meme?'
+		if(Math.random() < 0.01) {
+			deleteCheck = "Try uploading the right image next time"
+		}
+		if(!confirm(deleteCheck)) {
+			return
+		}
+
 		const memeId = $(button).data('meme-id');
 		$.ajax({
 			url: `/api/meme/${memeId}`,
@@ -459,7 +505,6 @@
 	function submitVote() {
 		// Get the selected vote option
 		var selectedOption = document.querySelector('input[name="vote"]:checked').value;
-		console.log(selectedOption)
 		// Prepare the data to be sent in the AJAX request
 		var formData = new FormData();
 		formData.append('vote', selectedOption);
@@ -475,7 +520,9 @@
 			},
 			success: function (response) {
 				if(Math.random() < 0.01 && selectedOption == 1) {
-					showSnackbar("A one? That's harsh even for you", 'warning')
+					showSnackbar("A ONE!? That's harsh even for you", 'warning');
+				} else if(Math.random() < 0.01 && selectedOption == 5) {
+					showSnackbar("You really think THAT deserves a FIVE!? Okay, whatever you say...", "warning");
 				} else {
 					showSnackbar('Vote submitted', 'success')
 				}
@@ -538,7 +585,7 @@
 			} else if (command === "meme_uploaded") {
 				const num_uploaders = message.data.num_uploaders;
 				const num_memes = message.data.num_memes;
-				const text = `${num_memes} meme${num_memes > 1 ? 's':''} submitted by ${num_uploaders} ${num_uploaders > 1 ? 'people':'person'}`
+				const text = `${num_memes} meme${num_memes != 1 ? 's':''} submitted by ${num_uploaders} ${num_uploaders != 1 ? 'people':'person'}`
 				$("#num_memes").text(text);
 
 			} else if (command === "competition_cancelled") {
@@ -573,17 +620,20 @@
 				const results = message.data;
 				 // Iterate through the sorted results and generate HTML
 				var html = '';
+
 				for (var i = 0; i < results.length; i++) {
 				var meme = results[i];
 				html += `
-					<div class="col-4">
+					<div class="col-lg-4 col-12">
 						<div class="meme-item card">
 							<div class="card-header">
-								<h5 class="card-title">${meme.participant}</h5>
-								<h6 class="card-subtitle mb-2 text-muted">Score: ${meme.score}</h6>
+								<h5 class="card-title">${ meme.participant }</h5>
+								<h6 class="card-subtitle mb-2 text-muted">Score: ${ meme.score }</h6>
 							</div>
 							<div class="card-body">
-								<img src="/competition/{{competition.name}}/memes/${meme.id}" alt="Meme Image" class="card-img-top">
+								<img src="/competition/{{ competition.name }}/memes/${ meme.id }"
+									alt="Meme Image"
+									class="card-img-top">
 							</div>
 						</div>
 					</div>
@@ -591,7 +641,7 @@
 				}
 
 				// Append the generated HTML to the 'top-memes-container' element
-				$('#comp-finished').html(html);
+				$('#winning-memes').html(html);
 			}
 		};
 

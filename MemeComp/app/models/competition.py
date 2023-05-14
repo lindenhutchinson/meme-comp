@@ -1,10 +1,12 @@
 from django.db import models
 from django.utils import timezone
 
+
 class Competition(models.Model):
     name = models.CharField(unique=True, max_length=16)
     theme = models.CharField(max_length=255)
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     started = models.BooleanField(default=False)
     owner = models.ForeignKey(
         'User', on_delete=models.CASCADE, related_name="created_competition"
@@ -38,6 +40,9 @@ class Competition(models.Model):
     def meme_ctr(self):
         return self.seen_memes.count()
 
+    @property
+    def has_updates_within_last_24_hours(self):
+        return self.updated_at >= timezone.now() - timezone.timedelta(hours=24)
 
     def __str__(self):
         return f"Competition {self.id} ({self.theme}) {self.name}"

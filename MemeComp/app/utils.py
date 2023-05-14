@@ -70,7 +70,6 @@ def get_top_memes(competition_name, num=3):
 
     # Order the memes by total score in descending order and get the top three
     top_memes = sorted_memes[:num]
-    print('top_memes are')
     results = [
         {
             'id':meme.id,

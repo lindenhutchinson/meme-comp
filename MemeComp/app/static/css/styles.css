@@ -44,8 +44,8 @@
 }
 .delete-button {
     position: absolute;
-    top: 5px;
-    left: 50%;
+    top: 10px;
+    right: 40px;
     z-index: 5;
 }
 

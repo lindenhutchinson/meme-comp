@@ -6,7 +6,6 @@ urlpatterns = [
     path('competition/<str:comp_name>', views.competition, name='competition'),
     path('login', views.login_view, name='login'),
     path('logout', views.logout_view,name='logout'),
-    path('competitions', views.joined_competitions, name='joined_competitions'),
     path('competition/<str:comp_name>/memes/<int:meme_id>', views.serve_file, name='serve_file'),
     # path('delete_meme/<int:meme_id>', views.delete_meme, name='delete_meme'),
     # path('create/', views.create_competition, name='create_competition'),
