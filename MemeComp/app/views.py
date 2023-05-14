@@ -129,7 +129,7 @@ def lobby(request):
 
 @login_required
 def competition(request, comp_name):
-    comp = Competition.objects.get(name=comp_name)
+    comp = get_object_or_404(Competition, name=comp_name)
     participant, created = Participant.objects.get_or_create(name=request.user.username, user=request.user, competition=comp)
     if created:
         data = {
@@ -147,7 +147,8 @@ def competition(request, comp_name):
     context = {
         'participant': participant,
         'competition': comp,
-        'top_memes': top_memes
+        'top_memes': top_memes,
+        'websocket_scheme': settings.WEBSOCKET_SCHEME
     }
     return render(request, 'competition.html', context)
 
@@ -172,10 +173,15 @@ def serve_file(request, comp_name, meme_id):
     # Check if the user has joined the competition
     competition = get_object_or_404(Competition, name=comp_name)
     if not competition.participants.filter(user=request.user).exists():
-        return HttpResponse.HttpResponseForbidden()
+        return HttpResponse("Access Forbidden", status=403)
 
     # Get the file object
     meme = get_object_or_404(Meme, id=meme_id, competition=competition)
+    
+    # only the uploader of the meme can access it before the competition has started
+    if not competition.started and meme.participant.user != request.user:
+        return HttpResponse("Access Forbidden", status=403)
+        
     file_data = ContentFile(meme.image.read(), name=meme.image.name)
     file_data.content_type = 'image/*'
     # Serve the file

@@ -1,0 +1,31 @@
+# fly.toml file generated for meme-competition on 2023-05-13T22:40:44+10:00
+
+app = "meme-competition"
+kill_signal = "SIGINT"
+kill_timeout = 5
+primary_region = "syd"
+
+[env]
+  PORT = "8000"
+
+[[statics]]
+  guest_path = "/code/static"
+  url_prefix = "/static/"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8000
+  processes = ["app"]
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20

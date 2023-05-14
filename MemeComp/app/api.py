@@ -101,7 +101,7 @@ def start_competition(request, comp_name):
             
             else:
                 return Response(
-                    {'detail': "Cannot start a competition with no uploads"},
+                    {'detail': "Cannot start a competition without any uploads."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         else:
@@ -174,7 +174,7 @@ def cancel_competition(request, comp_name):
 
             if not competition.started:
                     return Response(
-                    {"detail": "The competition has not begun."},
+                    {"detail": "The competition has not started yet."},
                     status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
             # clear the relevant  fields

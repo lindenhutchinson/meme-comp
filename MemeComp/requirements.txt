@@ -13,6 +13,7 @@ cryptography==40.0.2
 cssbeautifier==1.14.7
 daphne==4.0.0
 Django==4.2.1
+django-cors-headers==4.0.0
 django-nine==0.2.7
 djangorestframework==3.14.0
 djlint==1.27.0
@@ -32,6 +33,7 @@ pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pycparser==2.21
 pyOpenSSL==23.1.1
+python-dotenv==1.0.0
 pytz==2023.3
 PyYAML==6.0
 redis==4.5.4
@@ -43,7 +45,6 @@ sqlparse==0.4.4
 tomli==2.0.1
 tqdm==4.65.0
 Twisted==22.10.0
-twisted-iocpsupport==1.0.3
 txaio==23.1.1
 typing_extensions==4.5.0
 tzdata==2023.3

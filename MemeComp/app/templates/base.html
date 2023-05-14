@@ -1,10 +1,14 @@
 <!DOCTYPE html>
+
 <html lang="en">
 	<meta name="description" content="Join the ultimate meme competition and showcase your creativity. Submit hilarious memes and compete against other participants. Get ready for a fun-filled meme battle.">
 	<meta name="keywords" content="meme competition, funny memes, creative contest, meme battle, humorous images">
     <head>
+        {% load static %}
+
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" type="image/x-icon" href="{% static 'favicon/favicon.ico' %}">
         <title>
             {% block title %}
                 Meme Competition
@@ -21,13 +25,12 @@
         {% block css %}
        
         {% endblock css %}
-        {% load static %}
         <link rel="stylesheet" href="{% static 'styles.css' %}">
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{% url 'home' %}">My App</a>
+                <a class="navbar-brand" href="{% url 'home' %}">MemeComp</a>
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"

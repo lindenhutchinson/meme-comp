@@ -1,7 +1,7 @@
 from django.urls import re_path
-
+from django.conf import settings
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r"ws/competitions/(?P<competition_name>\w+)/$", consumers.CompetitionConsumer.as_asgi()),
+    re_path(settings.WEBSOCKET_SCHEME+r"/competitions/(?P<competition_name>\w+)/$", consumers.CompetitionConsumer.as_asgi()),
 ]

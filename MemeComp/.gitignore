@@ -1,0 +1,9 @@
+__pycache__/
+*.sqlite3
+media/
+.env.*
+# Ignore the static/ directory in the top-level directory
+/static/
+
+# Include the static/ directory in lower directories
+!/*/static/
