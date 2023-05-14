@@ -136,7 +136,7 @@ ASGI_APPLICATION = "MemeComp.asgi.application"
 #     "default": {
 #         "BACKEND": "channels_redis.core.RedisChannelLayer",
 #         "CONFIG": {
-#             "hosts": [("redis://default:8acaba5cf2164d828ed57ed0f616b6f6@fly-meme-comp-redis.upstash.io", 6379)],
+#             "hosts": [("", 6379)],
 #         },
 #     },
 # }
