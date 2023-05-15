@@ -57,9 +57,7 @@ def meme_upload(request, comp_name):
         return Response({'detail':"Smart guy aye? Try again buddy"}, status=status.HTTP_403_FORBIDDEN)
 
     serializer = MemeSerializer(data=request.data)
-    print(request.data)
     if serializer.is_valid():
-        print(serializer.validated_data)
         if serializer.validated_data['competition'] != competition or serializer.validated_data['participant'] != participant:
             return Response({'detail':"You think you're so clever"}, status=status.HTTP_403_FORBIDDEN)
         
@@ -68,7 +66,6 @@ def meme_upload(request, comp_name):
         # Update total memes count
         competition = serializer.validated_data['competition']
         total_memes = competition.memes.count()
-        print(competition)
         send_channel_message(competition.name, 'update_uploaded', {
             'num_memes':total_memes,
             'num_uploaders':competition.num_uploaders

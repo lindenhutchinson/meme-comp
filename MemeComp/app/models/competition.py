@@ -42,7 +42,7 @@ class Competition(models.Model):
 
     @property
     def has_updates_within_last_24_hours(self):
-        return self.updated_at >= timezone.now() - timezone.timedelta(hours=24)
+        return self.updated_at >= timezone.now() - timezone.timedelta(hours=1)
 
     def __str__(self):
         return f"Competition {self.id} ({self.theme}) {self.name}"

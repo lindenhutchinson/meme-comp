@@ -188,7 +188,7 @@
 							<input type="file" name="image" class="form-control" id="image" required />
 						</div>
 						<div class="col-12 col-lg-1">
-							<button style="width:100%" class="btn btn-block btn-primary" type="submit">Submit</button>
+							<button id="submit-meme-btn" style="width:100%" class="btn btn-block btn-primary" type="submit">Submit</button>
 						</div>
 						<input type="hidden" name="participant" value="{{ participant.id }}">
 						<input type="hidden" name="competition" value="{{ competition.id }}">
@@ -422,6 +422,7 @@
 
 	// Submit meme via AJAX
 	function submitMeme() {
+		$('#submit-meme-btn').attr('disabled', true)
 		var form = document.getElementById("upload-form");
 		var formData = new FormData(form);
 
@@ -450,6 +451,8 @@
 					showSnackbar('Error uploading your meme :(', 'danger')
 				}
 			}
+		}).then(() => {
+			$('#submit-meme-btn').attr('disabled', false)
 		});
 	}
 
@@ -476,7 +479,6 @@
 		$('#submitted-memes-container').append(element);
 		var actualLength = memes.length + 1;
 		$('#your-memes').text(`You have submitted ${actualLength} meme${actualLength == 1 ? '':'s'}`);
-		console.log('danger');
 	}
 
 	// delete meme via AJAX
