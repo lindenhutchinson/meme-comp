@@ -162,11 +162,14 @@
 						</form>
 					</div>
 				</div>
-				<div class="card-body g-0">
+				<div class="card-body g-0 image-zoom">
 					<img id="current-meme-image"
 							src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}"
 							alt="Current Meme"
-							class="current-meme" />
+							class="current-meme" 
+							onclick="toggleZoom(event)"
+							onmouseleave="zoomOut(event)"
+					/>
 				</div>
 			</div>
 		</div>
@@ -246,42 +249,91 @@
 </div>
 
 <style>
+	.image-zoom {
+		position: relative;
+		display: inline-block;
+	  }
+	  
+	  .image-zoom img {
+		cursor: zoom-in;
+		transition: transform 0.3s;
+	  }
+	  
+	  .image-zoom.zoom-in img {
+		cursor: zoom-out;
+	  }
+
 	.carousel-fade .carousel-item {
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-}
+  		opacity: 0;
+  		transition: opacity 0.5s ease-in-out;
+	}
 
-.carousel-fade .carousel-item.active {
-  opacity: 1;
-}
+	.carousel-fade .carousel-item.active {
+		opacity: 1;
+	}
 
-.carousel-fade .carousel-item-next.carousel-item-left,
-.carousel-fade .carousel-item-prev.carousel-item-right,
-.carousel-fade .carousel-item-next.carousel-item-right,
-.carousel-fade .carousel-item-prev.carousel-item-left {
-  opacity: 0;
-}
+	.carousel-fade .carousel-item-next.carousel-item-left,
+	.carousel-fade .carousel-item-prev.carousel-item-right,
+	.carousel-fade .carousel-item-next.carousel-item-right,
+	.carousel-fade .carousel-item-prev.carousel-item-left {
+		opacity: 0;
+	}
 
-.carousel-fade .carousel-item-next,
-.carousel-fade .carousel-item-prev,
-.carousel-fade .carousel-item.active.carousel-item-left,
-.carousel-fade .carousel-item.active.carousel-item-right {
-  transform: translate3d(0, 0, 0);
-}
+	.carousel-fade .carousel-item-next,
+	.carousel-fade .carousel-item-prev,
+	.carousel-fade .carousel-item.active.carousel-item-left,
+	.carousel-fade .carousel-item.active.carousel-item-right {
+		transform: translate3d(0, 0, 0);
+	}
 
-.carousel-fade .carousel-control-prev,
-.carousel-fade .carousel-control-next {
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-}
+	.carousel-fade .carousel-control-prev,
+	.carousel-fade .carousel-control-next {
+		opacity: 0;
+		transition: opacity 0.5s ease-in-out;
+	}
 
-.carousel-fade:hover .carousel-control-prev,
-.carousel-fade:hover .carousel-control-next {
-  opacity: 1;
-}
+	.carousel-fade:hover .carousel-control-prev,
+	.carousel-fade:hover .carousel-control-next {
+		opacity: 1;
+	}
 
 </style>
 <script>
+	function toggleZoom(event) {
+		var img = event.target;
+		var container = img.parentNode;
+	  
+		if (container.classList.contains("zoom-in")) {
+		  zoomOut(event);
+		} else {
+		  zoomIn(event);
+		}
+	}
+	function zoomIn(event) {
+		var img = event.target;
+		var container = img.parentNode;
+	  
+		var rect = img.getBoundingClientRect();
+		var offsetX = event.clientX - rect.left;
+		var offsetY = event.clientY - rect.top;
+	  
+		var zoomRatio = 2; // Adjust the zoom level as desired
+	  
+		container.classList.add("zoom-in");
+		container.classList.remove("zoom-out");
+	  
+		img.style.transformOrigin = offsetX + "px " + offsetY + "px";
+		img.style.transform = "scale(" + zoomRatio + ")";
+	  }
+	  
+	  function zoomOut(event) {
+		var img = event.target;
+		var container = img.parentNode;
+	  
+		container.classList.add("zoom-out");
+		container.classList.remove("zoom-in");
+		img.style.transform = "scale(1)";
+	  }
 	$(document).ready(function() {
 		$('#carouselExample').on('slide.bs.carousel', function (e) {
 			var $e = $(e.relatedTarget);
