@@ -187,7 +187,7 @@
 						<div class="col mb-2">
 							<input type="file" name="image" class="form-control" id="image" required />
 						</div>
-						<div class="col-12 col-lg-1">
+						<div class="col-12 col-lg-2">
 							<button id="submit-meme-btn" style="width:100%" class="btn btn-block btn-primary" type="submit">Submit</button>
 						</div>
 						<input type="hidden" name="participant" value="{{ participant.id }}">
@@ -422,7 +422,9 @@
 
 	// Submit meme via AJAX
 	function submitMeme() {
-		$('#submit-meme-btn').attr('disabled', true)
+		$('#submit-meme-btn').attr('disabled', true);
+		$('#submit-meme-btn').text('Submitting');
+
 		var form = document.getElementById("upload-form");
 		var formData = new FormData(form);
 
@@ -452,7 +454,8 @@
 				}
 			}
 		}).then(() => {
-			$('#submit-meme-btn').attr('disabled', false)
+			$('#submit-meme-btn').attr('disabled', false);
+			$('#submit-meme-btn').text('Submit');
 		});
 	}
 
