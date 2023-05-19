@@ -1,259 +1,261 @@
 {% extends "base.html" %}
 {% block content %}
 <div id="snackbar"></div>
-<div class="row text-center g-0">
-	<!-- TOP CARD (competition details/owner controls) -->
-	<div class="col-lg-3 col-12 card text-center m-2"
-			style="height:fit-content">
-		<div class="card-header">
-			<h2>{{ competition.theme }}</h2>
-			<small class="card-title">Hosted by {{ competition.owner }}</small>
-		</div>
-		<div class="card-title">
-			<div class="row mx-1 my-3">
-				<div class="input-group" style="z-index:0">
-					<input id="room-url"
-							type="text"
-							class="form-control"
-							value="Competition ID: {{ competition.name }}"
-							disabled>
-					<button class="btn btn-primary" onclick="copyLink()">Copy</button>
-				</div>
-			</div>
-			<div class="row">
-				<p id="num_memes">
-					{{ competition.num_memes }} meme{{ competition.num_memes|pluralize }} submitted by {{ competition.num_uploaders }} {{ competition.num_uploaders|pluralize:'person,people' }}
-				</p>
-			</div>
-			
-		</div>
-		<div class="card-body">
-			<div class="row mx-1">
-				<button class="btn btn-light btn-sm d-flex justify-content-center"
-						type="button"
-						onclick="toggleShowParticipants()">
-					Participants &nbsp;<span id="num-participants">({{ competition.num_participants }})</span>
-				</button>
-				<div class="overflow-auto participants-box p-1" style="max-height: 200px;">
-					<ul id="participants" class="list-group">
-						{% for participant in competition.participants.all %}
-							<li class="list-group-item">{{ participant.name }}</li>
-						{% endfor %}
-					</ul>
-				</div>
-			</div>
-			<div class="row text-center">
-				{% if request.user == competition.owner %}
-					<div class="d-flex justify-content-between mt-3">
-						<button id="start-comp-btn"
-								class="btn btn-success"
-								style="width:100%"
-								onclick="startCompetition()"
-								{% if competition.started %}disabled{% endif %}>
-							{% if competition.started %}
-								Competition started
-							{% else %}
-								Start Competition
-							{% endif %}
-						</button>
-						<button id="cancel-comp-btn"
-								class="btn btn-danger"
-								onclick="cancelCompetition()"
-								{% if not competition.started %}disabled{% endif %}>
-							<i class="bi bi-x-square"></i>
-						</button>
-					</div>
-					<p>
-						<button id="next-meme-btn"
-								class="btn btn-primary mx-auto mt-3 col-6"
-								onclick="advanceCompetition()"
-								{% if not competition.started or competition.finished %}style="display:none"{% endif %}>
-							Next meme
-						</button>
-					</p>
-				{% else %}
-					<p class="mt-3" id="waiting-msg">
-						{% if competition.finished %}
-						Competition has finished
-						{% elif competition.started %}
-						Competion has started
-						{% else %}
-						Waiting for {{competition.owner.username}} to start the competition...
-						{% endif %}
-					</p>
-				{% endif %}
-			</div>
-		</div>
-	</div>
-	<!-- COMPETITION FINISHED (winning memes) -->
-	<div id="comp-finished"
-			class="col row g-0 m-2"
-			{% if not competition.finished %}style="display:none"{% endif %}>
-		<div class="card">
-			<div class="card-header">
-				<div class="card-title">
-					<h2>Competition Results</h2>
-				</div>
-			</div>
-			<div class="card-body g-0">
-				<div id="winning-memes" class="overflow-auto row" style="max-height:400px">
-				{% for meme in top_memes %}
-					<div class="col-lg-4 col-12 mb-2">
-						<div class="meme-item">
-							<div class="row">
-								<h5 class="card-title">{{ meme.participant }}</h5>
-								<h6 class="card-subtitle mb-2">Score: {{ meme.score }}</h6>
-							</div>
-							<div class="row">
-								<img src="/competition/{{ competition.name }}/memes/{{ meme.id }}"
-										alt="Meme Image"
-										class="card-img-top">
-							</div>
-						</div>
-					</div>
-				{% endfor %}
-				</div>
-			</div>
-		</div>
-	</div>
-	<!-- COMPETITION VOTING (display current meme) -->
-	<div id="comp-started" class="col text-center m-2" {% if not competition.started or not competition.current_meme %}style="display:none"{% endif %}>
-		<div class="vote-container">
-			<div class="card" style="width:100%">
+<div class="text-center g-0 mb-4">
+	<div class="row m-2">
+		<!-- TOP CARD (competition details/owner controls) -->
+		<div class="col-lg-3 col-12 text-center mb-2"style="height:fit-content">
+			<div class="card">
 				<div class="card-header">
-					Total votes: <span id="num_votes">{{ competition.current_meme.num_votes }}</span>
-					<div class="pt-2 card-title d-flex align-items-center justify-content-center">
-						<form id="vote-form">
-							<div class="form-check form-check-inline">
-								<input class="form-check-input vote-radio"
-										type="radio"
-										name="vote"
-										id="vote-option0"
-										value="0">
-								<label class="form-check-label vote-label" for="vote-option0">0</label>
-							</div>
-							<div class="form-check form-check-inline">
-								<input class="form-check-input vote-radio"
-										type="radio"
-										name="vote"
-										id="vote-option1"
-										value="1">
-								<label class="form-check-label vote-label" for="vote-option1">1</label>
-							</div>
-							<div class="form-check form-check-inline">
-								<input class="form-check-input vote-radio"
-										type="radio"
-										name="vote"
-										id="vote-option2"
-										value="2">
-								<label class="form-check-label vote-label" for="vote-option2">2</label>
-							</div>
-							<div class="form-check form-check-inline">
-								<input class="form-check-input vote-radio"
-										type="radio"
-										name="vote"
-										id="vote-option3"
-										value="3">
-								<label class="form-check-label vote-label" for="vote-option3">3</label>
-							</div>
-							<div class="form-check form-check-inline">
-								<input class="form-check-input vote-radio"
-										type="radio"
-										name="vote"
-										id="vote-option4"
-										value="4">
-								<label class="form-check-label vote-label" for="vote-option4">4</label>
-							</div>
-							<div class="form-check form-check-inline">
-								<input class="form-check-input vote-radio"
-										type="radio"
-										name="vote"
-										id="vote-option5"
-										value="5">
-								<label class="form-check-label vote-label" for="vote-option5">5</label>
-							</div>
-						</form>
+					<h2>{{ competition.theme }}</h2>
+					<small class="card-title">Hosted by {{ competition.owner }}</small>
+				</div>
+				<div class="card-title">
+					<div class="row mx-1 my-3">
+						<div class="input-group" style="z-index:0">
+							<input id="room-url"
+									type="text"
+									class="form-control"
+									value="ID: {{ competition.name }}"
+									disabled>
+							<button class="btn btn-primary" onclick="copyLink()">Copy</button>
+						</div>
+					</div>
+					<div class="row">
+						<p id="num_memes">
+							{{ competition.num_memes }} meme{{ competition.num_memes|pluralize }} submitted by {{ competition.num_uploaders }} {{ competition.num_uploaders|pluralize:'person,people' }}
+						</p>
 					</div>
 				</div>
-				<div class="g-0 image-zoom">
-					<img id="current-meme-image"
-							src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}"
-							alt="Current Meme"
-							class="current-meme" 
-							onclick="toggleZoom(event)"
-							onmouseleave="zoomOut(event)"
-					/>
+				<div class="card-body">
+					<div class="row mx-1">
+						<button class="btn btn-light btn-sm d-flex justify-content-center"
+								type="button"
+								onclick="toggleShowParticipants()">
+							Participants &nbsp;<span id="num-participants">({{ competition.num_participants }})</span>
+						</button>
+						<div class="overflow-auto participants-box p-1" style="max-height: 200px;">
+							<ul id="participants" class="list-group">
+								{% for participant in competition.participants.all %}
+									<li class="list-group-item">{{ participant.name }}</li>
+								{% endfor %}
+							</ul>
+						</div>
+					</div>
+					<div class="row text-center">
+						{% if request.user == competition.owner %}
+							<div class="d-flex justify-content-between mt-3">
+								<button id="start-comp-btn"
+										class="btn btn-success"
+										style="width:100%"
+										onclick="startCompetition()"
+										{% if competition.started %}disabled{% endif %}>
+									{% if competition.started %}
+										Competition started
+									{% else %}
+										Start Competition
+									{% endif %}
+								</button>
+								<button id="cancel-comp-btn"
+										class="btn btn-danger"
+										onclick="cancelCompetition()"
+										{% if not competition.started %}disabled{% endif %}>
+									<i class="bi bi-x-square"></i>
+								</button>
+							</div>
+							<p>
+								<button id="next-meme-btn"
+										class="btn btn-primary mx-auto mt-3 col-6"
+										onclick="advanceCompetition()"
+										{% if not competition.started or competition.finished %}style="display:none"{% endif %}>
+									Next meme
+								</button>
+							</p>
+						{% else %}
+							<p class="mt-3" id="waiting-msg">
+								{% if competition.finished %}
+								Competition has finished
+								{% elif competition.started %}
+								Competion has started
+								{% else %}
+								Waiting for {{competition.owner.username}} to start the competition...
+								{% endif %}
+							</p>
+						{% endif %}
+					</div>
 				</div>
 			</div>
 		</div>
-	</div>
-	<!-- COMPETITION WAITING (upload memes, uploaded carousel) -->
-	<div id="comp-waiting"
-			class="col m-2"
-			{% if competition.started or competition.finished %}style="display:none"{% endif %}>
-		<div class="card">
-			<div class="card-header">
-				<h4 class="card-title">Memes</h4>
-			</div>
-			<div class="row mt-2 px-2">
-				<h5 class="card-title">Submit a meme</h5>
-				<form id="upload-form" enctype="multipart/form-data" onchange="submitMeme()">
-					{% csrf_token %}
-					<div class="mb-3 row g-0">
-						<div class="col mb-2">
-							<input type="file" name="image" class="form-control" id="image" required />
-						</div>
-						<div class="col-12 col-lg-2">
-							<button id="submit-meme-btn" style="width:100%" class="btn btn-block btn-primary" type="submit">Submit</button>
-						</div>
-						<input type="hidden" name="participant" value="{{ participant.id }}">
-						<input type="hidden" name="competition" value="{{ competition.id }}">
+		<!-- COMPETITION FINISHED (winning memes) -->
+		<div id="comp-finished"
+				class="col row g-0"
+				{% if not competition.finished %}style="display:none"{% endif %}>
+			<div class="card">
+				<div class="card-header">
+					<div class="card-title">
+						<h2>Competition Results</h2>
 					</div>
-				</form>
-			</div>
-			<small id="your-memes" class="mb-2">You have submitted {{participant.memes.all|length}} meme{{participant.memes.all|pluralize}}</small>
-			<div class="card-body">
-				<div id="carouselExample"
-						class="carousel slide carousel-fade"
-						data-bs-ride="carousel"
-						data-bs-interval="false">
-					<div class="carousel-inner" id="submitted-memes-container">
-						{% for meme in participant.memes.all %}
-							<div id="meme-{{ meme.id }}"
-									class="item carousel-item {% if forloop.first %}active{% endif %}">
-								<div class="card image-card">
-									<div class="image-container">
-										<img src="{% url 'serve_file' competition.name meme.id %}"
-												alt="{{ meme.title }}"
-												class="card-img-top square-image d-block" />
-										<button type="submit"
-												class="btn btn-sm btn-danger delete-button"
-												onclick="deleteMeme(this)"
-												data-meme-id="{{ meme.id }}">Delete</button>
-									</div>
+				</div>
+				<div class="card-body g-0">
+					<div id="winning-memes" class="overflow-auto row" style="max-height:400px">
+					{% for meme in top_memes %}
+						<div class="col-lg-4 col-12 mb-2">
+							<div class="meme-item">
+								<div class="row">
+									<h5 class="card-title">{{ meme.participant }}</h5>
+									<h6 class="card-subtitle mb-2">Score: {{ meme.score }}</h6>
 								</div>
-								
+								<div class="row">
+									<img src="/competition/{{ competition.name }}/memes/{{ meme.id }}"
+											alt="Meme Image"
+											class="card-img-top">
+								</div>
 							</div>
-						{% endfor %}
+						</div>
+					{% endfor %}
 					</div>
-					<div id="carousel-controls"
-							{% if participant.num_memes == 1 %}style="display:none"{% endif %}>
-						<button style="background-color:black"
-								class="carousel-control-prev"
-								type="button"
-								data-bs-target="#carouselExample"
-								data-bs-slide="prev">
-							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
-							<span class="visually-hidden">Previous</span>
-						</button>
-						<button style="background-color:black"
-								class="carousel-control-next"
-								type="button"
-								data-bs-target="#carouselExample"
-								data-bs-slide="next">
-							<span class="carousel-control-next-icon" aria-hidden="true"></span>
-							<span class="visually-hidden">Next</span>
-						</button>
+				</div>
+			</div>
+		</div>
+		<!-- COMPETITION VOTING (display current meme) -->
+		<div id="comp-started" class="col text-center" {% if not competition.started or not competition.current_meme %}style="display:none"{% endif %}>
+			<div class="vote-container">
+				<div class="card" style="width:100%">
+					<div class="card-header">
+						Total votes: <span id="num_votes">{{ competition.current_meme.num_votes }}</span>
+						<div class="pt-2 card-title d-flex align-items-center justify-content-center">
+							<form id="vote-form">
+								<div class="form-check form-check-inline">
+									<input class="form-check-input vote-radio"
+											type="radio"
+											name="vote"
+											id="vote-option0"
+											value="0">
+									<label class="form-check-label vote-label" for="vote-option0">0</label>
+								</div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input vote-radio"
+											type="radio"
+											name="vote"
+											id="vote-option1"
+											value="1">
+									<label class="form-check-label vote-label" for="vote-option1">1</label>
+								</div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input vote-radio"
+											type="radio"
+											name="vote"
+											id="vote-option2"
+											value="2">
+									<label class="form-check-label vote-label" for="vote-option2">2</label>
+								</div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input vote-radio"
+											type="radio"
+											name="vote"
+											id="vote-option3"
+											value="3">
+									<label class="form-check-label vote-label" for="vote-option3">3</label>
+								</div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input vote-radio"
+											type="radio"
+											name="vote"
+											id="vote-option4"
+											value="4">
+									<label class="form-check-label vote-label" for="vote-option4">4</label>
+								</div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input vote-radio"
+											type="radio"
+											name="vote"
+											id="vote-option5"
+											value="5">
+									<label class="form-check-label vote-label" for="vote-option5">5</label>
+								</div>
+							</form>
+						</div>
+					</div>
+					<div class="g-0 image-zoom">
+						<img id="current-meme-image"
+								src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}"
+								alt="Current Meme"
+								class="current-meme" 
+								onclick="toggleZoom(event)"
+								onmouseleave="zoomOut(event)"
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- COMPETITION WAITING (upload memes, uploaded carousel) -->
+		<div id="comp-waiting"
+				class="col"
+				{% if competition.started or competition.finished %}style="display:none"{% endif %}>
+			<div class="card">
+				<div class="card-header">
+					<h4 class="card-title">Memes</h4>
+				</div>
+				<div class="row mt-2 px-2">
+					<h5 class="card-title">Submit a meme</h5>
+					<form id="upload-form" enctype="multipart/form-data" onchange="submitMeme()">
+						{% csrf_token %}
+						<div class="mb-3 row g-0">
+							<div class="col mb-2">
+								<input type="file" name="image" class="form-control" id="image" required />
+							</div>
+							<div class="col-12 col-lg-2">
+								<button id="submit-meme-btn" style="width:100%" class="btn btn-block btn-primary" type="submit">Submit</button>
+							</div>
+							<input type="hidden" name="participant" value="{{ participant.id }}">
+							<input type="hidden" name="competition" value="{{ competition.id }}">
+						</div>
+					</form>
+				</div>
+				<small id="your-memes" class="mb-2">You have submitted {{participant.memes.all|length}} meme{{participant.memes.all|pluralize}}</small>
+				<div class="card-body">
+					<div id="carouselExample"
+							class="carousel slide carousel-fade"
+							data-bs-ride="carousel"
+							data-bs-interval="false">
+						<div class="carousel-inner" id="submitted-memes-container">
+							{% for meme in participant.memes.all %}
+								<div id="meme-{{ meme.id }}"
+										class="item carousel-item {% if forloop.first %}active{% endif %}">
+									<div class="card image-card">
+										<div class="image-container">
+											<img src="{% url 'serve_file' competition.name meme.id %}"
+													alt="{{ meme.title }}"
+													class="card-img-top square-image d-block" />
+											<button type="submit"
+													class="btn btn-sm btn-danger delete-button"
+													onclick="deleteMeme(this)"
+													data-meme-id="{{ meme.id }}">Delete</button>
+										</div>
+									</div>
+									
+								</div>
+							{% endfor %}
+						</div>
+						<div id="carousel-controls"
+								{% if participant.num_memes == 1 %}style="display:none"{% endif %}>
+							<button style="background-color:black"
+									class="carousel-control-prev"
+									type="button"
+									data-bs-target="#carouselExample"
+									data-bs-slide="prev">
+								<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+								<span class="visually-hidden">Previous</span>
+							</button>
+							<button style="background-color:black"
+									class="carousel-control-next"
+									type="button"
+									data-bs-target="#carouselExample"
+									data-bs-slide="next">
+								<span class="carousel-control-next-icon" aria-hidden="true"></span>
+								<span class="visually-hidden">Next</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -743,7 +745,7 @@
 						<div class="meme-item">
 							<div class="row">
 								<h5 class="card-title">${ meme.participant }</h5>
-								<h6 class="card-subtitle mb-2 text-muted">Score: ${ meme.score }</h6>
+								<h6 class="card-subtitle mb-2">Score: ${ meme.score }</h6>
 							</div>
 							<div class="row">
 								<img src="/competition/{{ competition.name }}/memes/${ meme.id }"
