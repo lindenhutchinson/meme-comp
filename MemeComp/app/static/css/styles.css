@@ -1,3 +1,45 @@
+
+body {
+    background-color: #455168;
+    color: #FFFFFF;
+}
+.card {
+    background-color:#335cb6;
+    color: #FFFFFF;
+    }
+.card-header {
+    background-color:#2b4276;
+    color: #FFFFFF;
+}
+.card-body {
+    background-color: #21355f;
+    color: #FFFFFF;
+}
+
+.card .nav-item  {
+    background-color: #335cb6;
+}
+
+.card .nav-item .nav-link {
+    color:white !important;
+}
+.card .nav-item .nav-link.active {
+    color:black !important;
+}   
+.navbar {
+    background-color: #007bff;
+    color:white;
+
+}
+
+.meme-item {
+    margin-top:15px;
+    padding-top:15px;
+    background-color:#335cb6;
+    border-top-left-radius:25px;
+    border-top-right-radius:25px;
+
+}
 .carousel-inner .carousel-item {
     transition: transform 0.6s ease-in;
     display: flex;

@@ -9,8 +9,8 @@
 			<h2>{{ competition.theme }}</h2>
 			<small class="card-title">Hosted by {{ competition.owner }}</small>
 		</div>
-		<div class="card-body">
-			<div class="row mb-2">
+		<div class="card-title">
+			<div class="row mx-1 my-3">
 				<div class="input-group" style="z-index:0">
 					<input id="room-url"
 							type="text"
@@ -25,8 +25,11 @@
 					{{ competition.num_memes }} meme{{ competition.num_memes|pluralize }} submitted by {{ competition.num_uploaders }} {{ competition.num_uploaders|pluralize:'person,people' }}
 				</p>
 			</div>
-			<div class="row">
-				<button class="btn btn-light btn-sm d-flex mr-3 ml-3 justify-content-center"
+			
+		</div>
+		<div class="card-body">
+			<div class="row mx-1">
+				<button class="btn btn-light btn-sm d-flex justify-content-center"
 						type="button"
 						onclick="toggleShowParticipants()">
 					Participants &nbsp;<span id="num-participants">({{ competition.num_participants }})</span>
@@ -41,7 +44,7 @@
 			</div>
 			<div class="row text-center">
 				{% if request.user == competition.owner %}
-					<div class="d-flex justify-content-between my-3">
+					<div class="d-flex justify-content-between mt-3">
 						<button id="start-comp-btn"
 								class="btn btn-success"
 								style="width:100%"
@@ -62,7 +65,7 @@
 					</div>
 					<p>
 						<button id="next-meme-btn"
-								class="btn btn-primary mx-auto col-6"
+								class="btn btn-primary mx-auto mt-3 col-6"
 								onclick="advanceCompetition()"
 								{% if not competition.started or competition.finished %}style="display:none"{% endif %}>
 							Next meme
@@ -92,15 +95,16 @@
 					<h2>Competition Results</h2>
 				</div>
 			</div>
-			<div id="winning-memes" class="overflow-auto card-body row p-1" style="max-height:400px">
+			<div class="card-body g-0">
+				<div id="winning-memes" class="overflow-auto row" style="max-height:400px">
 				{% for meme in top_memes %}
 					<div class="col-lg-4 col-12 mb-2">
-						<div class="meme-item card">
-							<div class="card-header">
+						<div class="meme-item">
+							<div class="row">
 								<h5 class="card-title">{{ meme.participant }}</h5>
-								<h6 class="card-subtitle mb-2 text-muted">Score: {{ meme.score }}</h6>
+								<h6 class="card-subtitle mb-2">Score: {{ meme.score }}</h6>
 							</div>
-							<div class="card-body">
+							<div class="row">
 								<img src="/competition/{{ competition.name }}/memes/{{ meme.id }}"
 										alt="Meme Image"
 										class="card-img-top">
@@ -108,6 +112,7 @@
 						</div>
 					</div>
 				{% endfor %}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -119,6 +124,14 @@
 					Total votes: <span id="num_votes">{{ competition.current_meme.num_votes }}</span>
 					<div class="pt-2 card-title d-flex align-items-center justify-content-center">
 						<form id="vote-form">
+							<div class="form-check form-check-inline">
+								<input class="form-check-input vote-radio"
+										type="radio"
+										name="vote"
+										id="vote-option0"
+										value="0">
+								<label class="form-check-label vote-label" for="vote-option0">0</label>
+							</div>
 							<div class="form-check form-check-inline">
 								<input class="form-check-input vote-radio"
 										type="radio"
@@ -162,7 +175,7 @@
 						</form>
 					</div>
 				</div>
-				<div class="card-body g-0 image-zoom">
+				<div class="g-0 image-zoom">
 					<img id="current-meme-image"
 							src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}"
 							alt="Current Meme"
@@ -198,7 +211,7 @@
 					</div>
 				</form>
 			</div>
-			<small id="your-memes">You have submitted {{participant.memes.all|length}} meme{{participant.memes.all|pluralize}}</small>
+			<small id="your-memes" class="mb-2">You have submitted {{participant.memes.all|length}} meme{{participant.memes.all|pluralize}}</small>
 			<div class="card-body">
 				<div id="carouselExample"
 						class="carousel slide carousel-fade"
@@ -727,12 +740,12 @@
 				var meme = results[i];
 				html += `
 					<div class="col-lg-4 col-12">
-						<div class="meme-item card">
-							<div class="card-header">
+						<div class="meme-item">
+							<div class="row">
 								<h5 class="card-title">${ meme.participant }</h5>
 								<h6 class="card-subtitle mb-2 text-muted">Score: ${ meme.score }</h6>
 							</div>
-							<div class="card-body">
+							<div class="row">
 								<img src="/competition/{{ competition.name }}/memes/${ meme.id }"
 									alt="Meme Image"
 									class="card-img-top">

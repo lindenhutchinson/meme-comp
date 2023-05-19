@@ -46,17 +46,19 @@
             <div class="card-header">
                 <h5 class="card-title">Your Competitions</h5>
             </div>
-            <ul class="list-group list-group-flush">
-                {% if competitions %}
-                {% for competition in competitions %}
-                <li class="list-group-item">
-                    <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a>
-                </li>
-                {% endfor %}
-                {% else %}
-                <li class="list-group-item">You haven't joined any competitions yet.</li>
-                {% endif %}
-            </ul>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% if competitions %}
+                    {% for competition in competitions %}
+                    <li class="list-group-item">
+                        <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a>
+                    </li>
+                    {% endfor %}
+                    {% else %}
+                    <li class="list-group-item">You haven't joined any competitions yet.</li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </div>
 </div>
