@@ -4,7 +4,7 @@ body {
     color: #FFFFFF;
 }
 .card {
-    background-color:#335cb6;
+    background-color:#586fa2;
     color: #FFFFFF;
     }
 .card-header {
@@ -12,7 +12,7 @@ body {
     color: #FFFFFF;
 }
 .card-body {
-    background-color: #21355f;
+    /* background-color: #21355f; */
     color: #FFFFFF;
 }
 

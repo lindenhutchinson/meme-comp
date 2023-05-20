@@ -262,7 +262,16 @@
 		</div>
 	</div>
 </div>
+<!-- 
+	ROFL: 128514
+	Confused face: 128533
+	Poo: 128169
+	OK hand: 128076
+	Trophy: 127942	
+	Fire: 128293
+	Crab: 129408
 
+ -->
 <style>
 	.image-zoom {
 		position: relative;
@@ -620,8 +629,8 @@
 				xhr.setRequestHeader("X-CSRFToken", csrfToken);
 			},
 			success: function (response) {
-				if(Math.random() < 0.01 && selectedOption == 1) {
-					showSnackbar("A ONE!? That's harsh even for you", 'warning');
+				if(Math.random() < 0.05 && selectedOption == 0) {
+					showSnackbar("Damn. That's harsh even for you", 'warning');
 				} else if(Math.random() < 0.01 && selectedOption == 5) {
 					showSnackbar("You really think THAT deserves a FIVE!? Okay, whatever you say...", "warning");
 				} else {

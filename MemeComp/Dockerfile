@@ -28,6 +28,7 @@ COPY . /code/
 RUN python manage.py collectstatic --noinput
 RUN python manage.py migrate
 RUN python manage.py migrate app
+RUN python manage.py createsuperuser --noinput
 
 # Copy the cron definition file
 # COPY cron /etc/cron.d/cron
