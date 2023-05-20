@@ -137,7 +137,6 @@ def lobby(request):
         'join_competition_form': join_competition_form,
     })
 
-
 @login_required
 def competition(request, comp_name):
     comp = get_object_or_404(Competition, name=comp_name)

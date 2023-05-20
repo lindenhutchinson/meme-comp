@@ -1,5 +1,5 @@
 from django.db import models
-
+import datetime
 
 class Vote(models.Model):
     VOTE_CHOICES = [
@@ -14,6 +14,14 @@ class Vote(models.Model):
     meme = models.ForeignKey('Meme', on_delete=models.CASCADE, related_name="votes")
     participant = models.ForeignKey('Participant', on_delete=models.CASCADE)
     score = models.IntegerField(choices=VOTE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    started_at = models.DateTimeField(default=None)
+
+    @property
+    def voting_time(self):
+        # return how long the participant took to cast their vote, in seconds
+        return int(self.created_at.timestamp()) - int(self.started_at.timestamp())
 
     def __str__(self):
         return f"{self.participant} voted {self.score} for {self.meme}"

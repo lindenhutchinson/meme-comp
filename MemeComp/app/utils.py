@@ -56,8 +56,7 @@ def set_next_meme_for_competition(competition_id):
         competition.current_meme = random_meme
 
         # Create a SeenMeme object for the selected meme and competition
-        seen_meme = SeenMeme.objects.create(meme=random_meme, competition=competition)
-        seen_meme.save()
+        SeenMeme.objects.create(meme=random_meme, competition=competition)
     else:
         competition.current_meme = None
     

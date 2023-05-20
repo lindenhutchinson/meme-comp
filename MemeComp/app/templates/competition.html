@@ -38,13 +38,13 @@
 							<ul id="participants" class="list-group">
 								{% for part in competition.sorted_participants %}
 									<li class="list-group-item" data-participant-id="{{part.id}}">
-										<div class="row">
-											<div class="col">
+										<div class="d-flex justify-content-between align-items-center">
+											<span style="text-align:center">
 												{{ part.name }}
-											</div>
-											<div class="col-2">
+											</span>
+											<span style="text-align:end">
 												<i id="sleep-{{part.id}}" class="mr-2 bi bi-cup-hot {% if part.active %} hidden {% endif %}"></i>
-											</div>
+											</span>
 										</div>
 									</li>
 								{% endfor %}
@@ -131,7 +131,16 @@
 			<div class="vote-container">
 				<div class="card" style="width:100%">
 					<div class="card-header">
-						Total votes: <span id="num_votes">{{ competition.current_meme.num_votes }}</span>
+						<div class="row">
+							<h4 id="meme-ctr">
+								Meme {{ competition.meme_ctr }}/{{ competition.num_memes }}
+							</h4>
+						</div>
+						<div class="row">
+							<p>
+							Total votes: <span id="num_votes">{{ competition.current_meme.num_votes }}</span>
+							</p>
+						</div>
 						<div class="pt-2 card-title d-flex align-items-center justify-content-center">
 							<form id="vote-form">
 								<div class="form-check form-check-inline">
@@ -205,7 +214,7 @@
 				<div class="card-header">
 					<h4 class="card-title">Memes</h4>
 				</div>
-				<div class="row mt-2 px-2">
+				<div class="row mt-2 mx-2">
 					<h5 class="card-title">Submit a meme</h5>
 					<form id="upload-form" enctype="multipart/form-data" onchange="submitMeme()">
 						{% csrf_token %}
@@ -343,6 +352,7 @@
 		  zoomIn(event);
 		}
 	}
+	
 	function zoomIn(event) {
 		var img = event.target;
 		var container = img.parentNode;
@@ -360,7 +370,7 @@
 		img.style.transform = "scale(" + zoomRatio + ")";
 	  }
 	  
-	  function zoomOut(event) {
+	function zoomOut(event) {
 		var img = event.target;
 		var container = img.parentNode;
 	  
@@ -368,7 +378,8 @@
 		container.classList.remove("zoom-in");
 		img.style.transform = "scale(1)";
 	  }
-	$(document).ready(function() {
+	
+	  $(document).ready(function() {
 		$('#carouselExample').on('slide.bs.carousel', function (e) {
 			var $e = $(e.relatedTarget);
 			var idx = $e.index();
@@ -397,6 +408,7 @@
 			box.addClass('collapse')
 		}
 	}
+	
 	var snackbarTimeout;
 	var prevColour;
 	function showSnackbar(message, colour) {
@@ -707,11 +719,11 @@
 		socket.onmessage = function (event) {
 			var message = JSON.parse(event.data);
 			console.log(message);
+			
 			var command = message.command;
-	
 			if (command === "user_joined") {
 				var participantName = message.data.name;
-				const participantId = message.data.id;  // Assuming participant ID is available in message.data.id
+				const participantId = message.data.id;
 				const numParticipants = message.data.num_participants;
 				var participantList = $("#participants");
 				
@@ -719,14 +731,14 @@
 					participantList.find(`li[data-participant-id="${participantId}"]`).length === 0
 				) {
 					participantList.prepend(`
-					<li class='list-group-item' data-participant-id="${participantId}">
-							<div class="row">
-								<div class="col">
+						<li class='list-group-item' data-participant-id="${participantId}">
+							<div class="d-flex justify-content-between align-items-center">
+								<span style="text-align:center">
 									${participantName}
-								</div>
-								<div class="col-2">
-									<i id="sleep-${participantId}" class="mr-2 bi bi-cup-hot hidden"></i>
-								</div>
+								</span>
+								<span style="text-align:end">
+									<i id="sleep-${participantId}" class="mr-2 bi bi-cup-hot {% if part.active %} hidden {% endif %}"></i>
+								</span>
 							</div>
 						</li>
 					`);
@@ -770,9 +782,8 @@
 				$("#num_votes").text('0');
 				$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
 				$("#waiting-msg").text('Competition has started');
-
+				$('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);
 				showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
-
 			} else if (command === "meme_voted") {
 				$("#num_votes").text(message.data)
 			} else if (command === "competition_results") {

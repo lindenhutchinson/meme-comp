@@ -47,7 +47,6 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
             'data':event['data']
         }))
 
-
     async def update_joined(self, event):
         await self.send(text_data=json.dumps({
             'command': 'user_joined',
