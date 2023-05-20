@@ -3,6 +3,7 @@ from django.db import models
 
 class Vote(models.Model):
     VOTE_CHOICES = [
+        (0, "0 - Just Awful"),
         (1, "1 - Terrible"),
         (2, "2 - Below Average"),
         (3, "3 - Average"),
