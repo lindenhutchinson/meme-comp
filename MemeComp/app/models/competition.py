@@ -29,6 +29,10 @@ class Competition(models.Model):
         return self.participants.count()
     
     @property
+    def sorted_participants(self):
+        return self.participants.order_by('-active')
+    
+    @property
     def num_uploaders(self):
         return self.memes.values('participant').distinct().count()
 

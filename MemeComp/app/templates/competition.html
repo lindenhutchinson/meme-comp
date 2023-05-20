@@ -36,8 +36,17 @@
 						</button>
 						<div class="overflow-auto participants-box p-1" style="max-height: 200px;">
 							<ul id="participants" class="list-group">
-								{% for participant in competition.participants.all %}
-									<li class="list-group-item">{{ participant.name }}</li>
+								{% for part in competition.sorted_participants %}
+									<li class="list-group-item" data-participant-id="{{part.id}}">
+										<div class="row">
+											<div class="col">
+												{{ part.name }}
+											</div>
+											<div class="col-2">
+												<i id="sleep-{{part.id}}" class="mr-2 bi bi-cup-hot {% if part.active %} hidden {% endif %}"></i>
+											</div>
+										</div>
+									</li>
 								{% endfor %}
 							</ul>
 						</div>
@@ -630,7 +639,7 @@
 			},
 			success: function (response) {
 				if(Math.random() < 0.05 && selectedOption == 0) {
-					showSnackbar("Damn. That's harsh even for you", 'warning');
+					showSnackbar("Damn. That's harsh even for you...", 'warning');
 				} else if(Math.random() < 0.01 && selectedOption == 5) {
 					showSnackbar("You really think THAT deserves a FIVE!? Okay, whatever you say...", "warning");
 				} else {
@@ -647,6 +656,26 @@
 		});
 	}
 
+	function updateParticipantStatus(participantId, active) {
+		const participantLi = $(`li[data-participant-id="${participantId}"]`);
+		const sleepIcon = $(`li[data-participant-id="${participantId}"] i`);
+
+		if (sleepIcon.length > 0) {
+			if(active) {
+				if(!sleepIcon.hasClass('hidden')) {
+					sleepIcon.addClass('hidden');
+					$('#participants').remove(participantLi);
+					$("#participants").prepend(participantLi);
+				}
+			} else {
+				if(sleepIcon.hasClass('hidden')) {
+					sleepIcon.removeClass('hidden');
+					$('#participants').remove(participantLi);
+					$("#participants").append(participantLi);
+				}
+			}
+		}
+	}
 	
 	$('#upload-form').on('submit', function (event) {
 		event.preventDefault();
@@ -667,7 +696,7 @@
 
 			"{{websocket_scheme}}://" +
 			window.location.host +
-			"/{{websocket_scheme}}/competitions/{{ competition.name }}/"
+			"/{{websocket_scheme}}/competitions/{{ competition.name }}/participant/{{ participant.id }}/"
 		);
 
 		socket.onopen = function (event) {
@@ -682,15 +711,25 @@
 	
 			if (command === "user_joined") {
 				var participantName = message.data.name;
-				const numParticipants = message.data.num_participants
+				const participantId = message.data.id;  // Assuming participant ID is available in message.data.id
+				const numParticipants = message.data.num_participants;
 				var participantList = $("#participants");
+				
 				if (
-					participantList.find("li:contains('" + participantName + "')")
-						.length === 0
+					participantList.find(`li[data-participant-id="${participantId}"]`).length === 0
 				) {
-					participantList.append(
-						`<li class='list-group-item'>${participantName}</li>`
-					);
+					participantList.prepend(`
+					<li class='list-group-item' data-participant-id="${participantId}">
+							<div class="row">
+								<div class="col">
+									${participantName}
+								</div>
+								<div class="col-2">
+									<i id="sleep-${participantId}" class="mr-2 bi bi-cup-hot hidden"></i>
+								</div>
+							</div>
+						</li>
+					`);
 				}
 				$('#num-participants').text(`(${numParticipants})`);
 
@@ -703,6 +742,8 @@
 				} else {
 					showSnackbar(`${participantName} joined`, 'success');
 				}
+				console.log('user joined, update status')
+				updateParticipantStatus(participantId, true)
 			} else if (command === "meme_uploaded") {
 				const num_uploaders = message.data.num_uploaders;
 				const num_memes = message.data.num_memes;
@@ -768,12 +809,16 @@
 
 				// Append the generated HTML to the 'top-memes-container' element
 				$('#winning-memes').html(html);
+			} else if (command == 'user_active') {
+				const id = message.data['id'];
+				const active = message.data['active']
+				console.log('user active')
+				updateParticipantStatus(id,active);
 			}
 		};
 
 		socket.onclose = function (event) {
 			console.log("Websocket connection closed.");
-
 			// Attempt to reconnect after a delay
 			setTimeout(connectWebSocket, 2000); // Adjust the delay as needed
 		};
@@ -786,6 +831,5 @@
 	
 	// Call the connectWebSocket function to establish the initial WebSocket connection
 	connectWebSocket();
-	
 </script>
 {% endblock content %}

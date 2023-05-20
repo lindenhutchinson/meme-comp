@@ -5,6 +5,12 @@ from django.db.models import Sum
 from .models import Competition, SeenMeme, Meme
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.contrib import messages
+from django.shortcuts import redirect
+
+def redirect_and_flash_error(request, error):
+    messages.error(request, error)
+    return redirect('home')
 
 def send_channel_message(comp_name, consumer, data=None):
     channel_layer = get_channel_layer()

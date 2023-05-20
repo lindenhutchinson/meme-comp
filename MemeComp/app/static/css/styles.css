@@ -1,4 +1,6 @@
-
+.hidden {
+    display:none;
+}
 body {
     background-color: #455168;
     color: #FFFFFF;

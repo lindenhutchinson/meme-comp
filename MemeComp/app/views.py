@@ -113,7 +113,8 @@ def lobby(request):
                     if created:
                         data = {
                             'num_participants':competition.participants.count(),
-                            'name':participant.name
+                            'name':participant.name,
+                            'id':participant.id
                         }
                         send_channel_message(competition.name, 'update_joined', data)
                     else:
@@ -144,7 +145,8 @@ def competition(request, comp_name):
     if created:
         data = {
             'num_participants':comp.participants.count(),
-            'name':participant.name
+            'name':participant.name,
+            'id':participant.id
         }
         send_channel_message(comp.name, 'update_joined', data)
     
