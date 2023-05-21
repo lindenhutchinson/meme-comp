@@ -201,14 +201,14 @@ def meme_vote(request, comp_name):
     participant = get_object_or_404(Participant, user=request.user, competition=competition)
     meme = competition.current_meme
     try:
-        vote = Vote.objects.get(meme=meme, participant=participant)
+        vote = Vote.objects.get(meme=meme, participant=participant, competition=competition)
         vote.score = score
         vote.save()
     except Vote.DoesNotExist:
         # create a vote using the meme, participant and the given score
         # also set "started_at" to when the competition last updated
         # this will allow calculations of how long the user took to vote
-        vote = Vote.objects.create(meme=meme, participant=participant, score=score, started_at=competition.updated_at)
+        vote = Vote.objects.create(competition=competition, meme=meme, participant=participant, score=score, started_at=competition.updated_at)
         total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
         send_channel_message(competition.name, 'update_voted', total_votes['total_votes'])
 

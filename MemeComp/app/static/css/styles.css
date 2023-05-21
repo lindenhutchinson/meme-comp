@@ -33,14 +33,28 @@ body {
     color:white;
 
 }
-
+.results-container {
+    display: flex;
+}
 .meme-item {
+    display: flex;
+    flex-direction: column;
     margin-top:15px;
     padding-top:15px;
     background-color:#335cb6;
-    border-top-left-radius:25px;
-    border-top-right-radius:25px;
-
+    border-radius:25px;
+}
+.meme-item-body {
+    display: flex;
+    text-align:start;
+    flex: 1;
+    flex-direction: column;
+    padding-top:15px;
+    padding-bottom:25px;
+    background-color:#131a2b;
+    color:white;
+    border-bottom-left-radius:25px;
+    border-bottom-right-radius:25px;
 }
 .carousel-inner .carousel-item {
     transition: transform 0.6s ease-in;

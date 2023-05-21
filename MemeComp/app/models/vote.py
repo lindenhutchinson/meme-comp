@@ -1,4 +1,5 @@
 from django.db import models
+from queryable_properties.properties import queryable_property
 import datetime
 
 class Vote(models.Model):
@@ -12,7 +13,8 @@ class Vote(models.Model):
     ]
 
     meme = models.ForeignKey('Meme', on_delete=models.CASCADE, related_name="votes")
-    participant = models.ForeignKey('Participant', on_delete=models.CASCADE)
+    participant = models.ForeignKey('Participant', on_delete=models.CASCADE, related_name="votes")
+    competition = models.ForeignKey('Competition', on_delete=models.CASCADE, related_name="votes")
     score = models.IntegerField(choices=VOTE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -152,13 +152,13 @@ def competition(request, comp_name):
     request.session['competition_id'] = comp.id
     request.session['participant_id'] = participant.id
     if comp.started and not comp.current_meme:
-        top_memes = get_top_memes(comp.name)
+        top_meme = get_top_memes(comp.name)[0]
     else:
-        top_memes = []
+        top_meme = None
     context = {
         'participant': participant,
         'competition': comp,
-        'top_memes': top_memes,
+        'top_meme': top_meme,
         'websocket_scheme': settings.WEBSOCKET_SCHEME
     }
     return render(request, 'competition.html', context)
