@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404, HttpResponse
-from .utils import get_current_user, generate_random_string, get_top_memes, send_channel_message
+from .utils import get_current_user, generate_random_string, get_top_meme, send_channel_message
 from .forms import CompetitionForm, JoinCompetitionForm, LoginForm, UserForm, UploadMemeForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -152,7 +152,7 @@ def competition(request, comp_name):
     request.session['competition_id'] = comp.id
     request.session['participant_id'] = participant.id
     if comp.started and not comp.current_meme:
-        top_meme = get_top_memes(comp.name)[0]
+        top_meme = get_top_meme(comp.name)
     else:
         top_meme = None
     context = {

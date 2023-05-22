@@ -1,7 +1,7 @@
+import copy
 from django.db import models
 from django.utils import timezone
-from django.db.models import Avg, Count, ExpressionWrapper, Min, Max
-from django.db.models.functions import Extract
+from django.db.models import Avg, Count,F, ExpressionWrapper, FloatField, StdDev
 
 
 class Competition(models.Model):
@@ -92,15 +92,38 @@ class Competition(models.Model):
 
     @property
     def highest_avg_score_received(self):
-        result = self.votes.values('meme__participant__name').annotate(
-            avg_score_received=Avg('score')
-        ).order_by('-avg_score_received').first()
-        if result:
-            return {
-                'participant':result['meme__participant__name'],
-                'score':round(result['avg_score_received'], 2)
-            }
+        if len(self.votes.all()):
+            participants = self.participants.filter(memes__votes__isnull=False).distinct()
+            # Calculate the mean score for each participant
+            participants = participants.annotate(
+                mean_score=Avg('memes__votes__score')
+            )
+
+            # Calculate the standard deviation of scores for each participant
+            participants = participants.annotate(
+                score_stddev=StdDev('memes__votes__score')
+            )
+            
+            # Calculate the weighted score for each participant with penalization
+            participants = participants.annotate(
+                penalization_factor=ExpressionWrapper(
+                    Count('memes') / self.num_memes,
+                    output_field=FloatField()
+                ),
+                weighted_score=ExpressionWrapper(
+                    (F('mean_score') - (F('score_stddev')) * F('penalization_factor')),
+                    output_field=FloatField()
+                )
+            )
+            # Retrieve the participant with the highest weighted score
+            highest_score_participant = participants.order_by('-weighted_score').first()
+            if highest_score_participant:
+                return {
+                    'participant': highest_score_participant.name,
+                    'score': round(highest_score_participant.weighted_score, 2)
+                }
         return {}
+
     
     @property
     def highest_memes_submitted(self):
@@ -116,42 +139,47 @@ class Competition(models.Model):
         
     @property
     def highest_avg_vote_time(self):
-        highest_avg = 0
-        participant = None
-        for p in self.participants.all():
-            avg_vote_time = 0
-            for v in p.votes.all():
-                avg_vote_time += v.voting_time
+        if len(self.votes.all()):
+            highest_avg = 0
+            participant = None
+            for p in self.participants.all():
+                avg_vote_time = 0
+                for v in p.votes.all():
+                    avg_vote_time += v.voting_time
 
-            if avg_vote_time:
-                avg_vote_time /= len(p.votes.all())
-                if avg_vote_time > highest_avg:
-                    highest_avg = avg_vote_time
-                    participant = p.name
+                if avg_vote_time:
+                    avg_vote_time /= len(p.votes.all())
+                    if avg_vote_time > highest_avg:
+                        highest_avg = avg_vote_time
+                        participant = p.name
 
-        return {
-            'participant':participant, 
-            'vote_time': round(highest_avg, 2)
-        }
+            return {
+                'participant':participant, 
+                'vote_time': round(highest_avg, 2)
+            }
+        return {}
+    
     @property
     def lowest_avg_vote_time(self):
-        lowest_avg = 999999999999
-        participant = None
-        for p in self.participants.all():
-            avg_vote_time = 0
-            for v in p.votes.all():
-                avg_vote_time += v.voting_time
+        if len(self.votes.all()):
+            lowest_avg = 999999999999
+            participant = None
+            for p in self.participants.all():
+                avg_vote_time = 0
+                for v in p.votes.all():
+                    avg_vote_time += v.voting_time
 
-            if avg_vote_time:
-                avg_vote_time /= len(p.votes.all())
-                if avg_vote_time < lowest_avg:
-                    lowest_avg = avg_vote_time
-                    participant = p.name
+                if avg_vote_time:
+                    avg_vote_time /= len(p.votes.all())
+                    if avg_vote_time < lowest_avg:
+                        lowest_avg = avg_vote_time
+                        participant = p.name
 
-        return {
-            'participant':participant, 
-            'vote_time': round(lowest_avg, 2)
-        }
+            return {
+                'participant':participant, 
+                'vote_time': round(lowest_avg, 2)
+            }
+        return {}
     
 
     def __str__(self):

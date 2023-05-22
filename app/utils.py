@@ -64,20 +64,21 @@ def set_next_meme_for_competition(competition_id):
 
     return competition
 
-def get_top_memes(competition_name):
+def get_top_meme(competition_name):
     # Get the competition instance
     competition = Competition.objects.get(name=competition_name)
 
     # Aggregate the total vote scores for each meme in the competition
     memes = Meme.objects.filter(competition=competition)
-    sorted_memes = sorted(memes, key=lambda meme: meme.total_score, reverse=True)
 
+    sorted_memes = sorted(memes, key=lambda meme: meme.total_score/(len(meme.votes.all()) or 1), reverse=True)
+    meme = sorted_memes[0]
+    score = round(meme.total_score / (len(meme.votes.all()) or 1), 2)
     # Order the memes by total score in descending order and get the top three
-    results = [
-        {
-            'id':meme.id,
-            'participant':meme.participant.name,
-            'score':meme.total_score
-        } for meme in sorted_memes
-    ]
+    results = {
+        'id':meme.id,
+        'participant':meme.participant.name,
+        'score': score
+    }
     return results
+    
