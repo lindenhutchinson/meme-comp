@@ -69,7 +69,7 @@ class Competition(models.Model):
         return avg_time
 
     @property
-    def highest_participant_avg_score_given(self):
+    def highest_avg_score_given(self):
         result = self.votes.values('participant__name').annotate(
             avg_score_given=Avg('score')
         ).order_by('-avg_score_given').first()
@@ -80,7 +80,7 @@ class Competition(models.Model):
             }
         
     @property
-    def lowest_participant_avg_score_given(self):
+    def lowest_avg_score_given(self):
         result = self.votes.values('participant__name').annotate(
             avg_score_given=Avg('score')
         ).order_by('-avg_score_given').last()
@@ -91,7 +91,7 @@ class Competition(models.Model):
             }
 
     @property
-    def highest_participant_avg_score_received(self):
+    def highest_avg_score_received(self):
         result = self.votes.values('meme__participant__name').annotate(
             avg_score_received=Avg('score')
         ).order_by('-avg_score_received').first()
@@ -103,7 +103,7 @@ class Competition(models.Model):
         return {}
     
     @property
-    def highest_participant_memes_submitted(self):
+    def highest_memes_submitted(self):
         result = self.memes.values('participant__name').annotate(
             num_memes=Count('id')
         ).order_by('-num_memes').first()
@@ -115,7 +115,7 @@ class Competition(models.Model):
         return {}
         
     @property
-    def highest_participant_avg_vote_time(self):
+    def highest_avg_vote_time(self):
         highest_avg = 0
         participant = None
         for p in self.participants.all():
@@ -134,7 +134,7 @@ class Competition(models.Model):
             'vote_time': round(highest_avg, 2)
         }
     @property
-    def lowest_participant_avg_vote_time(self):
+    def lowest_avg_vote_time(self):
         lowest_avg = 999999999999
         participant = None
         for p in self.participants.all():

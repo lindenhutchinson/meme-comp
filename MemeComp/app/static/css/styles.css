@@ -46,16 +46,29 @@ body {
 }
 .meme-item-body {
     display: flex;
-    text-align:start;
     flex: 1;
     flex-direction: column;
     padding-top:15px;
-    padding-bottom:25px;
     background-color:#131a2b;
     color:white;
     border-bottom-left-radius:25px;
     border-bottom-right-radius:25px;
 }
+.min-height-item {
+    min-height:400px;
+}
+.item-header {
+    min-height:50px;
+}
+.winning-container {
+    height:100%;
+    width:100%;
+    margin-bottom:15px;
+}
+.card-img-top {
+    border-radius:15px;
+}
+
 .carousel-inner .carousel-item {
     transition: transform 0.6s ease-in;
     display: flex;

@@ -148,7 +148,23 @@ def advance_competition(request, comp_name):
         # if no meme was set, end the competition - update the channel to show the competition results info
         competition.finished = True
         competition.save()
-        results = get_top_memes(competition.name)
+        results = {}
+        if len(competition.votes.all()):
+            top_meme = get_top_memes(competition.name)[0]
+            statistics = {
+                'fastest_voter':f'{competition.lowest_avg_vote_time["participant"]} averaged {competition.lowest_avg_vote_time["vote_time"]} seconds per vote',
+                'slowest_voter':f'{competition.highest_avg_vote_time["participant"]} averaged {competition.highest_avg_vote_time["vote_time"]} seconds per vote',
+                'highest_score_given':f'{competition.highest_avg_score_given["participant"]} gave a {competition.highest_avg_score_given["score"]} average score',
+                'lowest_score_given':f'{competition.lowest_avg_score_given["participant"]} gave a {competition.lowest_avg_score_given["score"]} average score',
+                'most_submitted':f'{competition.highest_memes_submitted["participant"]} submitted {competition.highest_memes_submitted["num_memes"]} memes',
+                'highest_avg_score':f'{competition.highest_avg_score_received["participant"]} received a {competition.highest_avg_score_received["score"]} average score',
+                'avg_meme_score':competition.avg_meme_score,
+                'avg_vote_time':competition.avg_vote_time
+            }
+            results = {
+                'top_meme':top_meme,
+                'statistics':statistics
+            }
         send_channel_message(competition.name, 'competition_results', results)
 
     return Response(status=status.HTTP_200_OK)
