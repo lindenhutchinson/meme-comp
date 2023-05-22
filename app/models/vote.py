@@ -1,5 +1,4 @@
 from django.db import models
-from queryable_properties.properties import queryable_property
 import datetime
 
 class Vote(models.Model):
