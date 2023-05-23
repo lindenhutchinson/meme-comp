@@ -229,3 +229,15 @@ def meme_vote(request, comp_name):
         send_channel_message(competition.name, 'update_voted', total_votes['total_votes'])
 
     return Response({'success': True}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def emoji_view(request, comp_name):
+    emoji_text = request.data.get('text')
+    # Process the competition cancel request
+    competition = get_object_or_404(Competition, name=comp_name)
+    get_object_or_404(Participant, user=request.user, competition=competition)
+    send_channel_message(competition.name, 'update_emoji', emoji_text)
+    return Response({'success': True}, status=status.HTTP_200_OK)

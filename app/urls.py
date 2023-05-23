@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/competition/<str:comp_name>/start', api.start_competition, name="start_competition"),
     path('api/competition/<str:comp_name>/cancel', api.cancel_competition, name="cancel_competition"),
     path('api/competition/<str:comp_name>/advance', api.advance_competition, name="advance_competition"),
+    path('api/competition/<str:comp_name>/emoji', api.emoji_view, name="emoji"),
 
 ]
 
