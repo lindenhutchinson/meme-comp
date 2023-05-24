@@ -1,4 +1,5 @@
 import os
+import random
 from django.conf import settings
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -7,10 +8,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
-from .utils import get_top_meme, set_next_meme_for_competition, send_channel_message
+from .utils import get_top_meme, send_shame_message, set_next_meme_for_competition, send_channel_message
 from .models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
-
+import re
 
 @api_view(['DELETE'])
 @authentication_classes([SessionAuthentication])  # Use appropriate authentication classes
@@ -51,6 +52,7 @@ def meme_upload(request, comp_name):
     competition = get_object_or_404(Competition, name=comp_name)
     participant = Participant.objects.get(competition=competition, user=request.user)
     if not participant:
+        send_shame_message(competition.name, request.user.username)
         return Response({'detail':"Smart guy aye? Try again buddy"}, status=status.HTTP_403_FORBIDDEN)
 
     serializer = MemeSerializer(data=request.data)
@@ -58,6 +60,7 @@ def meme_upload(request, comp_name):
         # these values are hidden inputs on the form that can be edited by the user on the page
         # let them know I'm onto their tricks :3
         if serializer.validated_data['competition'] != competition or serializer.validated_data['participant'] != participant:
+            send_shame_message(competition.name, request.user.username)
             return Response({'detail':"You think you're so clever"}, status=status.HTTP_403_FORBIDDEN)
         
         serializer.save()
@@ -83,6 +86,7 @@ def start_competition(request, comp_name):
 
     # Check if the request user is the owner of the competition
     if competition.owner != request.user:
+        send_shame_message(competition.name, request.user.username)
         return Response(
             {"detail": "You are not authorized to start this competition."},
             status=status.HTTP_403_FORBIDDEN,
@@ -122,6 +126,7 @@ def advance_competition(request, comp_name):
 
     # Check if the request user is the owner of the competition
     if competition.owner != request.user:
+        send_shame_message(competition.name, request.user.username)
         return Response(
             {"detail": "You are not authorized to advance this competition."},
             status=status.HTTP_403_FORBIDDEN,
@@ -179,6 +184,7 @@ def cancel_competition(request, comp_name):
 
     # Check if the request user is the owner of the competition
     if competition.owner != request.user:
+        send_shame_message(competition.name, request.user.username)
         return Response(
             {"detail": "You are not authorized to cancel this competition."},
             status=status.HTTP_403_FORBIDDEN,
@@ -212,10 +218,20 @@ def cancel_competition(request, comp_name):
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def meme_vote(request, comp_name):
-    score = request.data.get('vote')
+    score_text = request.data.get('vote')
     competition = get_object_or_404(Competition, name=comp_name)
     participant = get_object_or_404(Participant, user=request.user, competition=competition)
     meme = competition.current_meme
+    
+    try:
+        score = int(score_text)
+    except TypeError:
+        send_shame_message(competition.name, request.user.username)
+        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if score < 0 or score > 5:
+        send_shame_message(competition.name, request.user.username)
+        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         vote = Vote.objects.get(meme=meme, participant=participant, competition=competition)
         vote.score = score
@@ -235,9 +251,21 @@ def meme_vote(request, comp_name):
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def emoji_view(request, comp_name):
-    emoji_text = request.data.get('text')
-    # Process the competition cancel request
+    input_text = request.data.get('text')
+    
     competition = get_object_or_404(Competition, name=comp_name)
+    # ensure the request user is a member of the competition
     get_object_or_404(Participant, user=request.user, competition=competition)
-    send_channel_message(competition.name, 'update_emoji', emoji_text)
+    # an emoji in unicode is 6 integers
+    allowed_patt = r'(\d{6})'
+    try:
+        emoji = re.search(allowed_patt, f'{ord(input_text)}')
+        emoji_text = chr(int(emoji.group(1)))
+        if emoji_text:
+            send_channel_message(competition.name, 'update_emoji', emoji_text)
+    except TypeError:
+        send_shame_message(competition.name, request.user.username)
+        return Response({'detail': 'Nice try :)'}, status=status.HTTP_400_BAD_REQUEST)
+
+    
     return Response({'success': True}, status=status.HTTP_200_OK)

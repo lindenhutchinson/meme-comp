@@ -628,7 +628,7 @@
 
 		snackbarTimeout = setTimeout(function() {
 			snackbar.removeClass("show");
-		}, 2000); // Adjust the timeout duration as needed
+		}, 2900); // Adjust the timeout duration as needed
 	}
 
 	const csrfToken = "{{csrf_token}}";
@@ -877,9 +877,7 @@
 				console.log('emoji sent')
 			},
 			error: function (xhr, status, error) {
-				if(xhr.status === 403) {
-					showSnackbar(xhr.responseJSON.detail, 'danger')
-				}
+				showSnackbar(xhr.responseJSON.detail, 'danger')
 			}
 		});
 	}
@@ -1043,6 +1041,9 @@
 			} else if (command == 'update_emoji') {
 				const emoji = message.data;
 				createEmoji(emoji)
+			} else if (command == 'update_shame') {
+				const text = message.data;
+				showSnackbar(text, 'danger');
 			}
 		};
 

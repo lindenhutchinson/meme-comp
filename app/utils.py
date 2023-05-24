@@ -81,4 +81,22 @@ def get_top_meme(competition_name):
         'score': score
     }
     return results
+
+def send_shame_message(comp_name, username):
+    messages = [
+        f"{username} thinks they're a hackerman.",
+        f"{username} is trying to do something they shouldn't.",
+        f"{username} is why we can't have nice things.",
+        f"{username} probably Googles themselves.",
+        f"{username} used hack! It's not very effective...",
+        f"Warning: {username} is attempting to break into the secret cookie jar.",
+        f"Attention! {username} is testing their hacking skills.",
+        f"Caution: {username} is attempting to hack their way to world domination.",
+        f"Attention: {username} is currently experiencing technical difficulties in their hacking endeavours.",
+        f"Error 404: {username}'s hacking skills not found. Please check your connection to the Matrix and try again.",
+        f"Congratulations, {username}! You've been nominated for the 'Best Attempted Hack of the Year' award.",
+        f"Warning: {username} is conducting a secret hacking mission.",
+    ]
+    message = random.choice(messages)
+    send_channel_message(comp_name, 'update_shame', message)
     

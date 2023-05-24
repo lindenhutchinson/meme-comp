@@ -76,3 +76,9 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
             'command': 'update_emoji',
             'data':event['data']
         }))
+
+    async def update_shame(self, event):
+        await self.send(text_data=json.dumps({
+            'command': 'update_shame',
+            'data':event['data']
+        }))
