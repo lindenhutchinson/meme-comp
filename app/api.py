@@ -54,7 +54,6 @@ def meme_upload(request, comp_name):
     if not participant:
         send_shame_message(competition.name, request.user.username)
         return Response({'detail':"Smart guy aye? Try again buddy"}, status=status.HTTP_403_FORBIDDEN)
-
     serializer = MemeSerializer(data=request.data)
     if serializer.is_valid():
         # these values are hidden inputs on the form that can be edited by the user on the page
@@ -63,16 +62,22 @@ def meme_upload(request, comp_name):
             send_shame_message(competition.name, request.user.username)
             return Response({'detail':"You think you're so clever"}, status=status.HTTP_403_FORBIDDEN)
         
-        serializer.save()
+        meme_list = []
+        for img in request.FILES.getlist('image'):
+            meme = Meme.objects.create(
+                image=img,
+                competition=competition,
+                participant=participant
+            )
+            meme_list.append(meme.id)
 
-        # Update total memes count
-        competition = serializer.validated_data['competition']
+        competition.refresh_from_db()
         total_memes = competition.memes.count()
         send_channel_message(competition.name, 'update_uploaded', {
             'num_memes':total_memes,
             'num_uploaders':competition.num_uploaders
         })
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(meme_list, status=status.HTTP_201_CREATED)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -157,8 +162,9 @@ def advance_competition(request, comp_name):
                 'lowest_score_given':f'{competition.lowest_avg_score_given["participant"]} gave a {competition.lowest_avg_score_given["score"]} average score',
                 'most_submitted':f'{competition.highest_memes_submitted["participant"]} submitted {competition.highest_memes_submitted["num_memes"]} memes',
                 'highest_avg_score':f'{competition.highest_avg_score_received["participant"]} received a {competition.highest_avg_score_received["score"]} weighted score',
+                'avg_own_score':f'{competition.lowest_avg_own_memes["participant"]} gave themselves a {competition.lowest_avg_own_memes["score"]} average score',
                 'avg_meme_score':competition.avg_meme_score,
-                'avg_vote_time':competition.avg_vote_time
+                'avg_vote_time':competition.avg_vote_time,
         } if len(competition.votes.all()) else {}
         # if no meme was set, end the competition - update the channel to show the competition results info
         competition.finished = True

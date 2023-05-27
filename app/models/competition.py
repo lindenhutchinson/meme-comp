@@ -1,7 +1,7 @@
 import copy
 from django.db import models
 from django.utils import timezone
-from django.db.models import Avg, Count,F, ExpressionWrapper, FloatField, StdDev
+from django.db.models import Avg, Count,F, ExpressionWrapper, FloatField, StdDev, OuterRef, Subquery
 
 
 class Competition(models.Model):
@@ -124,7 +124,6 @@ class Competition(models.Model):
                 }
         return {}
 
-    
     @property
     def highest_memes_submitted(self):
         result = self.memes.values('participant__name').annotate(
@@ -180,7 +179,24 @@ class Competition(models.Model):
                 'vote_time': round(lowest_avg, 2)
             }
         return {}
-    
+        
+    @property
+    def lowest_avg_own_memes(self):
+        subquery = self.votes.filter(meme__participant=OuterRef('pk')).values('meme__participant').annotate(
+            avg_self_vote=Avg('score')
+        ).values('avg_self_vote')
 
+        result = self.participants.annotate(
+            avg_vote_on_own_memes=Avg('memes__votes__score', filter=F('memes__votes__participant_id') == F('id'))
+        ).annotate(
+            avg_vote_on_own_memes_avg=Subquery(subquery),
+        ).order_by('avg_vote_on_own_memes_avg').first()
+
+        if result:
+            return {
+                'participant': result.name,
+                'score': round(result.avg_vote_on_own_memes, 2)
+            }
+        return {}
     def __str__(self):
         return f"Competition {self.id} ({self.theme}) {self.name}"

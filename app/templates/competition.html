@@ -136,6 +136,9 @@
 								<strong class="m-0">Consistent Creator</strong>
 								<span id="highest_avg_score" class="mb-3">{{competition.highest_avg_score_received.participant}} received a {{competition.highest_avg_score_received.score}} weighted score</span>
 								
+								<strong class="m-0">Unbiased Observer</strong>
+								<span id="avg_own_score" class="mb-3">{{competition.lowest_avg_own_memes.participant}} gave themselves a {{competition.lowest_avg_own_memes.score}} average score</span>
+								
 								<strong class="m-0">Prolific Producer</strong>
 								<span id="most_submitted" class="mb-3">{{competition.highest_memes_submitted.participant}} submitted {{competition.highest_memes_submitted.num_memes}} memes</span>
 								
@@ -181,6 +184,9 @@
 								<button title="Refresh your emoji choices" onclick="createEmojiBtns()" id="refresh-emojis" class="btn btn-sm btn-dark"><i class="bi bi-arrow-clockwise"></i></button>
 
 								<div id="emoji-container">
+									<button class="btn btn-light emoji-button e-btn">&#128514</button>
+									<button class="btn btn-light emoji-button e-btn">&#128076</button>
+									<button class="btn btn-light emoji-button e-btn">&#128169</button>
 								</div>
 							</div>
 							<div class="row d-flex align-items-center justify-content-center">
@@ -258,12 +264,12 @@
 					<h4 class="card-title">Memes</h4>
 				</div>
 				<div class="row mt-2 mx-2">
-					<h5 class="card-title">Submit a meme</h5>
+					<h5 class="card-title">Upload your memes</h5>
 					<form id="upload-form" enctype="multipart/form-data" onchange="submitMeme()">
 						{% csrf_token %}
 						<div class="mb-3 row g-0">
 							<div class="col mb-2">
-								<input type="file" name="image" class="form-control" id="image" required />
+								<input multiple type="file" name="image" class="form-control" id="image" required />
 							</div>
 							<input type="hidden" name="participant" value="{{ participant.id }}">
 							<input type="hidden" name="competition" value="{{ competition.id }}">
@@ -602,6 +608,7 @@
 				disabled: emojiTimeout ? true : false
 			}).appendTo('#emoji-container');
 		}
+		// the event trigger needs to be repeated after the elements are created
 		$(".e-btn").on('click', function() {
 			var $this = $(this);
 			const emojiText = $this.text();
@@ -619,9 +626,8 @@
 			}, 2000); // Adjust the cooldown duration as desired
 		});
 	  }
-
 	$(document).ready(function() {
-		createEmojiBtns();
+		// createEmojiBtns();
 		// if (Math.random() < 0.10) {
 		// 	$('#special-emoji').html('&#129408');
 		// }
@@ -643,6 +649,22 @@
 					}
 				}
 			}
+		});
+		$(".e-btn").on('click', function() {
+			var $this = $(this);
+			const emojiText = $this.text();
+			sendEmoji(emojiText);
+			const fillDiv = $('#fill-div');
+			fillDiv.css('background-color', 'black');
+			fillDiv.addClass('div-fill');
+			$('.emoji-button').attr('disabled', true);
+
+			emojiTimeout = setTimeout(function() {
+				fillDiv.removeClass('div-fill');
+				$('.emoji-button').attr('disabled', false);
+				fillDiv.css('background-color', 'white');
+				emojiTimeout = 0;
+			}, 2000); // Adjust the cooldown duration as desired
 		});
 	});
 
@@ -817,7 +839,7 @@
 				} else {
 					showSnackbar('Meme uploaded', 'success');
 				}
-				memeSubmitted(response.id);
+				memeSubmitted(response);
 			},
 			error: function (xhr, status, error) {
 				if(xhr.status === 403) {
@@ -833,27 +855,32 @@
 	}
 
 	// load the submitted meme onto the page
-	function memeSubmitted(id) {
-		var memes = $("#submitted-memes-container").find('.item');
-		if(memes.length >= 1) {
-			$('#carousel-controls').css('display', 'inline')
-		}
-		var current = $("#submitted-memes-container").find('.active').first();
-		current.removeClass('active');
-		element = `
-			<div id="meme-${id}" class="item carousel-item active">
-				<div class="card image-card">
-					<div class="image-container">
-						<img src="/competition/{{competition.name}}/memes/${id}" alt="Dank memez yeeeea boii" class="square-image" />
-						<button type="submit" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="${id}">
-							Delete
-						</button>
+	function memeSubmitted(id_list) {
+		var actualLength = 0;
+		for(i=0;i<id_list.length;i++) {
+			var id = id_list[i];
+			var memes = $("#submitted-memes-container").find('.item');
+			if(memes.length >= 1) {
+				$('#carousel-controls').css('display', 'inline')
+			}
+			var current = $("#submitted-memes-container").find('.active').first();
+			current.removeClass('active');
+			element = `
+				<div id="meme-${id}" class="item carousel-item active">
+					<div class="card image-card">
+						<div class="image-container">
+							<img src="/competition/{{competition.name}}/memes/${id}" alt="Dank memez yeeeea boii" class="square-image" />
+							<button type="submit" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="${id}">
+								Delete
+							</button>
+						</div>
 					</div>
 				</div>
-			</div>
-			`
-		$('#submitted-memes-container').append(element);
-		var actualLength = memes.length + 1;
+				`
+			$('#submitted-memes-container').append(element);
+			actualLength = memes.length + 1;
+		}
+
 		$('#your-memes').text(`You have submitted ${actualLength} meme${actualLength == 1 ? '':'s'}`);
 	}
 
@@ -1111,7 +1138,6 @@
 			} else if (command == 'user_active') {
 				const id = message.data['id'];
 				const active = message.data['active']
-				console.log('user active')
 				updateParticipantStatus(id,active);
 			} else if (command == 'update_emoji') {
 				const emoji = message.data;
