@@ -12,6 +12,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
 from .models import Participant, Competition, User, Meme
 from django.views.decorators.http import require_POST
+from django.db.models import Count
 
 @require_POST
 @login_required
@@ -162,6 +163,20 @@ def competition(request, comp_name):
         'websocket_scheme': settings.WEBSOCKET_SCHEME
     }
     return render(request, 'competition.html', context)
+
+@login_required
+def competition_results(request, comp_name):
+    comp = get_object_or_404(Competition, name=comp_name)
+    participant = get_object_or_404(Participant, user=request.user, competition=comp)
+    participants = list(comp.participants.annotate(meme_count=Count('memes')).order_by('-meme_count'))
+    participants.remove(participant)
+    participants.insert(0, participant)
+    context = {
+        'competition':comp,
+        'participants':participants,
+        'participant':participant
+    }
+    return render(request, 'results.html', context)
 
 @login_required
 def serve_file(request, comp_name, meme_id):

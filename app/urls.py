@@ -4,6 +4,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('lobby', views.lobby, name='lobby'),
     path('competition/<str:comp_name>', views.competition, name='competition'),
+    path('competition/<str:comp_name>/results', views.competition_results, name='competition_results'),
     path('login', views.login_view, name='login'),
     path('logout', views.logout_view,name='logout'),
     path('competition/<str:comp_name>/memes/<int:meme_id>', views.serve_file, name='serve_file'),

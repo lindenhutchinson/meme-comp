@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row results-container justify-content-center">
+  <a href="{% url 'competition' competition.name %}" class="btn btn-sm btn-primary back-btn">Back to Competition</a>
+  <h1 class="d-flex justify-content-center">Competition ({{competition.theme}}) Results</h1>
+  {% for participant in participants %}
+  <div class="m-2 results-item">
+    <div class="item-header row">
+      <h5 class="card-title">{{ participant.name }}</h5>
+    </div>
+    <div class="results-item-body row">
+      <strong class="mt-3 d-flex justify-content-center">Average Meme Score</strong>
+      <span class="mb-3 d-flex justify-content-center">{{participant.avg_meme_score}}</span>
+      
+      <strong class="m-0 d-flex justify-content-center">Average Rating Given</strong>
+      <span class="mb-3 d-flex justify-content-center">{{participant.avg_rating_given}}</span>
+      
+      <strong class="m-0 d-flex justify-content-center">Average Voting Time</strong>
+      <span class="mb-3 d-flex justify-content-center">{{participant.avg_vote_time}}</span>
+      {% if participant.top_meme %}
+      <hr>
+        <strong class="mb-1 d-flex justify-content-center">Top Meme Score: {{participant.top_meme.avg_score}}</strong>
+        <img src="/competition/{{ competition.name }}/memes/{{ participant.top_meme.id }}" 
+            alt="This is where their top meme would go, if they HAD one!" 
+            class="results-meme">
+
+      {% endif %}
+    </div>
+  </div>
+<!-- 
+    <div class="card">
+      <div class="card-header">
+        <h3>{{ participant.name }}</h3>
+      </div>
+      <div class="card-body">
+        <h4>Participant Stats:</h4>
+        <ul>
+          <li>Average Meme Score: {{ participant.avg_meme_score }}</li>
+          <li>Average Rating Given: {{ participant.avg_rating_given }}</li>
+          <li>Average Vote Time: {{ participant.avg_vote_time }}</li>
+        </ul>
+
+        <h4>Top Voted Meme:</h4>
+        {% if participant.top_meme %}
+          <div class="row">
+            <div class="col-md-4">
+              <img src="/competition/{{ competition.name }}/memes/{{ participant.top_meme.id }}" 
+                alt="Top Voted Meme" 
+                class="img-fluid">
+            </div>
+            <div class="col-md-8">
+              <p>Score: {{ participant.top_meme.total_score }}</p>
+            </div>
+          </div>
+        {% else %}
+          <p>No memes submitted by {{ participant.name }}.</p>
+        {% endif %}
+      </div>
+    </div>
+    <br> -->
+  {% endfor %}
+  </div>
+{% endblock %}

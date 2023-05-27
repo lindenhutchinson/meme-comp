@@ -32,3 +32,8 @@ class Meme(models.Model):
     @property
     def total_score(self):
         return self.votes.aggregate(models.Sum('score')).get('score__sum') or 0
+    
+    @property
+    def avg_score(self):
+        score = self.votes.aggregate(models.Avg('score')).get('score__avg') or 0
+        return round(score, 2)

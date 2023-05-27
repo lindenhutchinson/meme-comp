@@ -104,6 +104,9 @@
 					<div class="card-title">
 						<h2>Competition Results</h2>
 					</div>
+					<div class="to-details">
+					<a href="{% url 'competition_results' competition.name %}" class="btn btn-sm btn-primary back-btn">Detailed Results</a>
+					</div>
 				</div>
 				<div class="card-body g-0">
 					<div class="row results-container justify-content-center">
@@ -957,9 +960,7 @@
 			},
 			success: function (response) {
 				if(Math.random() < 0.05 && selectedOption == 0) {
-					showSnackbar("Damn. That's harsh even for you...", 'warning');
-				} else if(Math.random() < 0.01 && selectedOption == 5) {
-					showSnackbar("You really think THAT deserves a FIVE!? Okay, whatever you say...", "warning");
+					showSnackbar("Damn that's harsh, even for you...", 'success');
 				} else {
 					showSnackbar('Vote submitted', 'success')
 				}
