@@ -1,16 +1,23 @@
-# fly.toml file generated for meme-competition on 2023-05-13T22:40:44+10:00
+# fly.toml app configuration file generated for meme-competition on 2023-05-27T12:14:58+10:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "meme-competition"
-kill_signal = "SIGINT"
-kill_timeout = 5
 primary_region = "syd"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+console_command = "/code/manage.py shell"
+
+[deploy]
+  release_command = "python manage.py migrate"
 
 [env]
   PORT = "8000"
 
-[[statics]]
-  guest_path = "/code/static"
-  url_prefix = "/static/"
+[[mounts]]
+  source = "meme_comp_vol"
+  destination = "/code/media"
 
 [[services]]
   protocol = "tcp"
@@ -25,8 +32,11 @@ primary_region = "syd"
   [[services.ports]]
     port = 443
     handlers = ["tls", "http"]
-
   [services.concurrency]
     type = "connections"
     hard_limit = 50
     soft_limit = 40
+
+[[statics]]
+  guest_path = "/code/static"
+  url_prefix = "/static/"

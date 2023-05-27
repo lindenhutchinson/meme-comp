@@ -16,6 +16,17 @@ STATIC_URL = "/static/"
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/min',
+        'user': '300/min'
+    }
+}
+
 # Application definition
 INSTALLED_APPS = [
     "app",
@@ -63,12 +74,15 @@ WSGI_APPLICATION = "MemeComp.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+from environs import Env 
+env = Env()
+env.read_env() 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": env.dj_db_url("DATABASE_URL", default="sqlite:///db.sqlite3"),
+    # "default": {
+    #     "ENGINE": "django.db.backends.sqlite3",
+    #     "NAME": BASE_DIR / "data/db.sqlite3",
+    # }
 }
 
 AUTH_USER_MODEL = 'app.User'
@@ -118,11 +132,5 @@ ASGI_APPLICATION = "MemeComp.asgi.application"
 #         },
 #     },
 # }
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        'CONFIG': {},
-    },
-}
 
 

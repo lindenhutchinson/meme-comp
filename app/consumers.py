@@ -26,8 +26,9 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def toggle_active_participant(self, active):
         part = Participant.objects.get(id=self.participant_id)
-        part.active = active
-        part.save()
+        if part:
+            part.active = active
+            part.save()
 
     async def next_meme(self, event):
         # Send a message to all users in the competition that the competition has started
