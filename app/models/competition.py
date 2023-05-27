@@ -195,7 +195,7 @@ class Competition(models.Model):
         if result:
             return {
                 'participant': result.name,
-                'score': round(result.avg_vote_on_own_memes, 2)
+                'score': round(result.avg_vote_on_own_memes or 0, 2)
             }
         return {}
     def __str__(self):
