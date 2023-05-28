@@ -182,21 +182,26 @@ class Competition(models.Model):
         
     @property
     def lowest_avg_own_memes(self):
-        subquery = self.votes.filter(meme__participant=OuterRef('pk')).values('meme__participant').annotate(
-            avg_self_vote=Avg('score')
-        ).values('avg_self_vote')
-
-        result = self.participants.annotate(
-            avg_vote_on_own_memes=Avg('memes__votes__score', filter=F('memes__votes__participant_id') == F('id'))
-        ).annotate(
-            avg_vote_on_own_memes_avg=Subquery(subquery),
-        ).order_by('avg_vote_on_own_memes_avg').first()
-
-        if result:
+        lowest_score = 999999
+        participant = None
+        for part in self.participants.all():
+            total = 0
+            for v in part.votes.all():
+                if v.participant == part:
+                    total += v.score
+                    
+            if part.votes.count() and part.memes.count():       
+                total /= part.memes.count()
+                
+                if total < lowest_score:
+                    lowest_score = total
+                    participant = part
+        if participant:
             return {
-                'participant': result.name,
-                'score': round(result.avg_vote_on_own_memes or 0, 2)
-            }
+                    'participant': participant.name,
+                    'score': round(lowest_score or 0, 2)
+                }
         return {}
+
     def __str__(self):
         return f"Competition {self.id} ({self.theme}) {self.name}"
