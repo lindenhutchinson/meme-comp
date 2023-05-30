@@ -27,7 +27,6 @@ class Participant(models.Model):
 
     @property
     def avg_vote_time(self):
-
         total = 0
         for v in self.votes.all():
             total += v.voting_time

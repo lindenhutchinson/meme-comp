@@ -2,7 +2,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from channels.db import database_sync_to_async
 from .models import Competition, Participant
-
+from .utils import check_emoji_text
 class CompetitionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # Get the competition name from the URL
@@ -22,6 +22,23 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
         await self.toggle_active_participant(False)
         # Leave the competition group
         await self.channel_layer.group_discard(self.comp_name, self.channel_name)
+
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json["message"]
+        command = text_data_json['command']
+
+        if command == 'send_emoji':
+            emoji_text = check_emoji_text(message)
+            if emoji_text:
+                await self.channel_layer.group_send(
+                    self.comp_name,
+                    {
+                        "type": "update_emoji",
+                        "data": emoji_text,
+                    },
+                )
+
 
     @database_sync_to_async
     def toggle_active_participant(self, active):

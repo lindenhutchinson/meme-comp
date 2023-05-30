@@ -187,7 +187,7 @@ class Competition(models.Model):
         for part in self.participants.all():
             total = 0
             for v in part.votes.all():
-                if v.participant == part:
+                if v.meme.participant == part:
                     total += v.score
                     
             if part.votes.count() and part.memes.count():       

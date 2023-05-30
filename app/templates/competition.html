@@ -977,20 +977,28 @@
 
 	function sendEmoji(emojiText) {
 		if (checkAjaxCtr()) {
-			$.ajax({
-				url: `/api/competition/{{competition.name}}/emoji`,
-				type: "POST",
-				data: {text:emojiText},
-				beforeSend: function (xhr) {
-					xhr.setRequestHeader("X-CSRFToken", csrfToken);
-				},
-				success: function (response) {
-				},
-				error: function (xhr, status, error) {
-					showSnackbar(xhr.responseJSON.detail, 'danger')
-				}
-			});
+
+			// send emoji via socket rather than via request
+			socket.send(JSON.stringify({
+				'command':'send_emoji',
+				'message':emojiText
+			}));
 		}
+		// if (checkAjaxCtr()) {
+		// 	$.ajax({
+		// 		url: `/api/competition/{{competition.name}}/emoji`,
+		// 		type: "POST",
+		// 		data: {text:emojiText},
+		// 		beforeSend: function (xhr) {
+		// 			xhr.setRequestHeader("X-CSRFToken", csrfToken);
+		// 		},
+		// 		success: function (response) {
+		// 		},
+		// 		error: function (xhr, status, error) {
+		// 			showSnackbar(xhr.responseJSON.detail, 'danger')
+		// 		}
+		// 	});
+		// }
 	}
 
 	function updateParticipantStatus(participantId, active) {

@@ -253,25 +253,24 @@ def meme_vote(request, comp_name):
     return Response({'success': True}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-@authentication_classes([SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def emoji_send(request, comp_name):
-    input_text = request.data.get('text')
+# @api_view(['POST'])
+# @authentication_classes([SessionAuthentication])
+# @permission_classes([IsAuthenticated])
+# def emoji_send(request, comp_name):
+#     input_text = request.data.get('text')
     
-    competition = get_object_or_404(Competition, name=comp_name)
-    # ensure the request user is a member of the competition
-    get_object_or_404(Participant, user=request.user, competition=competition)
-    # an emoji in unicode is 6 integers
-    allowed_patt = r'(\d{4,6})'
-    try:
-        emoji = re.search(allowed_patt, f'{ord(input_text)}')
-        emoji_text = chr(int(emoji.group(1)))
-        if emoji_text:
-            send_channel_message(competition.name, 'update_emoji', emoji_text)
-    except TypeError:
-        send_shame_message(competition.name, request.user.username)
-        return Response({'detail': 'Nice try :)'}, status=status.HTTP_400_BAD_REQUEST)
+#     competition = get_object_or_404(Competition, name=comp_name)
+#     # ensure the request user is a member of the competition
+#     get_object_or_404(Participant, user=request.user, competition=competition)
+#     # an emoji in unicode is 6 integers
+#     try:
+#         emoji = re.search(r'(\d{4,6})', f'{ord(input_text)}')
+#         emoji_text = chr(int(emoji.group(1)))
+#         if emoji_text:
+#             send_channel_message(competition.name, 'update_emoji', emoji_text)
+#     except TypeError:
+#         send_shame_message(competition.name, request.user.username)
+#         return Response({'detail': 'Nice try :)'}, status=status.HTTP_400_BAD_REQUEST)
 
     
-    return Response({'success': True}, status=status.HTTP_200_OK)
+#     return Response({'success': True}, status=status.HTTP_200_OK)

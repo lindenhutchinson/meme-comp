@@ -1,3 +1,4 @@
+import re
 from django.contrib.auth import get_user_model
 import random
 import string
@@ -99,4 +100,11 @@ def send_shame_message(comp_name, username):
     ]
     message = random.choice(messages)
     send_channel_message(comp_name, 'update_shame', message)
-    
+
+def check_emoji_text(text):
+    try:
+        emoji = re.search(r'(\d{4,6})', f'{ord(text)}')
+        emoji_text = chr(int(emoji.group(1)))
+        return emoji_text or False
+    except TypeError:
+        return False
