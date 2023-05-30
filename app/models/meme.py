@@ -2,28 +2,32 @@ import os
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from PIL import Image
 
+
+class MemeManager(models.Manager):
+    def create(self, **obj_data):
+        meme =  super().create(**obj_data)
+        
+        # resize the image
+        image = meme.image
+        if not image.path.endswith('.gif'):
+            with Image.open(image.path) as im:
+                im.thumbnail((1000, 1000), Image.Resampling.BICUBIC)
+                im.save(image.path)
+
+        return meme
+             
 
 class Meme(models.Model):
     image = models.ImageField(upload_to='memes')
     created_at = models.DateTimeField(default=timezone.now)
     competition = models.ForeignKey('Competition', on_delete=models.CASCADE, related_name='memes')
     participant = models.ForeignKey('Participant', on_delete=models.CASCADE, related_name='memes')
-
-    def __str__(self):
-        return f'Meme {self.id} by {self.participant.name}'
+    objects = MemeManager()
     
-    def delete(self, *args, **kwargs):
-        # Delete the associated file
-        if self.image:
-            # Get the file path
-            file_path = os.path.join(settings.MEDIA_ROOT, str(self.image))
-
-            # Delete the file if it exists
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-
-        super().delete(*args, **kwargs)
+    def __str__(self):
+        return f'Meme {self.id} by {self.participant.name}'       
 
     @property
     def num_votes(self):
