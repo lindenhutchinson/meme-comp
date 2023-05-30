@@ -253,12 +253,13 @@
 					</div>
 					<div class="g-0 image-zoom">
 						<img id="current-meme-image"
-								src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}"
+								{% if competition.started and competition.current_meme %}src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}"{% endif %}
 								alt="Current Meme"
 								class="current-meme" 
 								onclick="toggleZoom(event)"
 								onmouseleave="zoomOut(event)"
 						/>
+						
 					</div>
 				</div>
 			</div>
@@ -273,14 +274,22 @@
 				</div>
 				<div class="row mt-2 mx-2">
 					<h5 class="card-title">Upload your memes</h5>
+					
 					<form id="upload-form" enctype="multipart/form-data" onchange="submitMeme()">
 						{% csrf_token %}
 						<div class="mb-3 row g-0">
+							<div class="col-1">
+								<div id="meme-spinner" class="spinner-border" role="status" style="display:none">
+									<span class="visually-hidden">Loading...</span>
+								</div>
+							</div>
 							<div class="col mb-2">
 								<input multiple type="file" name="image" class="form-control" id="image" required />
 							</div>
-							<input type="hidden" name="participant" value="{{ participant.id }}">
-							<input type="hidden" name="competition" value="{{ competition.id }}">
+							<div class="col-1">
+								<input type="hidden" name="participant" value="{{ participant.id }}">
+								<input type="hidden" name="competition" value="{{ competition.id }}">
+							</div>
 						</div>
 					</form>
 				</div>
@@ -296,9 +305,11 @@
 										class="item carousel-item {% if forloop.first %}active{% endif %}">
 									<div class="card image-card">
 										<div class="image-container">
-											<img src="{% url 'serve_file' competition.name meme.id %}"
+											<img 
+											{% if not competition.started and not competition.finished %}src="{% url 'serve_file' competition.name meme.id %}" {% endif %}
 													alt="{{ meme.title }}"
-													class="square-image d-block" />
+													class="square-image d-block" 
+											/>
 											<button type="submit"
 													class="btn btn-sm btn-danger delete-button"
 													onclick="deleteMeme(this)"
@@ -825,8 +836,7 @@
 
 	// Submit meme via AJAX
 	function submitMeme() {
-		$('#submit-meme-btn').attr('disabled', true);
-		$('#submit-meme-btn').text('Submitting');
+		$('#meme-spinner').css('display','');
 
 		var form = document.getElementById("upload-form");
 		var formData = new FormData(form);
@@ -857,8 +867,7 @@
 				}
 			}
 		}).then(() => {
-			$('#submit-meme-btn').attr('disabled', false);
-			$('#submit-meme-btn').text('Submit');
+			$('#meme-spinner').css('display','none');
 		});
 	}
 

@@ -28,11 +28,16 @@ def meme_delete(request, meme_id):
     meme.image.close()
     # Delete the file from the file system
     meme_image_path = os.path.join(settings.MEDIA_ROOT, meme.image.name)
-    while os.path.exists(meme_image_path):
+    sanity_ctr = 0
+    while os.path.exists(meme_image_path) and sanity_ctr < 50:
+        sanity_ctr +=1
         try:
             os.remove(meme_image_path)
         except PermissionError:
             meme.image.close()
+            
+    if sanity_ctr == 50:
+        return Response({"detail": "Couldn't delete, try again"}, status=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
     # Delete the meme
     meme.delete()
