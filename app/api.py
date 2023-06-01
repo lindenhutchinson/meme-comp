@@ -8,10 +8,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
-from .utils import get_top_meme, send_shame_message, set_next_meme_for_competition, send_channel_message
+from .utils import do_advance_competition, send_shame_message, set_next_meme_for_competition, send_channel_message
 from .models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
-import re
 
 @api_view(['DELETE'])
 @authentication_classes([SessionAuthentication])  # Use appropriate authentication classes
@@ -23,6 +22,7 @@ def meme_delete(request, meme_id):
     # Verify if the authenticated user has a participant associated with the meme
     if meme.participant.user != request.user:
         # User is not authorized to delete the meme
+        print(f"{request.user.username} attempted to delete the wrong meme")
         return Response({"detail": "Delete your own memes, you donkey"}, status=status.HTTP_403_FORBIDDEN)
 
     meme.image.close()
@@ -57,13 +57,14 @@ def meme_upload(request, comp_name):
     competition = get_object_or_404(Competition, name=comp_name)
     participant = Participant.objects.get(competition=competition, user=request.user)
     if not participant:
+        print(f"{request.user.username} attempted an invalid upload")
         send_shame_message(competition.name, request.user.username)
         return Response({'detail':"Smart guy aye? Try again buddy"}, status=status.HTTP_403_FORBIDDEN)
     serializer = MemeSerializer(data=request.data)
     if serializer.is_valid():
         # these values are hidden inputs on the form that can be edited by the user on the page
-        # let them know I'm onto their tricks :3
         if serializer.validated_data['competition'] != competition or serializer.validated_data['participant'] != participant:
+            print(f"{request.user.username} attempted an invalid upload")
             send_shame_message(competition.name, request.user.username)
             return Response({'detail':"You think you're so clever"}, status=status.HTTP_403_FORBIDDEN)
         
@@ -96,6 +97,7 @@ def start_competition(request, comp_name):
 
     # Check if the request user is the owner of the competition
     if competition.owner != request.user:
+        print(f"{request.user.username} attempted to start the competition")
         send_shame_message(competition.name, request.user.username)
         return Response(
             {"detail": "You are not authorized to start this competition."},
@@ -136,6 +138,7 @@ def advance_competition(request, comp_name):
 
     # Check if the request user is the owner of the competition
     if competition.owner != request.user:
+        print(f"{request.user.username} attempted to advance the competition")
         send_shame_message(competition.name, request.user.username)
         return Response(
             {"detail": "You are not authorized to advance this competition."},
@@ -148,40 +151,7 @@ def advance_competition(request, comp_name):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
     )
 
-    # attempt to get a random next meme for the competition
-    competition = set_next_meme_for_competition(competition.id)
-
-    if competition.current_meme:
-    # if we were able to set a random meme, update the channel to show it on the page
-        data = {
-            'id':competition.current_meme.id,
-            'num_memes':competition.num_memes,
-            'ctr':competition.meme_ctr
-        }
-        send_channel_message(competition.name, 'next_meme', data)
-    else:
-        statistics = {
-                'fastest_voter':f'{competition.lowest_avg_vote_time["participant"]} averaged {competition.lowest_avg_vote_time["vote_time"]} seconds per vote',
-                'slowest_voter':f'{competition.highest_avg_vote_time["participant"]} averaged {competition.highest_avg_vote_time["vote_time"]} seconds per vote',
-                'highest_score_given':f'{competition.highest_avg_score_given["participant"]} gave a {competition.highest_avg_score_given["score"]} average score',
-                'lowest_score_given':f'{competition.lowest_avg_score_given["participant"]} gave a {competition.lowest_avg_score_given["score"]} average score',
-                'most_submitted':f'{competition.highest_memes_submitted["participant"]} submitted {competition.highest_memes_submitted["num_memes"]} memes',
-                'highest_avg_score':f'{competition.highest_avg_score_received["participant"]} received a {competition.highest_avg_score_received["score"]} weighted score',
-                'avg_own_score':f'{competition.lowest_avg_own_memes["participant"]} gave themselves a {competition.lowest_avg_own_memes["score"]} average score',
-                'avg_meme_score':competition.avg_meme_score,
-                'avg_vote_time':competition.avg_vote_time,
-        } if len(competition.votes.all()) else {}
-        # if no meme was set, end the competition - update the channel to show the competition results info
-        competition.finished = True
-        competition.save()
-        results = {}
-        if len(competition.votes.all()):
-            top_meme = get_top_meme(competition.name)
-            results = {
-                'top_meme':top_meme,
-                'statistics':statistics
-            }
-        send_channel_message(competition.name, 'competition_results', results)
+    do_advance_competition(competition)
 
     return Response(status=status.HTTP_200_OK)
 
@@ -195,6 +165,7 @@ def cancel_competition(request, comp_name):
 
     # Check if the request user is the owner of the competition
     if competition.owner != request.user:
+        print(f"{request.user.username} attempted to cancel the competition")
         send_shame_message(competition.name, request.user.username)
         return Response(
             {"detail": "You are not authorized to cancel this competition."},
@@ -237,10 +208,12 @@ def meme_vote(request, comp_name):
     try:
         score = int(score_text)
     except TypeError:
+        print(f"{request.user.username} attempted an invalid vote - {score}")
         send_shame_message(competition.name, request.user.username)
         return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
 
     if score < 0 or score > 5:
+        print(f"{request.user.username} attempted an invalid vote - {score}")
         send_shame_message(competition.name, request.user.username)
         return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
     try:
@@ -255,7 +228,12 @@ def meme_vote(request, comp_name):
         total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
         send_channel_message(competition.name, 'update_voted', total_votes['total_votes'])
 
+    competition.refresh_from_db()
+    if competition.current_meme.votes.count() == competition.num_participants:
+        do_advance_competition(competition)
+
     return Response({'success': True}, status=status.HTTP_200_OK)
+
 
 
 # @api_view(['POST'])

@@ -24,7 +24,6 @@ def generate_random_string(length):
     valid_chars = [c for c in string.ascii_letters if c not in ['l', 'I', 'i', 'O', 'o']]
     return ''.join(random.choice(valid_chars) for _ in range(length))
 
-
 def get_current_user(request):
     user_id = request.session.get('user_id')
     if user_id:
@@ -88,7 +87,6 @@ def send_shame_message(comp_name, username):
         f"{username} thinks they're a hackerman.",
         f"{username} is trying to do something they shouldn't.",
         f"{username} is why we can't have nice things.",
-        f"{username} probably Googles themselves.",
         f"{username} used hack! It's not very effective...",
         f"Warning: {username} is attempting to break into the secret cookie jar.",
         f"Attention! {username} is testing their hacking skills.",
@@ -108,3 +106,39 @@ def check_emoji_text(text):
         return emoji_text or False
     except TypeError:
         return False
+
+def do_advance_competition(competition):
+    # attempt to get a random next meme for the competition
+    competition = set_next_meme_for_competition(competition.id)
+
+    if competition.current_meme:
+    # if we were able to set a random meme, update the channel to show it on the page
+        data = {
+            'id':competition.current_meme.id,
+            'num_memes':competition.num_memes,
+            'ctr':competition.meme_ctr
+        }
+        send_channel_message(competition.name, 'next_meme', data)
+    else:
+        # if no meme was set, end the competition - update the channel to show the competition results info
+        statistics = {
+                'fastest_voter':f'{competition.lowest_avg_vote_time["participant"]} averaged {competition.lowest_avg_vote_time["vote_time"]} seconds per vote',
+                'slowest_voter':f'{competition.highest_avg_vote_time["participant"]} averaged {competition.highest_avg_vote_time["vote_time"]} seconds per vote',
+                'highest_score_given':f'{competition.highest_avg_score_given["participant"]} gave a {competition.highest_avg_score_given["score"]} average score',
+                'lowest_score_given':f'{competition.lowest_avg_score_given["participant"]} gave a {competition.lowest_avg_score_given["score"]} average score',
+                'most_submitted':f'{competition.highest_memes_submitted["participant"]} submitted {competition.highest_memes_submitted["num_memes"]} memes',
+                'highest_avg_score':f'{competition.highest_avg_score_received["participant"]} received a {competition.highest_avg_score_received["score"]} weighted score',
+                'avg_own_score':f'{competition.lowest_avg_own_memes["participant"]} gave themselves a {competition.lowest_avg_own_memes["score"]} average score',
+                'avg_meme_score':competition.avg_meme_score,
+                'avg_vote_time':competition.avg_vote_time,
+        } if len(competition.votes.all()) else {}
+        competition.finished = True
+        competition.save()
+        results = {}
+        if len(competition.votes.all()):
+            top_meme = get_top_meme(competition.name)
+            results = {
+                'top_meme':top_meme,
+                'statistics':statistics
+            }
+        send_channel_message(competition.name, 'competition_results', results)
