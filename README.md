@@ -2,7 +2,7 @@
 
 The Meme Competition App is a Django-based web application that allows users to participate in meme competitions. Users can create competitions, submit memes, and vote on memes to determine the winners.
 
-See the app in production here: https://www.meme-competition.fly.dev/
+See the app in production here: https://meme-competition.fly.dev/
 ## Features
 
 - User registration and authentication
