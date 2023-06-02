@@ -1,0 +1,294 @@
+{% load competition_tags %}
+<div id="comp-started" class="col text-center" 
+{% if not competition.started or not competition.current_meme%}style="display:none" {% endif %}>
+    <div class="vote-container">
+        <div class="card shadow" style="width:100%">
+            <div class="card-header">
+                <div class="row pt-2">
+                    <div class="col">
+                        <h4 id="meme-ctr">
+                            Meme {{ competition.meme_ctr }}/{{ competition.num_memes }}
+                        </h4>
+                    </div>
+                    <div class="col">
+                        <h4>
+                            Total votes: <span id="num_votes">{{ competition.current_meme.num_votes }}</span>
+                        </h4>
+                    </div>
+                </div>
+                <div class="row">
+
+                </div>
+                <div class="card-title">
+                    <div class="mb-1 row d-flex align-items-center justify-content-center">
+                        <div id="fill-div"></div>
+                        <button title="Refresh your emoji choices" onclick="createEmojiBtns()" id="refresh-emojis"
+                            class="btn btn-sm btn-dark"><i class="bi bi-arrow-clockwise"></i></button>
+
+                        <div id="emoji-container">
+                            <button class="btn btn-light emoji-button e-btn">&#128514</button>
+                            <button class="btn btn-light emoji-button e-btn">&#128076</button>
+                            <button class="btn btn-light emoji-button e-btn">&#128169</button>
+                        </div>
+                    </div>
+                    <div class="row d-flex align-items-center justify-content-center">
+                        <form id="vote-form">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option0"
+                                    value="0">
+                                <label class="form-check-label vote-label" for="vote-option0">0</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option1"
+                                    value="1">
+                                <label class="form-check-label vote-label" for="vote-option1">1</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option2"
+                                    value="2">
+                                <label class="form-check-label vote-label" for="vote-option2">2</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option3"
+                                    value="3">
+                                <label class="form-check-label vote-label" for="vote-option3">3</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option4"
+                                    value="4">
+                                <label class="form-check-label vote-label" for="vote-option4">4</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option5"
+                                    value="5">
+                                <label class="form-check-label vote-label" for="vote-option5">5</label>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="g-0 image-zoom">
+                {% emoji_stuff %}
+                <img id="current-meme-image" {% if competition.started and competition.current_meme %}
+                    src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}" {% endif %}
+                    alt="Current Meme" class="current-meme" onclick="toggleZoom(event)" onmouseleave="zoomOut(event)" />
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var emojiTimeout;
+    $(document).ready(function () {
+        $(".e-btn").on('click', function () {
+            var $this = $(this);
+            const emojiText = $this.text();
+            sendEmoji(emojiText);
+            const fillDiv = $('#fill-div');
+            fillDiv.css('background-color', 'black');
+            fillDiv.addClass('div-fill');
+            $('.emoji-button').attr('disabled', true);
+
+            emojiTimeout = setTimeout(function () {
+                fillDiv.removeClass('div-fill');
+                $('.emoji-button').attr('disabled', false);
+                fillDiv.css('background-color', 'white');
+                emojiTimeout = 0;
+            }, 2000); // Adjust the cooldown duration as desired
+        });
+        $('input[type=radio][name=vote]').on('change', function () {
+            const memeId = $(this).data('meme-id');
+            submitVote(memeId);
+        });
+    });
+
+
+
+    // submit vote via AJAX
+    function submitVote() {
+        // Get the selected vote option
+        var selectedOption = document.querySelector('input[name="vote"]:checked').value;
+        // Prepare the data to be sent in the AJAX request
+        var formData = new FormData();
+        formData.append('vote', selectedOption);
+        $.ajax({
+            url: `/api/competition/{{competition.name}}/vote`,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrfToken);
+            },
+            success: function (response) {
+                if (Math.random() < 0.05 && selectedOption == 0) {
+                    showSnackbar("Damn that's harsh, even for you...", 'success');
+                } else {
+                    showSnackbar('Vote submitted', 'success')
+                }
+            },
+            error: function (xhr, status, error) {
+                if (xhr.status === 403) {
+                    showSnackbar(xhr.responseJSON.detail, 'danger')
+                } else {
+                    showSnackbar('Unable to submit vote', 'danger')
+                }
+            }
+        });
+    }
+
+    const ctr_thresh = 100;
+    var end = null;
+    var timeout = 30;
+    var emojiCtr = 0;
+
+    function getTimeSeconds() {
+        var date = new Date();
+        return (date.getTime() / 1000);
+    }
+    function checkEmojiCtr() {
+        emojiCtr++;
+
+        if (emojiCtr > ctr_thresh) {
+            if (!end) {
+                alert('You are sending too many requests. Please calm down.')
+                end = getTimeSeconds() + timeout;
+                return false;
+            }
+            var current = getTimeSeconds();
+            if (current < end) {
+                showSnackbar(`You have been timed out, try again in ${Math.ceil(end - current)} seconds`, "danger");
+                return false
+            } else {
+                end = null;
+                emojiCtr = 0;
+            }
+        }
+        return true
+    }
+
+    function sendEmoji(emojiText) {
+        if (checkEmojiCtr()) {
+            // send emoji via socket rather than via request
+            socket.send(JSON.stringify({
+                'command': 'send_emoji',
+                'message': emojiText
+            }));
+        }
+    }
+
+
+    function toggleZoom(event) {
+        var img = event.target;
+        var container = img.parentNode;
+
+        if (container.classList.contains("zoom-in")) {
+            zoomOut(event);
+        } else {
+            zoomIn(event);
+        }
+    }
+
+    function zoomIn(event) {
+        var img = event.target;
+        var container = img.parentNode;
+
+        var rect = img.getBoundingClientRect();
+        var offsetX = event.clientX - rect.left;
+        var offsetY = event.clientY - rect.top;
+
+        var zoomRatio = 2; // Adjust the zoom level as desired
+
+        container.classList.add("zoom-in");
+        container.classList.remove("zoom-out");
+
+        img.style.transformOrigin = offsetX + "px " + offsetY + "px";
+        img.style.transform = "scale(" + zoomRatio + ")";
+    }
+
+    function zoomOut(event) {
+        var img = event.target;
+        var container = img.parentNode;
+
+        container.classList.add("zoom-out");
+        container.classList.remove("zoom-in");
+        img.style.transform = "scale(1)";
+    }
+
+    function getRandomEmoji() {
+        const randomCodePoint = Math.floor(Math.random() * (0x1F6FF - 0x1F300 + 1)) + 0x1F300;
+        return `&#${randomCodePoint};`;
+    }
+    function createEmojiBtns() {
+        const emojis = [
+            '&#127378', //'🆒'
+            '&#128175',//'💯',
+            '&#128170',//'💪',
+            '&#128169',//'💩',
+            '&#128293',//'🔥',
+            '&#128514',//'😂',
+            '&#128556',//'😬',
+            '&#128579',//'🙃',
+            '&#129312',//'🤠',
+            '&#129321',//'🤩',
+            '&#129408',//'🦀',
+            '&#129504',//'🧠',
+            '&#128079',//'👏',
+            '&#128076',//'👌',
+            '&#128077',//'👍',
+            '&#127942',//'🏆',
+            '&#127881',//'🎉',
+            '&#127752',//'🌈',
+            '&#10067',//'❓',
+            '&#9989',//'✅',
+            '&#9940',//'⛔',
+            '&#9889',//'⚡',
+            '&#11088',//'⭐',
+            '&#9749',//☕
+            '&#10024',//✨
+            '&#127383',//🆗
+            '&#127775',//🌟
+            '&#127775',//🌟
+
+        ];
+
+        $('#emoji-container').empty()
+        const numBtns = 3;
+        for (i = 0; i < numBtns; i++) {
+            var emoji = emojis[Math.floor(Math.random() * emojis.length)];
+            const index = emojis.indexOf(emoji);
+            if (index > -1) { // only splice array when item is found
+                emojis.splice(index, 1); // 2nd parameter means remove one item only
+            }
+            if (Math.random() < 0.3) {
+                emoji = getRandomEmoji();
+            }
+
+            $('<button>', {
+                id: `emoji-${i}`,
+                class: 'btn btn-light emoji-button e-btn',
+                html: emoji,
+                disabled: emojiTimeout ? true : false
+            }).appendTo('#emoji-container');
+        }
+        // the event trigger needs to be repeated after the elements are created
+        $(".e-btn").on('click', function () {
+            var $this = $(this);
+            const emojiText = $this.text();
+            sendEmoji(emojiText);
+            const fillDiv = $('#fill-div');
+            fillDiv.css('background-color', 'black');
+            fillDiv.addClass('div-fill');
+            $('.emoji-button').attr('disabled', true);
+
+            emojiTimeout = setTimeout(function () {
+                fillDiv.removeClass('div-fill');
+                $('.emoji-button').attr('disabled', false);
+                fillDiv.css('background-color', 'white');
+                emojiTimeout = 0;
+            }, 2000); // Adjust the cooldown duration as desired
+        });
+    }
+
+</script>

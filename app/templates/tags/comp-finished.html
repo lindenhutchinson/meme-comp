@@ -1,0 +1,79 @@
+<div id="comp-finished" class="col row g-0" {% if not competition.finished %}style="display:none" {% endif %}>
+    <div class="card shadow">
+        <div class="card-header">
+            <div class="card-title">
+                <h2>Competition Results</h2>
+            </div>
+            <div class="to-details">
+                <a href="{% url 'competition_results' competition.name %}"
+                    class="btn btn-sm btn-primary back-btn">Detailed Results</a>
+            </div>
+        </div>
+        <div class="card-body g-0">
+            <div class="row results-container justify-content-center">
+                <div id="winning-meme" class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
+                    <div class="row item-header">
+                        <h5 class="card-title">{{ top_meme.participant }}</h5>
+                        <h6 class="card-subtitle">Score: {{ top_meme.score }}</h6>
+                    </div>
+                    <div class="row meme-item-body">
+                        <div class="winning-container">
+                            {% if competition.finished %}
+                            <img src="/competition/{{ competition.name }}/memes/{{ top_meme.id }}"
+                                alt="Meme Image" class="card-img-top">
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
+                    <div class="item-header row">
+                        <h5 class="card-title">Honourable Mentions</h5>
+                    </div>
+                    <div id="mentions" class="meme-item-body row">
+                        <strong class="m-0">Gracious Reviewer</strong>
+                        <span id="highest_score_given"
+                            class="mb-3">{{competition.highest_avg_score_given.participant}} gave a
+                            {{competition.highest_avg_score_given.score}} average score</span>
+
+                        <strong class="m-0">Harshest Critic</strong>
+                        <span id="lowest_score_given"
+                            class="mb-3">{{competition.lowest_avg_score_given.participant}} gave a
+                            {{competition.lowest_avg_score_given.score}} average score</span>
+
+                        <strong class="m-0">Consistent Creator</strong>
+                        <span id="highest_avg_score"
+                            class="mb-3">{{competition.highest_avg_score_received.participant}} received a
+                            {{competition.highest_avg_score_received.score}} weighted score</span>
+
+                        <strong class="m-0">Unbiased Observer</strong>
+                        <span id="avg_own_score" class="mb-3">{{competition.lowest_avg_own_memes.participant}}
+                            gave themselves a {{competition.lowest_avg_own_memes.score}} average score</span>
+
+                        <strong class="m-0">Prolific Producer</strong>
+                        <span id="most_submitted"
+                            class="mb-3">{{competition.highest_memes_submitted.participant}} submitted
+                            {{competition.highest_memes_submitted.num_memes}} memes</span>
+
+                        <strong class="m-0">Rapid Grader</strong>
+                        <span id="fastest_voter" class="mb-3">{{competition.lowest_avg_vote_time.participant}}
+                            averaged {{competition.lowest_avg_vote_time.vote_time}} seconds per vote</span>
+
+                        <strong class="m-0">Thoughtful Assessor</strong>
+                        <span id="slowest_voter" class="mb-3">{{competition.highest_avg_vote_time.participant}}
+                            averaged {{competition.highest_avg_vote_time.vote_time}} seconds per vote</span>
+                    </div>
+                </div>
+                <div class="shadow col-lg-3 col-12 m-2 meme-item">
+                    <div class="row">
+                        <h5 class="card-title">Statistics</h5>
+                    </div>
+                    <div id="statistics" class="row meme-item-body">
+                        <p>Average Meme Score: <span id="avg_meme_score">{{competition.avg_meme_score}}</span>
+                        </p>
+                        <p>Average Vote Time: <span id="avg_vote_time">{{competition.avg_vote_time}}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

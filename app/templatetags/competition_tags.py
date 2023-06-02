@@ -1,0 +1,38 @@
+# emoji_tags.py
+from django import template
+
+register = template.Library()
+
+@register.inclusion_tag('tags/emoji-stuff.html')
+def emoji_stuff():
+    return {}
+
+@register.inclusion_tag('tags/comp-card.html')
+def comp_card(user, competition, host):
+    return {
+        'user':user,
+        'competition':competition,
+        'host':host
+    }
+
+@register.inclusion_tag('tags/comp-waiting.html')
+def comp_waiting(participant, competition):
+    return {
+        'participant':participant,
+        'competition':competition,
+    }
+
+@register.inclusion_tag('tags/comp-voting.html')
+def comp_voting(competition):
+    return {
+        'competition':competition,
+    }
+
+
+@register.inclusion_tag('tags/comp-finished.html')
+def comp_finished(top_meme, competition):
+    return {
+        'competition':competition,
+        'top_meme':top_meme
+    }
+
