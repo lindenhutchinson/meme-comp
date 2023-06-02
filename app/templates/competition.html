@@ -4,8 +4,8 @@
 <div id="snackbar"></div>
 <div class="text-center g-0 mb-4">
 	<div class="row m-2">
-		{% comp_card request.user competition request.get_host %}
-
+		{% comp_card request.user competition %}
+		
 		{% comp_waiting participant competition %}
 
 		{% comp_voting competition %}
@@ -88,7 +88,7 @@
 					} else if (Math.random() < 0.05) {
 						showSnackbar(`Look who showed up, it's ${participantName}`, 'success')
 					} else if (Math.random() < 0.05) {
-						showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`)
+						showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`, 'success')
 					} else {
 						showSnackbar(`${participantName} joined`, 'success');
 					}
@@ -100,34 +100,36 @@
 					$("#num_memes").text(text);
 
 				} else if (command === "competition_cancelled") {
-					$("#comp-started").css('display', 'none')
-					$("#comp-finished").css('display', 'none')
-					$("#comp-waiting").css('display', 'inline')
-					$("#current-meme-image").attr('src', '')
+					$("#comp-started").css('display', 'none');
+					$("#comp-finished").css('display', 'none');
+					$("#comp-waiting").css('display', '');
+
 					$('input[name="vote"]').prop('checked', false);
 					$("#num_votes").text('0');
 					$("#waiting-msg").text('Waiting for {{competition.owner.username}} to start the competition...');
+					$("#current-meme-image").attr('src', '');
+					
 					showSnackbar('Competition cancelled', 'info');
-
 				} else if (command === "next_meme") {
 					const memeId = message.data.id;
 					const memeCtr = message.data.ctr;
 					const numMemes = message.data.num_memes
-					$("#comp-started").css('display', '')
-					$("#comp-waiting").css('display', 'none')
+					$("#comp-started").css('display', '');
+					$("#comp-waiting").css('display', 'none');
+
+					$("#waiting-msg").text('Competition has started');
 					$('input[name="vote"]').prop('checked', false);
 					$("#num_votes").text('0');
-					$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
-					$("#waiting-msg").text('Competition has started');
 					$('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);
-					showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
-				} else if (command === "meme_voted") {
-					$("#num_votes").text(message.data)
-				} else if (command === "competition_results") {
 
-					$("#comp-started").css('display', 'none')
-					$("#comp-waiting").css('display', 'none')
-					$("#comp-finished").css('display', '')
+					$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
+					
+					showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
+				} else if (command === "competition_results") {
+					$("#comp-started").css('display', 'none');
+					$("#comp-waiting").css('display', 'none');
+					$("#comp-finished").css('display', '');
+
 					$("#next-meme-btn").css('display', 'none');
 					$("#waiting-msg").text('Competition has finished');
 
@@ -154,17 +156,20 @@
 							$(`#${key}`).text(value);
 						}
 					}
-				} else if (command == 'user_active') {
-					const id = message.data['id'];
-					const active = message.data['active']
-					updateParticipantStatus(id, active);
 				} else if (command == 'update_emoji') {
 					const emoji = message.data;
 					createEmoji(emoji)
 				} else if (command == 'update_shame') {
 					const text = message.data;
 					showSnackbar(text, 'danger');
+				} else if (command === "meme_voted") {
+					$("#num_votes").text(message.data)
 				}
+				// else if (command == 'user_active') {
+				// 	const id = message.data['id'];
+				// 	const active = message.data['active']
+				// 	updateParticipantStatus(id, active);
+				// }
 			};
 
 			socket.onclose = function (event) {

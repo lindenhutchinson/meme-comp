@@ -220,40 +220,21 @@ def meme_vote(request, comp_name):
         vote = Vote.objects.get(meme=meme, participant=participant, competition=competition)
         vote.score = score
         vote.save()
+        return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
+
     except Vote.DoesNotExist:
         # create a vote using the meme, participant and the given score
         # also set "started_at" to when the competition last updated
         # this will allow calculations of how long the user took to vote
         vote = Vote.objects.create(competition=competition, meme=meme, participant=participant, score=score, started_at=competition.updated_at)
         total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
-        send_channel_message(competition.name, 'meme_voted', total_votes['total_votes'])
+        
+        # if all participants have voted,
+        # automatically advance the competition
+        competition.refresh_from_db()
+        if competition.current_meme.votes.count() == competition.num_participants:
+            do_advance_competition(competition)
+        else:
+            send_channel_message(competition.name, 'meme_voted', total_votes['total_votes'])
 
-    competition.refresh_from_db()
-    if competition.current_meme.votes.count() == competition.num_participants:
-        do_advance_competition(competition)
-
-    return Response({'success': True}, status=status.HTTP_200_OK)
-
-
-
-# @api_view(['POST'])
-# @authentication_classes([SessionAuthentication])
-# @permission_classes([IsAuthenticated])
-# def emoji_send(request, comp_name):
-#     input_text = request.data.get('text')
-    
-#     competition = get_object_or_404(Competition, name=comp_name)
-#     # ensure the request user is a member of the competition
-#     get_object_or_404(Participant, user=request.user, competition=competition)
-#     # an emoji in unicode is 6 integers
-#     try:
-#         emoji = re.search(r'(\d{4,6})', f'{ord(input_text)}')
-#         emoji_text = chr(int(emoji.group(1)))
-#         if emoji_text:
-#             send_channel_message(competition.name, 'update_emoji', emoji_text)
-#     except TypeError:
-#         send_shame_message(competition.name, request.user.username)
-#         return Response({'detail': 'Nice try :)'}, status=status.HTTP_400_BAD_REQUEST)
-
-    
-#     return Response({'success': True}, status=status.HTTP_200_OK)
+        return Response({'success': True}, status=status.HTTP_201_CREATED)

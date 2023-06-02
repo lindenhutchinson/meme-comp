@@ -102,7 +102,7 @@
 	
 	function copyLink() {
 		// Get the text field
-		var compLink = "{{ host }}{% url 'competition' competition.name %}";
+		var compLink = window.location.host + "{% url 'competition' competition.name %}";
 		navigator.clipboard.writeText(compLink)
 		console.log('copied', compLink)
 

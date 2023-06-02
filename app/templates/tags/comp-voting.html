@@ -68,7 +68,8 @@
                 </div>
             </div>
             <div class="g-0 image-zoom">
-                {% emoji_stuff %}
+                <div id="emoji"></div>
+
                 <img id="current-meme-image" {% if competition.started and competition.current_meme %}
                     src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}" {% endif %}
                     alt="Current Meme" class="current-meme" onclick="toggleZoom(event)" onmouseleave="zoomOut(event)" />
@@ -177,7 +178,6 @@
             }));
         }
     }
-
 
     function toggleZoom(event) {
         var img = event.target;
@@ -290,5 +290,150 @@
             }, 2000); // Adjust the cooldown duration as desired
         });
     }
+    /**
+     * Generates a random number within the specified range.
+     *
+     * @param {number} min - The minimum value of the range (inclusive).
+     * @param {number} max - The maximum value of the range (inclusive).
+     * @returns {number} A random number within the specified range.
+     */
+    function getRandomNumber(min, max) {
+        return Math.ceil(Math.random() * (max - min) + min);
+    }
 
+    /**
+     * Sets random movement values for an emoji element.
+     *
+     * @param {jQuery} emojiElement - The jQuery object representing the emoji element.
+     * @param {string} emojiText - The text to be displayed in the emoji element.
+     */
+    function setRandomMovement(emojiElement, emojiText) {
+        emojiElement.css('display', '');
+        var startX = `${50 + getRandomNumber(-30, 30)}%`;
+        var startY = `${25 + getRandomNumber(0, 25)}%`;
+        var deg = 10;
+        var posRotation = `${deg}deg`;
+        var negRotation = `${-1*deg}deg`;
+        // document.documentElement.style.setProperty('--start-x', startX);
+        // document.documentElement.style.setProperty('--start-y', startY);
+        document.documentElement.style.setProperty('--neg-rotation', negRotation);
+        document.documentElement.style.setProperty('--pos-rotation', posRotation);
+        emojiElement.css('top', startY);
+        emojiElement.css('left', startX)
+        emojiElement.text(emojiText);
+    }
+
+    /**
+     * Creates an emoji element with random movement and removes it after a certain time.
+     *
+     * @param {string} emojiText - The text to be displayed in the emoji element.
+     */
+    function createEmoji(emojiText) {
+        const id = getRandomNumber(1000, 9999);
+        const emojiBody = $('#emoji');
+        const emojiElement = $('<div>', {
+                id: id,
+                class: 'emoji',
+                style: 'display:none'
+        }).appendTo('#emoji');
+
+        setRandomMovement(emojiElement, emojiText);
+
+        setTimeout(function() {
+            emojiElement.text('');
+            emojiElement.css('display', 'none');
+            emojiBody.remove(emojiElement);
+        }, 1750);
+    }
 </script>
+
+<style>
+	#refresh-emojis {
+		margin-left:10px;
+		flex-basis:fit-content;
+		border-radius:50%;
+
+	}
+	#emoji-container {
+		display:flex;
+		flex-direction: row;
+		justify-content: center;
+		flex-wrap:wrap;
+	}
+	.emoji-button {
+		border-radius:50%;
+		width:40px;
+		height:40px;
+		font-size:20px;
+		display:flex;
+		justify-content: center;
+		align-items: center;
+		margin: 15px;
+	}
+	#fill-div {
+		border-radius:30px;
+		width: 100px;
+		height: 10px;
+		background-color: white;
+		border: none;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.div-fill::after {
+		content:'';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background-color: white;
+		animation: fillAnimation 2s linear forwards;
+		pointer-events: none;
+	}
+
+	@keyframes fillAnimation {
+	0% { left: -100%; }
+	100% { left: 0; }
+	}
+
+	.emoji {
+		z-index:99999;
+		position: absolute;
+		/* top: var(--start-y);
+		left:  var(--start-x); */
+		transform: translate(-50%, -50%);
+		transform: rotate(var(--neg-rotation));
+		font-size: 5rem;
+		animation: moveEmoji ease-in 2s;
+		animation-duration: 2s;
+		animation-name: moveEmoji;
+		animation-iteration-count: 1;
+		animation-timing-function: ease-in
+	}
+
+	@keyframes moveEmoji {
+		0% { 
+			/* transform: translate(-50%, -50%);  */
+			scale: 0.2;
+			opacity: 1;
+			transform: rotate(var(--neg-rotation));
+		}
+		25% {
+			transform: rotate(var(--pos-rotation));
+		}
+		50% {
+			transform: rotate(var(--neg-rotation));
+		}
+		75% {
+			transform: rotate(var(--pos-rotation));
+		}
+		100% { 
+			/* transform: translate(calc(-50% + var(--move-x)), calc(-50% + var(--move-y)));  */
+			opacity: 0;
+			scale: 1;
+			display: none;
+			transform: rotate(var(--neg-rotation));
+		}
+	}
+</style>
