@@ -8,6 +8,8 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib import messages
 from django.shortcuts import redirect
+import pytz
+from django.utils import timezone
 
 def redirect_and_flash_error(request, error):
     messages.error(request, error)
@@ -16,7 +18,7 @@ def redirect_and_flash_error(request, error):
 def send_channel_message(comp_name, consumer, data=None):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        comp_name, {"type": consumer, "data": data}
+        comp_name, {"type": 'send_update', "data": data, "command":consumer}
     )
 
 def generate_random_string(length):
@@ -106,6 +108,13 @@ def check_emoji_text(text):
         return emoji_text or False
     except TypeError:
         return False
+
+def convert_to_localtime(utctime):
+    fmt = '%A %d %b - %I:%M%p'
+    utc = utctime.replace(tzinfo=pytz.UTC)
+    print(timezone.get_current_timezone())
+    localtz = utc.astimezone(timezone.get_current_timezone())
+    return localtz.strftime(fmt)
 
 def do_advance_competition(competition):
     # attempt to get a random next meme for the competition

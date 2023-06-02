@@ -5,7 +5,7 @@
 	<div class="row m-2">
 		<!-- TOP CARD (competition details/owner controls) -->
 		<div class="col-lg-3 col-12 text-center mb-2"style="height:fit-content">
-			<div class="card">
+			<div class="card shadow">
 				<div class="card-header">
 					<h2>{{ competition.theme }}</h2>
 					<small class="card-title">Hosted by {{ competition.owner }}</small>
@@ -42,9 +42,9 @@
 											<span style="text-align:center">
 												{{ part.name }}
 											</span>
-											<span style="text-align:end">
+											<!-- <span style="text-align:end">
 												<i id="sleep-{{part.id}}" class="mr-2 bi bi-cup-hot {% if part.active %} hidden {% endif %}"></i>
-											</span>
+											</span> -->
 										</div>
 									</li>
 								{% endfor %}
@@ -99,7 +99,7 @@
 		<div id="comp-finished"
 				class="col row g-0"
 				{% if not competition.finished %}style="display:none"{% endif %}>
-			<div class="card">
+			<div class="card shadow">
 				<div class="card-header">
 					<div class="card-title">
 						<h2>Competition Results</h2>
@@ -110,7 +110,7 @@
 				</div>
 				<div class="card-body g-0">
 					<div class="row results-container justify-content-center">
-						<div id="winning-meme" class="col-lg-5 col-12 m-2 meme-item min-height-item">
+						<div id="winning-meme" class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
 							<div class="row item-header">
 								<h5 class="card-title">{{ top_meme.participant }}</h5>
 								<h6 class="card-subtitle">Score: {{ top_meme.score }}</h6>
@@ -125,7 +125,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="col-lg-5 col-12 m-2 meme-item min-height-item">
+						<div class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
 							<div class="item-header row">
 								<h5 class="card-title">Honourable Mentions</h5>
 							</div>
@@ -152,7 +152,7 @@
 								<span id="slowest_voter" class="mb-3">{{competition.highest_avg_vote_time.participant}} averaged {{competition.highest_avg_vote_time.vote_time}} seconds per vote</span>
 							</div>
 						</div>
-						<div class="col-lg-3 col-12 m-2 meme-item">
+						<div class="shadow col-lg-3 col-12 m-2 meme-item">
 							<div class="row">
 								<h5 class="card-title">Statistics</h5>
 							</div>
@@ -168,7 +168,7 @@
 		<!-- COMPETITION VOTING (display current meme) -->
 		<div id="comp-started" class="col text-center" {% if not competition.started or not competition.current_meme %}style="display:none"{% endif %}>
 			<div class="vote-container">
-				<div class="card" style="width:100%">
+				<div class="card shadow" style="width:100%">
 					<div class="card-header">
 						<div class="row pt-2">
 							<div class="col">
@@ -268,7 +268,7 @@
 		<div id="comp-waiting"
 				class="col"
 				{% if competition.started or competition.finished %}style="display:none"{% endif %}>
-			<div class="card">
+			<div class="card shadow">
 				<div class="card-header">
 					<h4 class="card-title">Memes</h4>
 				</div>
@@ -1077,9 +1077,6 @@
 							<div class="d-flex justify-content-between align-items-center">
 								<span style="text-align:center">
 									${participantName}
-								</span>
-								<span style="text-align:end">
-									<i id="sleep-${participantId}" class="mr-2 bi bi-cup-hot {% if part.active %} hidden {% endif %}"></i>
 								</span>
 							</div>
 						</li>

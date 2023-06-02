@@ -43,7 +43,7 @@ def meme_delete(request, meme_id):
     meme.delete()
     # Update total memes count
     total_memes = competition.memes.count()
-    send_channel_message(competition.name, 'update_uploaded', {
+    send_channel_message(competition.name, 'meme_uploaded', {
         'num_memes':total_memes,
         'num_uploaders':competition.num_uploaders
     })
@@ -79,7 +79,7 @@ def meme_upload(request, comp_name):
 
         competition.refresh_from_db()
         total_memes = competition.memes.count()
-        send_channel_message(competition.name, 'update_uploaded', {
+        send_channel_message(competition.name, 'meme_uploaded', {
             'num_memes':total_memes,
             'num_uploaders':competition.num_uploaders
         })
@@ -192,7 +192,7 @@ def cancel_competition(request, comp_name):
     votes.delete()       
 
     # alert the channel that the competition has been cancelled
-    send_channel_message(competition.name, 'cancel_competition')
+    send_channel_message(competition.name, 'competition_cancelled')
     return Response(status=status.HTTP_200_OK)           
 
 
@@ -226,7 +226,7 @@ def meme_vote(request, comp_name):
         # this will allow calculations of how long the user took to vote
         vote = Vote.objects.create(competition=competition, meme=meme, participant=participant, score=score, started_at=competition.updated_at)
         total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
-        send_channel_message(competition.name, 'update_voted', total_votes['total_votes'])
+        send_channel_message(competition.name, 'meme_voted', total_votes['total_votes'])
 
     competition.refresh_from_db()
     if competition.current_meme.votes.count() == competition.num_participants:

@@ -5,7 +5,7 @@
   <a href="{% url 'competition' competition.name %}" class="btn btn-sm btn-primary back-btn">Back to Competition</a>
   <h1 class="d-flex justify-content-center">Competition ({{competition.theme}}) Results</h1>
   {% for participant in participants %}
-  <div class="m-2 results-item">
+  <div class="m-2 results-item shadow">
     <div class="item-header row">
       <h5 class="card-title">{{ participant.name }}</h5>
     </div>

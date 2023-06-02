@@ -51,8 +51,8 @@
                 <ul class="list-group list-group-flush">
                     {% if competitions %}
                     {% for competition in competitions %}
-                    <li class="list-group-item">
-                        <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a><small>{{competition.updated_at}}</small>                    
                     </li>
                     {% endfor %}
                     {% else %}

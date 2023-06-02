@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404, HttpResponse
-from .utils import get_current_user, generate_random_string, get_top_meme, send_channel_message
+from .utils import convert_to_localtime, generate_random_string, get_top_meme, send_channel_message
 from .forms import CompetitionForm, JoinCompetitionForm, LoginForm, UserForm, UploadMemeForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -117,7 +117,7 @@ def lobby(request):
                             'name':participant.name,
                             'id':participant.id
                         }
-                        send_channel_message(competition.name, 'update_joined', data)
+                        send_channel_message(competition.name, 'user_joined', data)
                     else:
                         messages.warning(request, 'You have already joined this competition.')
                         
@@ -129,6 +129,7 @@ def lobby(request):
         competitions.append({
             'name': participant.competition.name,
             'theme': participant.competition.theme,
+            'updated_at':convert_to_localtime(participant.competition.updated_at)
         })
     
 
@@ -148,7 +149,7 @@ def competition(request, comp_name):
             'name':participant.name,
             'id':participant.id
         }
-        send_channel_message(comp.name, 'update_joined', data)
+        send_channel_message(comp.name, 'user_joined', data)
     
     request.session['competition_id'] = comp.id
     request.session['participant_id'] = participant.id
