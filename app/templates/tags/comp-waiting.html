@@ -36,7 +36,7 @@
                             <div class="image-container">
                                 <img {% if not competition.started and not competition.finished %}
                                     src="{% url 'serve_file' competition.name meme.id %}" {% endif %}
-                                    alt="{{ meme.title }}" class="square-image d-block" />
+                                    alt="One of your dank memes" class="square-image d-block" />
                                 <button type="submit" class="btn btn-sm btn-danger delete-button"
                                     onclick="deleteMeme(this)" data-meme-id="{{ meme.id }}">Delete</button>
                             </div>

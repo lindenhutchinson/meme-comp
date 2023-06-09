@@ -12,7 +12,12 @@
                     </div>
                     <div class="col">
                         <h4>
-                            Total votes: <span id="num_votes">{{ competition.current_meme.num_votes }}</span>
+                            Total votes: 
+                            <span id="num_votes">
+                            {% if competition.current_meme %}
+                                {{ competition.current_meme.num_votes }}
+                            {% endif %}
+                            </span>
                         </h4>
                     </div>
                 </div>
@@ -217,7 +222,7 @@
     }
 
     function getRandomEmoji() {
-        const randomCodePoint = Math.floor(Math.random() * (0x1F6FF - 0x1F300 + 1)) + 0x1F300;
+        var randomCodePoint = Math.floor(Math.random() * (0x1F601 - 0x1F64F  + 1)) + 0x1F64F;
         return `&#${randomCodePoint};`;
     }
     function createEmojiBtns() {
@@ -246,11 +251,8 @@
             '&#9889',//'⚡',
             '&#11088',//'⭐',
             '&#9749',//☕
-            '&#10024',//✨
             '&#127383',//🆗
             '&#127775',//🌟
-            '&#127775',//🌟
-
         ];
 
         $('#emoji-container').empty()
@@ -261,7 +263,7 @@
             if (index > -1) { // only splice array when item is found
                 emojis.splice(index, 1); // 2nd parameter means remove one item only
             }
-            if (Math.random() < 0.3) {
+            if (Math.random() < 0.1) {
                 emoji = getRandomEmoji();
             }
 
