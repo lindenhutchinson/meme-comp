@@ -296,3 +296,7 @@ body {
 .carousel-fade:hover .carousel-control-next {
     opacity: 1;
 }
+#button-div {
+    position:absolute;
+    display:none;
+}

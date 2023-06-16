@@ -43,6 +43,17 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
                         "command": "update_emoji"
                     },
                 )
+        elif command == 'the_button':
+            user = message
+            await self.channel_layer.group_send(
+                self.comp_name,
+                {
+                    "type": "send_update",
+                    "data": user,
+                    "command": "update_button"
+                },
+            )
+
 
 
     # this is causing problems - disabling for now

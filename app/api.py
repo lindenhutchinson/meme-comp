@@ -11,10 +11,12 @@ from django.db.models import Count
 from .utils import do_advance_competition, send_shame_message, set_next_meme_for_competition, send_channel_message
 from .models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
+import time
+
 
 @api_view(['DELETE'])
-@authentication_classes([SessionAuthentication])  # Use appropriate authentication classes
-@permission_classes([IsAuthenticated])  # Use appropriate permission classes
+@authentication_classes([SessionAuthentication]) 
+@permission_classes([IsAuthenticated]) 
 def meme_delete(request, meme_id):
     # Retrieve the meme object
     meme = get_object_or_404(Meme, id=meme_id)
@@ -23,20 +25,26 @@ def meme_delete(request, meme_id):
     if meme.participant.user != request.user:
         # User is not authorized to delete the meme
         print(f"{request.user.username} attempted to delete the wrong meme")
+        send_shame_message(competition, request.user.username)
         return Response({"detail": "Delete your own memes, you donkey"}, status=status.HTTP_403_FORBIDDEN)
 
     meme.image.close()
     # Delete the file from the file system
     meme_image_path = os.path.join(settings.MEDIA_ROOT, meme.image.name)
     sanity_ctr = 0
-    while os.path.exists(meme_image_path) and sanity_ctr < 50:
+    MAX_DELETE_ATTEMPTS = 10
+    # images sometimes can't be deleted because they are open
+    # keep trying to close the image.
+    while os.path.exists(meme_image_path) and sanity_ctr < MAX_DELETE_ATTEMPTS:
         sanity_ctr +=1
         try:
             os.remove(meme_image_path)
         except PermissionError:
+            print(f'Attempt to delete meme: {sanity_ctr}')
             meme.image.close()
+            time.sleep(0.5)
             
-    if sanity_ctr == 50:
+    if sanity_ctr == MAX_DELETE_ATTEMPTS:
         return Response({"detail": "Couldn't delete, try again"}, status=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
 
     # Delete the meme
@@ -51,8 +59,8 @@ def meme_delete(request, meme_id):
 
 
 @api_view(['POST'])
-@authentication_classes([SessionAuthentication])  # Use appropriate authentication classes
-@permission_classes([IsAuthenticated])  # Use appropriate permission classes
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
 def meme_upload(request, comp_name):
     competition = get_object_or_404(Competition, name=comp_name)
     participant = Participant.objects.get(competition=competition, user=request.user)
@@ -63,6 +71,7 @@ def meme_upload(request, comp_name):
     serializer = MemeSerializer(data=request.data)
     if serializer.is_valid():
         # these values are hidden inputs on the form that can be edited by the user on the page
+        # dont really need these, but it's funny to catch someone trying that.
         if serializer.validated_data['competition'] != competition or serializer.validated_data['participant'] != participant:
             print(f"{request.user.username} attempted an invalid upload")
             send_shame_message(competition.name, request.user.username)
@@ -75,7 +84,10 @@ def meme_upload(request, comp_name):
                 competition=competition,
                 participant=participant
             )
-            meme_list.append(meme.id)
+            if meme:
+                meme_list.append(meme.id)
+            else:
+                return Response({'detail':'Error uploading meme'}, status=status.HTTP_400_BAD_REQUEST)
 
         competition.refresh_from_db()
         total_memes = competition.memes.count()
@@ -87,6 +99,50 @@ def meme_upload(request, comp_name):
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def meme_vote(request, comp_name):
+    score_text = request.data.get('vote')
+    competition = get_object_or_404(Competition, name=comp_name)
+    participant = get_object_or_404(Participant, user=request.user, competition=competition)
+    meme = competition.current_meme
+    
+    try:
+        score = int(score_text)
+    except TypeError:
+        print(f"{request.user.username} attempted an invalid vote - {score}")
+        send_shame_message(competition.name, request.user.username)
+        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if score < 0 or score > 5:
+        print(f"{request.user.username} attempted an invalid vote - {score}")
+        send_shame_message(competition.name, request.user.username)
+        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        vote = Vote.objects.get(meme=meme, participant=participant, competition=competition)
+        vote.score = score
+        vote.save()
+        return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
+
+    except Vote.DoesNotExist:
+        # create a vote using the meme, participant and the given score
+        # also set "started_at" to when the competition last updated
+        # this will allow calculations of how long the user took to vote
+        vote = Vote.objects.create(competition=competition, meme=meme, participant=participant, score=score, started_at=competition.updated_at)
+        total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
+        
+        # if all participants have voted,
+        # automatically advance the competition
+        competition.refresh_from_db()
+        if competition.current_meme.votes.count() == competition.num_participants:
+            do_advance_competition(competition)
+        else:
+            send_channel_message(competition.name, 'meme_voted', total_votes['total_votes'])
+
+        return Response({'success': True}, status=status.HTTP_201_CREATED)
+    
 
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication])
@@ -195,46 +251,3 @@ def cancel_competition(request, comp_name):
     send_channel_message(competition.name, 'competition_cancelled')
     return Response(status=status.HTTP_200_OK)           
 
-
-@api_view(['POST'])
-@authentication_classes([SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def meme_vote(request, comp_name):
-    score_text = request.data.get('vote')
-    competition = get_object_or_404(Competition, name=comp_name)
-    participant = get_object_or_404(Participant, user=request.user, competition=competition)
-    meme = competition.current_meme
-    
-    try:
-        score = int(score_text)
-    except TypeError:
-        print(f"{request.user.username} attempted an invalid vote - {score}")
-        send_shame_message(competition.name, request.user.username)
-        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
-
-    if score < 0 or score > 5:
-        print(f"{request.user.username} attempted an invalid vote - {score}")
-        send_shame_message(competition.name, request.user.username)
-        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        vote = Vote.objects.get(meme=meme, participant=participant, competition=competition)
-        vote.score = score
-        vote.save()
-        return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
-
-    except Vote.DoesNotExist:
-        # create a vote using the meme, participant and the given score
-        # also set "started_at" to when the competition last updated
-        # this will allow calculations of how long the user took to vote
-        vote = Vote.objects.create(competition=competition, meme=meme, participant=participant, score=score, started_at=competition.updated_at)
-        total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
-        
-        # if all participants have voted,
-        # automatically advance the competition
-        competition.refresh_from_db()
-        if competition.current_meme.votes.count() == competition.num_participants:
-            do_advance_competition(competition)
-        else:
-            send_channel_message(competition.name, 'meme_voted', total_votes['total_votes'])
-
-        return Response({'success': True}, status=status.HTTP_201_CREATED)

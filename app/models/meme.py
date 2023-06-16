@@ -2,22 +2,45 @@ import os
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
+from django.core.files.base import ContentFile
+from io import BytesIO
 
+# class MemeManager(models.Manager):
+#     def create(self, **obj_data):
+#         meme =  super().create(**obj_data)
+        
+#         # resize the image
+#         image = meme.image
+#         if not image.path.endswith('.gif'):
+#             try:
+#                 with Image.open(image.path) as im:
+#                     im.thumbnail((1000, 1000), Image.Resampling.BICUBIC)
+#                     im.save(image.path)
+#             except UnidentifiedImageError:
+#                 meme.delete()
+
+#         return meme
 
 class MemeManager(models.Manager):
-    def create(self, **obj_data):
-        meme =  super().create(**obj_data)
+    def save(self, *args, **kwargs):
+        image_file = self.instance.image
         
-        # resize the image
-        image = meme.image
-        if not image.path.endswith('.gif'):
-            with Image.open(image.path) as im:
-                im.thumbnail((1000, 1000), Image.Resampling.BICUBIC)
-                im.save(image.path)
+        if image_file:
+            try:
+                with Image.open(image_file) as image:
+                    image.verify()
+                    if image.format.lower() == 'gif':
+                        # Skip resizing for GIF images
+                        return super().save(*args, **kwargs)
 
-        return meme
-             
+                    # Resize the image
+                    image.thumbnail((1000, 1000), Image.Resampling.BICUBIC)
+                    meme = super().save(*args, **kwargs)
+                    image.save(meme.image.path, format='JPEG')
+
+            except UnidentifiedImageError:
+                return   
 
 class Meme(models.Model):
     image = models.ImageField(upload_to='memes')

@@ -1,11 +1,22 @@
 {% extends "base.html" %}
 {% load competition_tags %}
 {% block content %}
+<div id="button-div"><button class="btn btn-light emoji-button" onclick="clickButton()">🦀</button></div>
+<div id="crabs"></div>
+<script>
+	function clickButton() {
+		socket.send(JSON.stringify({
+			'command': 'the_button',
+			'message': '{{ participant.name}}'
+		}));
+		$('#button-div').remove()
+	}
+</script>
 <div id="snackbar"></div>
 <div class="text-center g-0 mb-4">
 	<div class="row m-2">
 		{% comp_card request.user competition %}
-		
+
 		{% comp_waiting participant competition %}
 
 		{% comp_voting competition %}
@@ -13,65 +24,95 @@
 		{% comp_finished top_meme competition %}
 	</div>
 </div>
-	<script>
-		var snackbarTimeout;
-		var prevColour;
-		function showSnackbar(message, colour) {
-			var snackbar = $("#snackbar");
-			if (snackbarTimeout) {
-				clearTimeout(snackbarTimeout);
-				snackbarTimeout = null;
-				snackbar.removeClass("show");
-			}
-			if (prevColour !== colour) {
-				snackbar.removeClass(`btn-${prevColour}`)
-				prevColour = null;
-			}
+<script>
+	$(document).ready(function() {
+		var x = getRandomNumber(0, self.innerWidth);
+		var y = getRandomNumber(0, self.innerHeight);
+		$('#button-div').css('left', x+'px')
+		$('#button-div').css('top', y+'px')
+	})
+	function sleep(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+	async function unleashTheCrabs() {
+		numCrabs = Math.random() * 100
 
-			snackbar.text(message);
-			snackbar.addClass(`btn-${colour}`)
+		for (i = 0; i < numCrabs; i++) {
+			const body = $('#crabs');
+			const element = $('<div>', {
+				class: 'emoji',
+				style: 'display:none'
+			}).appendTo(body);
 
-			prevColour = colour;
-			snackbar.addClass("show");
+			setRandomMovement(element, '🦀');
 
-			snackbarTimeout = setTimeout(function () {
-				snackbar.removeClass("show");
-			}, 2900); // Adjust the timeout duration as needed
+			setTimeout(function () {
+				element.text('');
+				element.css('display', 'none');
+				body.remove(element);
+			}, 1750);
+			await sleep(Math.random() * 200)
+		}
+	}
+
+	var snackbarTimeout;
+	var prevColour;
+	function showSnackbar(message, colour) {
+		var snackbar = $("#snackbar");
+		if (snackbarTimeout) {
+			clearTimeout(snackbarTimeout);
+			snackbarTimeout = null;
+			snackbar.removeClass("show");
+		}
+		if (prevColour !== colour) {
+			snackbar.removeClass(`btn-${prevColour}`)
+			prevColour = null;
 		}
 
-		// ------------------------ WEB SOCKETS -----------------------------------	
-		
-		const csrfToken = "{{csrf_token}}";
-		
-		// Open websocket connection
-		var socket = null; // Declare the socket variable outside the function
-		function connectWebSocket() {
-			socket = new WebSocket(
-				"{{websocket_scheme}}://" +
-				window.location.host +
-				"/{{websocket_scheme}}/competitions/{{ competition.name }}/participant/{{ participant.id }}/"
-			);
+		snackbar.text(message);
+		snackbar.addClass(`btn-${colour}`)
 
-			socket.onopen = function (event) {
-				console.log("Websocket connection opened.");
-			};
+		prevColour = colour;
+		snackbar.addClass("show");
 
-			// Handle received messages
-			socket.onmessage = function (event) {
-				var message = JSON.parse(event.data);
-				console.log(message);
+		snackbarTimeout = setTimeout(function () {
+			snackbar.removeClass("show");
+		}, 2900); // Adjust the timeout duration as needed
+	}
 
-				var command = message.command;
-				if (command === "user_joined") {
-					var participantName = message.data.name;
-					const participantId = message.data.id;
-					const numParticipants = message.data.num_participants;
-					var participantList = $("#participants");
+	// ------------------------ WEB SOCKETS -----------------------------------	
 
-					if (
-						participantList.find(`li[data-participant-id="${participantId}"]`).length === 0
-					) {
-						participantList.prepend(`
+	const csrfToken = "{{csrf_token}}";
+
+	// Open websocket connection
+	var socket = null; // Declare the socket variable outside the function
+	function connectWebSocket() {
+		socket = new WebSocket(
+			"{{websocket_scheme}}://" +
+			window.location.host +
+			"/{{websocket_scheme}}/competitions/{{ competition.name }}/participant/{{ participant.id }}/"
+		);
+
+		socket.onopen = function (event) {
+			console.log("Websocket connection opened.");
+		};
+
+		// Handle received messages
+		socket.onmessage = function (event) {
+			var message = JSON.parse(event.data);
+			console.log(message);
+
+			var command = message.command;
+			if (command === "user_joined") {
+				var participantName = message.data.name;
+				const participantId = message.data.id;
+				const numParticipants = message.data.num_participants;
+				var participantList = $("#participants");
+
+				if (
+					participantList.find(`li[data-participant-id="${participantId}"]`).length === 0
+				) {
+					participantList.prepend(`
 						<li class='list-group-item' data-participant-id="${participantId}">
 							<div class="d-flex justify-content-between align-items-center">
 								<span style="text-align:center">
@@ -80,64 +121,64 @@
 							</div>
 						</li>
 					`);
-					}
-					$('#num-participants').text(`(${numParticipants})`);
+				}
+				$('#num-participants').text(`(${numParticipants})`);
 
-					if (Math.random() < 0.05) {
-						showSnackbar(`Oh look, ${participantName} is here!`, 'success')
-					} else if (Math.random() < 0.05) {
-						showSnackbar(`Look who showed up, it's ${participantName}`, 'success')
-					} else if (Math.random() < 0.05) {
-						showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`, 'success')
-					} else {
-						showSnackbar(`${participantName} joined`, 'success');
-					}
-					updateParticipantStatus(participantId, true)
-				} else if (command === "meme_uploaded") {
-					const num_uploaders = message.data.num_uploaders;
-					const num_memes = message.data.num_memes;
-					const text = `${num_memes} meme${num_memes != 1 ? 's' : ''} submitted by ${num_uploaders} ${num_uploaders != 1 ? 'people' : 'person'}`
-					$("#num_memes").text(text);
+				if (Math.random() < 0.05) {
+					showSnackbar(`Oh look, ${participantName} is here!`, 'success')
+				} else if (Math.random() < 0.05) {
+					showSnackbar(`Look who showed up, it's ${participantName}`, 'success')
+				} else if (Math.random() < 0.05) {
+					showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`, 'success')
+				} else {
+					showSnackbar(`${participantName} joined`, 'success');
+				}
+				// updateParticipantStatus(participantId, true)
+			} else if (command === "meme_uploaded") {
+				const num_uploaders = message.data.num_uploaders;
+				const num_memes = message.data.num_memes;
+				const text = `${num_memes} meme${num_memes != 1 ? 's' : ''} submitted by ${num_uploaders} ${num_uploaders != 1 ? 'people' : 'person'}`
+				$("#num_memes").text(text);
 
-				} else if (command === "competition_cancelled") {
-					$("#comp-started").css('display', 'none');
-					$("#comp-finished").css('display', 'none');
-					$("#comp-waiting").css('display', '');
+			} else if (command === "competition_cancelled") {
+				$("#comp-started").css('display', 'none');
+				$("#comp-finished").css('display', 'none');
+				$("#comp-waiting").css('display', '');
 
-					$('input[name="vote"]').prop('checked', false);
-					$("#num_votes").text('0');
-					$("#waiting-msg").text('Waiting for {{competition.owner.username}} to start the competition...');
-					$("#current-meme-image").attr('src', '');
-					
-					showSnackbar('Competition cancelled', 'info');
-				} else if (command === "next_meme") {
-					const memeId = message.data.id;
-					const memeCtr = message.data.ctr;
-					const numMemes = message.data.num_memes
-					$("#comp-started").css('display', '');
-					$("#comp-waiting").css('display', 'none');
+				$('input[name="vote"]').prop('checked', false);
+				$("#num_votes").text('0');
+				$("#waiting-msg").text('Waiting for {{competition.owner.username}} to start the competition...');
+				$("#current-meme-image").attr('src', '');
 
-					$("#waiting-msg").text('Competition has started');
-					$('input[name="vote"]').prop('checked', false);
-					$("#num_votes").text('0');
-					$('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);
+				showSnackbar('Competition cancelled', 'info');
+			} else if (command === "next_meme") {
+				const memeId = message.data.id;
+				const memeCtr = message.data.ctr;
+				const numMemes = message.data.num_memes
+				$("#comp-started").css('display', '');
+				$("#comp-waiting").css('display', 'none');
 
-					$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
-					
-					showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
-				} else if (command === "competition_results") {
-					$("#comp-started").css('display', 'none');
-					$("#comp-waiting").css('display', 'none');
-					$("#comp-finished").css('display', '');
+				$("#waiting-msg").text('Competition has started');
+				$('input[name="vote"]').prop('checked', false);
+				$("#num_votes").text('0');
+				$('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);
 
-					$("#next-meme-btn").css('display', 'none');
-					$("#waiting-msg").text('Competition has finished');
+				$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
 
-					showSnackbar('Competition has finished', 'info')
+				showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
+			} else if (command === "competition_results") {
+				$("#comp-started").css('display', 'none');
+				$("#comp-waiting").css('display', 'none');
+				$("#comp-finished").css('display', '');
 
-					const results = message.data;
-					if (results) {
-						html = `
+				$("#next-meme-btn").css('display', 'none');
+				$("#waiting-msg").text('Competition has finished');
+
+				showSnackbar('Competition has finished', 'info')
+
+				const results = message.data;
+				if (results) {
+					html = `
 						<div class="row item-header">
 							<h5 class="card-title">${results.top_meme.participant}</h5>
 							<h6 class="card-subtitle">Score: ${results.top_meme.score}</h6>
@@ -151,40 +192,44 @@
 						</div>
 					`;
 
-						$('#winning-meme').html(html);
-						for (const [key, value] of Object.entries(results.statistics)) {
-							$(`#${key}`).text(value);
-						}
+					$('#winning-meme').html(html);
+					for (const [key, value] of Object.entries(results.statistics)) {
+						$(`#${key}`).text(value);
 					}
-				} else if (command == 'update_emoji') {
-					const emoji = message.data;
-					createEmoji(emoji)
-				} else if (command == 'update_shame') {
-					const text = message.data;
-					showSnackbar(text, 'danger');
-				} else if (command === "meme_voted") {
-					$("#num_votes").text(message.data)
 				}
-				// else if (command == 'user_active') {
-				// 	const id = message.data['id'];
-				// 	const active = message.data['active']
-				// 	updateParticipantStatus(id, active);
-				// }
-			};
+			} else if (command == 'update_emoji') {
+				const emoji = message.data;
+				createEmoji(emoji)
+			} else if (command == 'update_shame') {
+				const text = message.data;
+				showSnackbar(text, 'danger');
+			} else if (command === "meme_voted") {
+				$("#num_votes").text(message.data)
+			} else if (command == "update_button") {
+				const user = message.data;
+				showSnackbar(user + ' let the crabs out', 'danger')
+				unleashTheCrabs()
+			}
+			// else if (command == 'user_active') {
+			// 	const id = message.data['id'];
+			// 	const active = message.data['active']
+			// 	updateParticipantStatus(id, active);
+			// }
+		};
 
-			socket.onclose = function (event) {
-				console.log("Websocket connection closed.");
-				// Attempt to reconnect after a delay
-				setTimeout(connectWebSocket, 2000);
-			};
+		socket.onclose = function (event) {
+			console.log("Websocket connection closed.");
+			// Attempt to reconnect after a delay
+			setTimeout(connectWebSocket, 2000);
+		};
 
-			socket.onerror = function (error) {
-				console.error("Websocket error:", error);
-				setTimeout(connectWebSocket, 2000);
-			};
-		}
+		socket.onerror = function (error) {
+			console.error("Websocket error:", error);
+			setTimeout(connectWebSocket, 2000);
+		};
+	}
 
-		// Call the connectWebSocket function to establish the initial WebSocket connection
-		connectWebSocket();
-	</script>
+	// Call the connectWebSocket function to establish the initial WebSocket connection
+	connectWebSocket();
+</script>
 {% endblock content %}
