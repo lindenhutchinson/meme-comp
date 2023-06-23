@@ -4,12 +4,19 @@
 <div id="button-div"><button class="btn btn-light emoji-button" onclick="clickButton()">🦀</button></div>
 <div id="crabs"></div>
 <script>
+	var released = false;
 	function clickButton() {
-		socket.send(JSON.stringify({
-			'command': 'the_button',
-			'message': '{{ participant.name}}'
-		}));
-		$('#button-div').remove()
+		if(released) {
+			showSnackbar("It's time to let the crabs rest {{participant.name}}", "warning")
+		} else {
+
+			socket.send(JSON.stringify({
+				'command': 'the_button',
+				'message': '{{ participant.name}}'
+			}));
+			$('#button-div').remove()
+			released = true;
+		}
 	}
 </script>
 <div id="snackbar"></div>
