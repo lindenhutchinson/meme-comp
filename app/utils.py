@@ -15,10 +15,10 @@ def redirect_and_flash_error(request, error):
     messages.error(request, error)
     return redirect('home')
 
-def send_channel_message(comp_name, consumer, data=None):
+def send_channel_message(comp_name, command, data=None):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        comp_name, {"type": 'send_update', "data": data, "command":consumer}
+        comp_name, {"type": 'send_update', "data": data, "command":command}
     )
 
 def generate_random_string(length):
@@ -66,23 +66,57 @@ def set_next_meme_for_competition(competition_id):
 
     return competition
 
-def get_top_meme(competition_name):
+# def get_top_meme(competition_name):
+#     # Get the competition instance
+#     competition = Competition.objects.get(name=competition_name)
+
+#     # Aggregate the total vote scores for each meme in the competition
+#     memes = Meme.objects.filter(competition=competition)
+
+#     sorted_memes = sorted(memes, key=lambda meme: meme.total_score/(len(meme.votes.all()) or 1), reverse=True)
+#     meme = sorted_memes[0]
+#     score = round(meme.total_score / (len(meme.votes.all()) or 1), 2)
+    
+#     results = {
+#         'id':meme.id,
+#         'participant':meme.participant.name,
+#         'score': score
+#     }
+#     return results
+
+from django.db.models import F, Count, Sum
+
+def get_top_memes(comp_name):
     # Get the competition instance
-    competition = Competition.objects.get(name=competition_name)
+    competition = Competition.objects.get(name=comp_name)
 
-    # Aggregate the total vote scores for each meme in the competition
-    memes = Meme.objects.filter(competition=competition)
+    # Aggregate the total vote scores for each meme in the competition and sort in descending order
+    memes = Meme.objects.filter(competition=competition).annotate(
+        vote_count=Count('votes'),
+        total=Sum('votes__score')
+    ).annotate(
+        vote_score=F('total') / Count('votes', distinct=True)
+    ).order_by('-vote_score')
 
-    sorted_memes = sorted(memes, key=lambda meme: meme.total_score/(len(meme.votes.all()) or 1), reverse=True)
-    meme = sorted_memes[0]
-    score = round(meme.total_score / (len(meme.votes.all()) or 1), 2)
-    # Order the memes by total score in descending order and get the top three
-    results = {
-        'id':meme.id,
-        'participant':meme.participant.name,
-        'score': score
-    }
-    return results
+    meme = memes.first()
+    
+    if len(tying_memes := memes.filter(vote_score=meme.vote_score).values()) > 1:
+        return list(tying_memes)
+    else:
+        score = round(meme.vote_score, 2) if meme else 0
+        
+        results = {
+            'id': meme.id if meme else None,
+            'participant': meme.participant.name if meme else None,
+            'score': score
+        }
+        return [results]
+
+def 2do_tiebreaker(comp_name, tying_memes):
+    print(tying_memes)
+    
+    send_channel_message(comp_name, 'do_tiebreaker', tying_memes)
+
 
 def send_shame_message(comp_name, username):
     messages = [
@@ -145,9 +179,13 @@ def do_advance_competition(competition):
         competition.save()
         results = {}
         if len(competition.votes.all()):
-            top_meme = get_top_meme(competition.name)
-            results = {
-                'top_meme':top_meme,
-                'statistics':statistics
-            }
-        send_channel_message(competition.name, 'competition_results', results)
+            top_memes = get_top_memes(competition.name)
+            if len(top_memes) == 1:
+                results = {
+                    'top_meme':top_memes[0],
+                    'statistics':statistics
+                }
+                send_channel_message(competition.name, 'competition_results', results)
+                
+            else:
+                do_tiebreaker(competition.name, top_memes)
