@@ -3,6 +3,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
+from django.db.models import Sum, Count,F
 
 
 
@@ -11,7 +12,12 @@ def populate_winning_meme(apps, schema_editor):
 
     for competition in Competition.objects.all():
         # Get the top meme for the competition
-        top_meme = competition.top_memes.first()
+        top_meme = competition.memes.annotate(
+            vote_count=Count('votes'),
+            total=Sum('votes__score')
+        ).annotate(
+            vote_score=F('total') / Count('votes', distinct=True)
+        ).order_by('-vote_score').first()
         if top_meme:
             # Set the top meme as the winning meme for the competition
             competition.winning_meme = top_meme

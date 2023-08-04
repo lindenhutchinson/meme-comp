@@ -135,14 +135,12 @@ def check_emoji_text(text):
 def convert_to_localtime(utctime):
     fmt = '%A %d %b - %I:%M%p'
     utc = utctime.replace(tzinfo=pytz.UTC)
-    print(timezone.get_current_timezone())
     localtz = utc.astimezone(timezone.get_current_timezone())
     return localtz.strftime(fmt)
 
 def do_advance_competition(competition):
     # attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition.id)
-    print('attempting to advance_competition')
     if competition.current_meme:
     # if we were able to set a random meme, update the channel to show it on the page
         data = {
@@ -167,7 +165,6 @@ def do_advance_competition(competition):
 
         if len(competition.votes.all()):
             top_memes = get_top_memes(competition.name)
-            print('top_memes', top_memes)
             if len(top_memes) == 1:
                 top_meme = Meme.objects.get(id=top_memes[0]['id'])
                 competition.winning_meme = top_meme

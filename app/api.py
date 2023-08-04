@@ -147,7 +147,6 @@ def meme_vote(request, comp_name):
         competition.refresh_from_db()
         tiebreaker_skip = num_votes_for_tiebreaker(competition) >= competition.num_participants
         if(competition.tiebreaker and tiebreaker_skip):
-            print('advance competition!')
             do_advance_competition(competition)
 
         return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)

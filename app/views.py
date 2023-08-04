@@ -158,11 +158,8 @@ def competition(request, comp_name):
 
     tying_memes = []
     top_meme = None
-    print(comp.started)
-    print(comp.current_meme)
     if comp.started and not comp.current_meme:
         if comp.is_tie or comp.tiebreaker:
-            print(comp.tying_memes)
             tying_memes = comp.tying_memes
         else:
             top_meme = comp.top_memes[0]
