@@ -131,10 +131,12 @@ def lobby(request):
             'theme': participant.competition.theme,
             'updated_at':convert_to_localtime(participant.competition.updated_at)
         })
+        
+    sorted_comps = sorted(competitions, key=lambda x : x['updated_at'])
     
 
     return render(request, 'lobby.html', {
-        'competitions': competitions,
+        'competitions': sorted_comps,
         'competition_form': competition_form,
         'join_competition_form': join_competition_form,
     })
