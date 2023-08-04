@@ -16,7 +16,7 @@ class Participant(models.Model):
     
     @property
     def top_meme(self):
-        sorted_memes = sorted(self.memes.all(), key=lambda meme: meme.total_score, reverse=True)
+        sorted_memes = sorted(self.memes.all(), key=lambda meme: meme.avg_score, reverse=True)
         return sorted_memes[0] if sorted_memes else None
 
 
