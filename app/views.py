@@ -153,14 +153,23 @@ def competition(request, comp_name):
     
     request.session['competition_id'] = comp.id
     request.session['participant_id'] = participant.id
+
+    tying_memes = []
+    top_meme = None
+    print(comp.started)
+    print(comp.current_meme)
     if comp.started and not comp.current_meme:
-        top_meme = get_top_memes(comp.name)
-    else:
-        top_meme = None
+        if comp.is_tie or comp.tiebreaker:
+            print(comp.tying_memes)
+            tying_memes = comp.tying_memes
+        else:
+            top_meme = comp.top_memes[0]
+
     context = {
         'participant': participant,
         'competition': comp,
         'top_meme': top_meme,
+        'tying_memes': tying_memes,
         'websocket_scheme': settings.WEBSOCKET_SCHEME
     }
     return render(request, 'competition.html', context)
@@ -199,3 +208,46 @@ def serve_file(request, comp_name, meme_id):
     response = HttpResponse(file_data, content_type=file_data.content_type)
     response['Content-Disposition'] = f'attachment; filename="{meme.image.name}"'
     return response
+
+@login_required
+def user_page(request, id):
+    user = get_object_or_404(User, id=id)
+
+    if not user.shares_comp_with(request.user):
+        return HttpResponse("Access Forbidden", status=403)
+
+    # check if the requesting user shares a competition with the page user
+
+    '''
+    total competitions
+    total memes
+    total average meme score
+    total average vote given
+    total voting time
+    competitions won
+    their highest rated user on meme avg
+    user who has rated them the highest on meme avg
+    library of their memes
+    their highest rated meme (given and received)
+
+
+    '''
+    context = {
+        'view_user': user,
+        'total_competitions': user.total_competitions,
+        'total_memes': user.total_memes,
+        'total_votes': user.total_votes,
+        'total_avg_meme_score': user.total_avg_vote_received,
+        'total_avg_vote_given': user.total_avg_vote_given,
+        'total_avg_own_vote_given': user.total_avg_vote_received_from_self,
+        'total_voting_time': user.total_voting_time,
+        'total_avg_voting_time': user.total_avg_voting_time,
+        'competitions_won': user.competitions_won,
+        'highest_rated_user': user.highest_rated_user,
+        'highest_user_rated_by':user.highest_user_rated_by,
+        'meme_library': user.meme_library,
+    }
+    return render(request, 'user.html', context)
+
+    
+

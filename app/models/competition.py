@@ -1,7 +1,7 @@
 import copy
 from django.db import models
 from django.utils import timezone
-from django.db.models import Avg, Count,F, ExpressionWrapper, FloatField, StdDev, OuterRef, Subquery
+from django.db.models import Avg, Sum, Count,F, ExpressionWrapper, FloatField, StdDev, OuterRef, Subquery
 
 
 class Competition(models.Model):
@@ -16,11 +16,35 @@ class Competition(models.Model):
     current_meme = models.ForeignKey(
         'Meme', null=True, on_delete=models.SET_NULL, related_name="current"
     )
+    winning_meme = models.ForeignKey(
+        'Meme', null=True, on_delete=models.SET_NULL, related_name="won_competition"
+    )
+    tiebreaker = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
     
     def start_competition(self):
         self.started = True
         self.save()
+
+
+    @property
+    def top_memes(self):
+        return self.memes.filter(competition=self).annotate(
+            vote_count=Count('votes'),
+            total=Sum('votes__score')
+        ).annotate(
+            vote_score=F('total') / Count('votes', distinct=True)
+        ).order_by('-vote_score')
+    
+    @property
+    def is_tie(self):
+        top_meme = self.top_memes.first()
+        return len(self.top_memes.filter(vote_score=top_meme.real_avg_score)) > 1
+
+    @property
+    def tying_memes(self): 
+        top_meme = self.top_memes.first()
+        return self.top_memes.filter(vote_score=top_meme.real_avg_score).values()   
 
     @property
     def num_memes(self):
@@ -204,4 +228,4 @@ class Competition(models.Model):
         return {}
 
     def __str__(self):
-        return f"Competition {self.id} ({self.theme}) {self.name}"
+        return f"Competition {self.theme} ({self.name})"

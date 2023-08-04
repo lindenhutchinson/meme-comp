@@ -31,3 +31,10 @@ def comp_finished(top_meme, competition):
         'top_meme':top_meme
     }
 
+
+@register.inclusion_tag('tags/comp-tiebreaker.html')
+def comp_tiebreaker(tying_memes, competition):
+    return {
+        'competition':competition,
+        'tying_memes':tying_memes
+    }

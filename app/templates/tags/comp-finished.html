@@ -13,8 +13,8 @@
             <div class="row results-container justify-content-center">
                 <div id="winning-meme" class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
                     <div class="row item-header">
-                        <h5 class="card-title">{{ top_meme.participant }}</h5>
-                        <h6 class="card-subtitle">Score: {{ top_meme.score }}</h6>
+                        <h5 class="card-title">{{ top_meme.participant.name }}</h5>
+                        <h6 class="card-subtitle">Score: {{ top_meme.avg_score }}</h6>
                     </div>
                     <div class="row meme-item-body">
                         <div class="winning-container">

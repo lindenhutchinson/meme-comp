@@ -7,7 +7,7 @@
 	var released = false;
 	function clickButton() {
 		if(released) {
-			showSnackbar("It's time to let the crabs rest {{participant.name}}", "warning")
+			showSnackbar("Let the crabs rest {{participant.name}}", "warning")
 		} else {
 
 			socket.send(JSON.stringify({
@@ -27,6 +27,8 @@
 		{% comp_waiting participant competition %}
 
 		{% comp_voting competition %}
+
+		{% comp_tiebreaker tying_memes competition %}
 
 		{% comp_finished top_meme competition %}
 	</div>
@@ -136,7 +138,10 @@
 				case 'update_button':
 					showSnackbar(message.data + ' let the crabs out', 'danger');
 					unleashTheCrabs();
-					break;		
+					break;	
+				case 'do_tiebreaker':
+					doTieBreaker(message.data);
+					break;	
 			}
 		};
 
@@ -184,9 +189,10 @@
 			showSnackbar(`${participantName} joined`, 'success');
 		}
 	}
-	function doCompetitionResults(data) {
+	function doCompetitionResults(results) {
 		$("#comp-started").css('display', 'none');
 		$("#comp-waiting").css('display', 'none');
+		$("#comp-tiebreaker").css('display', 'none');
 		$("#comp-finished").css('display', '');
 
 		$("#next-meme-btn").css('display', 'none');
@@ -194,16 +200,15 @@
 
 		showSnackbar('Competition has finished', 'info')
 
-		const results = message.data;
 		if (results) {
 			html = `
 				<div class="row item-header">
-					<h5 class="card-title">${results.top_meme.participant}</h5>
-					<h6 class="card-subtitle">Score: ${results.top_meme.score}</h6>
+					<h5 class="card-title">${results.participant}</h5>
+					<h6 class="card-subtitle">Score: ${results.score}</h6>
 				</div>
 				<div class="row meme-item-body">
 					<div class="winning-container">
-						<img src="/competition/{{ competition.name }}/memes/${results.top_meme.id}"
+						<img src="/competition/{{ competition.name }}/memes/${results.id}"
 								alt="Meme Image"
 								class="card-img-top">
 					</div>
@@ -219,15 +224,41 @@
 	function doCompetitionCancelled() {
 		$("#comp-started").css('display', 'none');
 		$("#comp-finished").css('display', 'none');
+		$("#comp-tiebreaker").css('display', 'none');
 		$("#comp-waiting").css('display', '');
 
 		$('input[name="vote"]').prop('checked', false);
 		$("#num_votes").text('0');
 		$("#waiting-msg").text('Waiting for {{competition.owner.username}} to start the competition...');
 		$("#current-meme-image").attr('src', '');
-
+		$("#tiebreaker-images").empty()
 		showSnackbar('Competition cancelled', 'info');
 	}
+
+	function doTieBreaker(tiebreakMemes) {
+		$("#comp-started").css('display', 'none');
+		$("#comp-tiebreaker").css('display', '');
+		$("#num_votes").text('0');
+		$('#tiebreaker-images').empty()
+		tiebreakMemes.forEach((meme) => {
+			var html = `
+				<div 
+					class="tiebreaker-image-div d-flex" 
+					onclick="tiebreakerClick(event)"
+				>
+					<img 
+						id="${meme.id}" 
+						src="/competition/{{ competition.name }}/memes/${meme.id }" 
+						alt="Dank Meme" 
+						class="tiebreaker-image" 
+					/>
+				</div>
+				`
+			$('#tiebreaker-images').append(html)
+		})
+		showSnackbar('T-T-T-T-TIEBREAKER!!!!!!!', 'warning')
+	}
+
 	function doNextMeme(data) {
 		const memeId = data.id;
 		const memeCtr = data.ctr;

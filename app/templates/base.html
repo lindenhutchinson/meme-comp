@@ -49,7 +49,9 @@
                     <div class="d-flex align-items-center">
 
                     {% if user.is_authenticated %}
-                            <span class="me-3">{{ user.username }}</span>
+                            <span class="me-3">
+                                <a class="btn btn-light" href="{% url 'user' user.id %}">{{ user.username }}</a>
+                            </span>
                             <form style="margin-right:15px" method="post" action="{% url 'logout' %}">
                                 {% csrf_token %}
                                 <button class="btn btn-outline-primary" type="submit">Logout</button>

@@ -68,4 +68,6 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'command': event['command'],
             'data': event['data']
-        }))
+            },
+            default=str
+        ))

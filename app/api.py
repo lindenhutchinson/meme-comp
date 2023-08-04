@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
-from .utils import do_advance_competition, send_shame_message, set_next_meme_for_competition, send_channel_message
+from .utils import do_advance_competition, num_votes_for_tiebreaker, send_shame_message, set_next_meme_for_competition, send_channel_message
 from .models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
 import time
@@ -82,7 +82,8 @@ def meme_upload(request, comp_name):
             meme = Meme.objects.create(
                 image=img,
                 competition=competition,
-                participant=participant
+                participant=participant,
+                user=request.user
             )
             if meme:
                 meme_list.append(meme.id)
@@ -100,43 +101,80 @@ def meme_upload(request, comp_name):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+BREAK_TIE_SCORE = 0.001
+
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def meme_vote(request, comp_name):
-    score_text = request.data.get('vote')
+    score = request.data.get('vote', BREAK_TIE_SCORE)
+    meme_id = request.data.get('meme_id', False)
+
     competition = get_object_or_404(Competition, name=comp_name)
     participant = get_object_or_404(Participant, user=request.user, competition=competition)
-    meme = competition.current_meme
     
-    try:
-        score = int(score_text)
-    except TypeError:
-        print(f"{request.user.username} attempted an invalid vote - {score}")
-        send_shame_message(competition.name, request.user.username)
-        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    if meme_id:
+        meme = get_object_or_404(Meme, id=meme_id)
+    else:
+        meme = competition.current_meme
+        try:
+            score = int(score)
+        except TypeError:
+            print(f"{request.user.username} attempted an invalid vote - {score}")
+            send_shame_message(competition.name, request.user.username)
+            return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if score < 0 or score > 5:
-        print(f"{request.user.username} attempted an invalid vote - {score}")
-        send_shame_message(competition.name, request.user.username)
-        return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+        if score < 0 or score > 5:
+            print(f"{request.user.username} attempted an invalid vote - {score}")
+            send_shame_message(competition.name, request.user.username)
+            return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+            
+
     try:
-        vote = Vote.objects.get(meme=meme, participant=participant, competition=competition)
-        vote.score = score
+        vote = Vote.objects.get(
+            meme=meme, 
+            participant=participant, 
+            competition=competition,
+            user=request.user
+        )
+        if meme_id:
+            vote.score += BREAK_TIE_SCORE
+        else:
+            vote.score = score
         vote.save()
+
+        competition.refresh_from_db()
+        tiebreaker_skip = num_votes_for_tiebreaker(competition) >= competition.num_participants
+        if(competition.tiebreaker and tiebreaker_skip):
+            print('advance competition!')
+            do_advance_competition(competition)
+
         return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
 
     except Vote.DoesNotExist:
         # create a vote using the meme, participant and the given score
         # also set "started_at" to when the competition last updated
         # this will allow calculations of how long the user took to vote
-        vote = Vote.objects.create(competition=competition, meme=meme, participant=participant, score=score, started_at=competition.updated_at)
+        vote = Vote.objects.create(
+            competition=competition, 
+            meme=meme, 
+            participant=participant, 
+            user=request.user,
+            score=score, 
+            started_at=competition.updated_at
+        )
+
         total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(total_votes=Count('id'))
         
         # if all participants have voted,
         # automatically advance the competition
         competition.refresh_from_db()
-        if competition.current_meme.votes.count() == competition.num_participants:
+        voting_skip = False
+        if competition.current_meme:
+            voting_skip = competition.current_meme.votes.count() == competition.num_participants
+        tiebreaker_skip = num_votes_for_tiebreaker(competition) >= competition.num_participants
+        if voting_skip or (competition.is_tie and tiebreaker_skip):
             do_advance_competition(competition)
         else:
             send_channel_message(competition.name, 'meme_voted', total_votes['total_votes'])

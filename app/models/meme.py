@@ -6,21 +6,6 @@ from PIL import Image, UnidentifiedImageError
 from django.core.files.base import ContentFile
 from io import BytesIO
 
-# class MemeManager(models.Manager):
-#     def create(self, **obj_data):
-#         meme =  super().create(**obj_data)
-        
-#         # resize the image
-#         image = meme.image
-#         if not image.path.endswith('.gif'):
-#             try:
-#                 with Image.open(image.path) as im:
-#                     im.thumbnail((1000, 1000), Image.Resampling.BICUBIC)
-#                     im.save(image.path)
-#             except UnidentifiedImageError:
-#                 meme.delete()
-
-#         return meme
 
 class MemeManager(models.Manager):
     def save(self, *args, **kwargs):
@@ -47,10 +32,11 @@ class Meme(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     competition = models.ForeignKey('Competition', on_delete=models.CASCADE, related_name='memes')
     participant = models.ForeignKey('Participant', on_delete=models.CASCADE, related_name='memes')
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='memes')
     objects = MemeManager()
     
     def __str__(self):
-        return f'Meme {self.id} by {self.participant.name}'       
+        return f'Meme {self.id} by {self.participant}'       
 
     @property
     def num_votes(self):
@@ -64,3 +50,7 @@ class Meme(models.Model):
     def avg_score(self):
         score = self.votes.aggregate(models.Avg('score')).get('score__avg') or 0
         return round(score, 2)
+    
+    @property
+    def real_avg_score(self):
+        return self.votes.aggregate(models.Avg('score')).get('score__avg') or 0

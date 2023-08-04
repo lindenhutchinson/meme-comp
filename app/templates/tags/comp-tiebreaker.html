@@ -1,0 +1,84 @@
+<div 
+    id="comp-tiebreaker"
+    class="col text-center mb-2"
+        {% if not competition.tiebreaker %}
+        style="display:none"
+        {% endif %}
+>
+    <div class="card shadow">
+        <div class="card-header">
+            <div class="row">
+                <div class="col">
+                    <h4 class="p-2 title-text">
+                        Tiebreaker 
+                    </h4>
+                    <small class="hide">yes i finally implemented it</small>        
+                </div>
+                <div class="p-2 col">
+                    <h4>Votes:</h4>
+                </div>
+            </div>
+           
+        </div>
+        <div class="card-body">
+            <div id="tiebreaker-images" class="d-flex justify-content-around">
+                {% for meme in tying_memes %}
+                <div 
+                    class="tiebreaker-image-div d-flex"
+                    onclick="tiebreakerClick(event)" 
+                >
+                    <img 
+                        id="{{meme.id}}" 
+                        src="/competition/{{ competition.name }}/memes/{{ meme.id }}" 
+                        alt="Dank Meme" 
+                        class="tiebreaker-image" 
+                    />
+                </div>
+                {% endfor %}
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    function tiebreakerClick(event) {
+        $(".selected-tiebreaker-image").each(function() {
+            $(this).removeClass('selected-tiebreaker-image')
+        });
+        imgEle = $(event.target)
+
+        imgEle.addClass('selected-tiebreaker-image')
+
+        console.log('yes vote for this meme!');
+        submitTiebreakerVote(imgEle.attr('id'));
+    }
+
+    function submitTiebreakerVote(memeId) {
+        // Prepare the data to be sent in the AJAX request
+        var formData = new FormData();
+        formData.append('is_tiebreaker', true);
+        formData.append('meme_id', memeId);
+        $.ajax({
+            url: `/api/competition/{{competition.name}}/vote`,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrfToken);
+            },
+            success: function (response) {
+                showSnackbar('Tiebreaker submitted', 'success')
+            },
+            error: function (xhr, status, error) {
+                if (xhr.status === 403) {
+                    showSnackbar(xhr.responseJSON.detail, 'danger')
+                } else {
+                    showSnackbar('Unable to submit vote', 'danger')
+                }
+            }
+        });
+    }
+
+</script>

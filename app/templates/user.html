@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<body>
+    <div class="row results-container justify-content-center">
+        <h1>{{ view_user.username }}'s Information</h1>
+        <div class="m-2 results-item shadow">
+            <div class="item-header row text-center">
+                <h4>Statistics</h4>
+            </div>
+            <div class="results-item-body row">
+                <p>Competitions Won: {{ competitions_won }}</p>
+                <p>Number of Competitions: {{ total_competitions }}</p>
+                <p>Number of Memes Submitted: {{ total_memes }}</p>
+                <p>Average Meme Score: {{ total_avg_meme_score }}</p>
+                <p>Number of Votes Submitted: {{ total_votes }}</p>
+                <p>Average Voting Time: {{ total_avg_voting_time }} seconds</p>
+                <p>Total Time Spent Voting: {{ total_voting_time }} seconds</p>
+                <p>Average Vote Score Given: {{ total_avg_vote_given }}</p>
+                <p>Average Vote Score Given to Own Memes: {{ total_avg_own_vote_given }}</p>
+                {% if highest_rated_user %}
+                    <p>Favourite Meme Creator: {{ highest_rated_user.username }} ({{ highest_rated_user.avg_score|floatformat:2 }})</p>
+                {% endif %}
+            
+                {% if highest_rated_by_user %}
+                    <p>Biggest Fan: {{ highest_rated_by_user.username }} ({{ highest_rated_by_user.avg_score|floatformat:2 }})</p>
+                {% endif %}
+            </div>
+        </div>
+        {% if meme_library %}
+        <div class="m-2 results-item shadow">
+            <div class="item-header row">
+                Meme Library
+            </div>
+            <div class="results-item-body row">
+                <div id="carouselExample" class="carousel slide carousel-fade" data-bs-ride="carousel"
+                    data-bs-interval="false">
+                    <div class="carousel-inner" id="submitted-memes-container">
+                        {% for meme in meme_library %}
+                        <div id="meme-{{ meme.id }}" class="item carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="card image-card">
+                                <div style="text-align: center; background-color: black;">
+                                    <p>Competition: {{meme.competition.theme}}</p>
+                                    <p>Score: {{meme.avg_score}}</p>
+                                </div>
+                                <div class="image-container">
+                                    <img
+                                        src="{% url 'serve_file' meme.competition.name meme.id %}"
+                                        alt="One of your dank memes" 
+                                        class="square-image d-block" 
+                                        loading="lazy"
+                                    />
+
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% endfor %}
+                    </div>
+                    <div id="carousel-controls">
+                        <button style="background-color:black" class="carousel-control-prev" type="button"
+                            data-bs-target="#carouselExample" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button style="background-color:black" class="carousel-control-next" type="button"
+                            data-bs-target="#carouselExample" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+{% endblock %}

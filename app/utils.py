@@ -84,20 +84,14 @@ def set_next_meme_for_competition(competition_id):
 #     }
 #     return results
 
-from django.db.models import F, Count, Sum
+
 
 def get_top_memes(comp_name):
     # Get the competition instance
     competition = Competition.objects.get(name=comp_name)
 
-    # Aggregate the total vote scores for each meme in the competition and sort in descending order
-    memes = Meme.objects.filter(competition=competition).annotate(
-        vote_count=Count('votes'),
-        total=Sum('votes__score')
-    ).annotate(
-        vote_score=F('total') / Count('votes', distinct=True)
-    ).order_by('-vote_score')
-
+    # get the memes in order of their avg scores
+    memes = competition.top_memes
     meme = memes.first()
     
     if len(tying_memes := memes.filter(vote_score=meme.vote_score).values()) > 1:
@@ -111,11 +105,6 @@ def get_top_memes(comp_name):
             'score': score
         }
         return [results]
-
-def 2do_tiebreaker(comp_name, tying_memes):
-    print(tying_memes)
-    
-    send_channel_message(comp_name, 'do_tiebreaker', tying_memes)
 
 
 def send_shame_message(comp_name, username):
@@ -153,7 +142,7 @@ def convert_to_localtime(utctime):
 def do_advance_competition(competition):
     # attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition.id)
-
+    print('attempting to advance_competition')
     if competition.current_meme:
     # if we were able to set a random meme, update the channel to show it on the page
         data = {
@@ -175,17 +164,36 @@ def do_advance_competition(competition):
                 'avg_meme_score':competition.avg_meme_score,
                 'avg_vote_time':competition.avg_vote_time,
         } if len(competition.votes.all()) else {}
-        competition.finished = True
-        competition.save()
-        results = {}
+
         if len(competition.votes.all()):
             top_memes = get_top_memes(competition.name)
+            print('top_memes', top_memes)
             if len(top_memes) == 1:
+                top_meme = Meme.objects.get(id=top_memes[0]['id'])
+                competition.winning_meme = top_meme
+                competition.finished = True
+                competition.tiebreaker = False
+
+                competition.save()
                 results = {
-                    'top_meme':top_memes[0],
+                    'participant':top_meme.participant.name,
+                    'score':top_meme.avg_score,
+                    'id':top_meme.id,
                     'statistics':statistics
+
                 }
                 send_channel_message(competition.name, 'competition_results', results)
                 
             else:
-                do_tiebreaker(competition.name, top_memes)
+                competition.tiebreaker = True
+                competition.save()
+                send_channel_message(competition.name, 'do_tiebreaker', top_memes)
+
+
+def num_votes_for_tiebreaker(competition):
+    # Get the updated_at timestamp of the competition
+    competition_updated_at = competition.updated_at
+    
+    # Get the votes updated before the competition's updated_at timestamp
+    votes_updated_before_competition = competition.votes.filter(updated_at__gt=competition_updated_at)
+    return votes_updated_before_competition.count()
