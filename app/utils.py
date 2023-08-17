@@ -93,18 +93,14 @@ def get_top_memes(comp_name):
     # get the memes in order of their avg scores
     memes = competition.top_memes
     meme = memes.first()
+    tying_memes =  memes.filter(vote_score=meme.vote_score)
     
-    if len(tying_memes := memes.filter(vote_score=meme.vote_score).values()) > 1:
-        return list(tying_memes)
-    else:
-        score = round(meme.vote_score, 2) if meme else 0
-        
-        results = {
-            'id': meme.id if meme else None,
-            'participant': meme.participant.name if meme else None,
-            'score': score
-        }
-        return [results]
+    return [{
+        'id': m.id,
+        'participant': m.participant.name,
+        'score':round(m.vote_score, 2)
+    } for m in tying_memes]
+
 
 
 def send_shame_message(comp_name, username):
@@ -187,10 +183,7 @@ def do_advance_competition(competition):
                 send_channel_message(competition.name, 'do_tiebreaker', top_memes)
 
 
-def num_votes_for_tiebreaker(competition):
-    # Get the updated_at timestamp of the competition
-    competition_updated_at = competition.updated_at
-    
+def num_votes_for_tiebreaker(competition):   
     # Get the votes updated before the competition's updated_at timestamp
-    votes_updated_before_competition = competition.votes.filter(updated_at__gt=competition_updated_at)
+    votes_updated_before_competition = competition.votes.filter(updated_at__gt=competition.updated_at).values('user_id').distinct()
     return votes_updated_before_competition.count()

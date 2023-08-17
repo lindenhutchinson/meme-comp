@@ -11,18 +11,17 @@
                 <div class="col">
                     <h4 class="p-2 title-text">
                         Tiebreaker 
-                    </h4>
-                    <small class="hide">yes i finally implemented it</small>        
+                    </h4>     
                 </div>
                 <div class="p-2 col">
-                    <h4>Votes:</h4>
+                    <h4>Votes: <span id="tiebreaker_votes">0</span></h4>
                 </div>
             </div>
            
         </div>
         <div class="card-body">
             <div id="tiebreaker-images" class="d-flex justify-content-around">
-                {% for meme in tying_memes %}
+                {% for meme in competition.tying_memes %}
                 <div 
                     class="tiebreaker-image-div d-flex"
                     onclick="tiebreakerClick(event)" 

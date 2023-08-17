@@ -14,10 +14,10 @@ class Competition(models.Model):
         'User', on_delete=models.CASCADE, related_name="created_competition"
     )
     current_meme = models.ForeignKey(
-        'Meme', null=True, on_delete=models.SET_NULL, related_name="current"
+        'Meme', null=True, on_delete=models.SET_NULL, related_name="current", blank=True
     )
     winning_meme = models.ForeignKey(
-        'Meme', null=True, on_delete=models.SET_NULL, related_name="won_competition"
+        'Meme', null=True, on_delete=models.SET_NULL, related_name="won_competition", blank=True
     )
     tiebreaker = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
@@ -39,12 +39,16 @@ class Competition(models.Model):
     @property
     def is_tie(self):
         top_meme = self.top_memes.first()
-        return len(self.top_memes.filter(vote_score=top_meme.real_avg_score)) > 1
+        if top_meme:
+            return len(self.top_memes.filter(vote_score=top_meme.real_avg_score)) > 1
+        return False
 
     @property
     def tying_memes(self): 
         top_meme = self.top_memes.first()
-        return self.top_memes.filter(vote_score=top_meme.real_avg_score).values()   
+        if top_meme:
+            return self.top_memes.filter(vote_score=top_meme.real_avg_score).values()
+        return []  
 
     @property
     def num_memes(self):

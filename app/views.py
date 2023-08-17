@@ -13,7 +13,7 @@ from django.conf import settings
 from .models import Participant, Competition, User, Meme
 from django.views.decorators.http import require_POST
 from django.db.models import Count
-
+from datetime import datetime
 @require_POST
 @login_required
 def logout_view(request):
@@ -129,10 +129,10 @@ def lobby(request):
         competitions.append({
             'name': participant.competition.name,
             'theme': participant.competition.theme,
-            'updated_at':convert_to_localtime(participant.competition.updated_at)
+            'created_at':participant.competition.created_at
         })
         
-    sorted_comps = sorted(competitions, key=lambda x : x['updated_at'])
+    sorted_comps = sorted(competitions, key=lambda x : datetime.strftime(x['created_at'], '%Y/%m/%d %H:%M:%S'), reverse=True)
     
 
     return render(request, 'lobby.html', {
@@ -156,19 +156,9 @@ def competition(request, comp_name):
     request.session['competition_id'] = comp.id
     request.session['participant_id'] = participant.id
 
-    tying_memes = []
-    top_meme = None
-    if comp.started and not comp.current_meme:
-        if comp.is_tie or comp.tiebreaker:
-            tying_memes = comp.tying_memes
-        else:
-            top_meme = comp.top_memes[0]
-
     context = {
         'participant': participant,
         'competition': comp,
-        'top_meme': top_meme,
-        'tying_memes': tying_memes,
         'websocket_scheme': settings.WEBSOCKET_SCHEME
     }
     return render(request, 'competition.html', context)

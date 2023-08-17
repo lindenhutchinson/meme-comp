@@ -7,12 +7,11 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Q
 from .utils import do_advance_competition, num_votes_for_tiebreaker, send_shame_message, set_next_meme_for_competition, send_channel_message
 from .models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
 import time
-
 
 @api_view(['DELETE'])
 @authentication_classes([SessionAuthentication]) 
@@ -148,7 +147,9 @@ def meme_vote(request, comp_name):
         tiebreaker_skip = num_votes_for_tiebreaker(competition) >= competition.num_participants
         if(competition.tiebreaker and tiebreaker_skip):
             do_advance_competition(competition)
-
+        else:
+            send_channel_message(competition.name, 'meme_voted', num_votes_for_tiebreaker(competition))
+            
         return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
 
     except Vote.DoesNotExist:
@@ -265,7 +266,6 @@ def cancel_competition(request, comp_name):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    # Set the competition as started, set the current meme, etc.
     if not competition.started:
         return Response(
             {"detail": "The competition has not started yet."},
@@ -276,13 +276,14 @@ def cancel_competition(request, comp_name):
     competition.current_meme = None 
     competition.started = False
     competition.finished = False
+    competition.tiebreaker = False
     competition.save()  
 
     # delete the seen memes of the competition
     SeenMeme.objects.filter(competition=competition).delete()   
     comp_memes = competition.memes.all()
     votes = Vote.objects.filter(meme__in=comp_memes)
-    votes.delete()       
+    votes.delete()
 
     # alert the channel that the competition has been cancelled
     send_channel_message(competition.name, 'competition_cancelled')

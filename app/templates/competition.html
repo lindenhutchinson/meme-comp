@@ -28,7 +28,7 @@
 
 		{% comp_voting competition %}
 
-		{% comp_tiebreaker tying_memes competition %}
+		{% comp_tiebreaker competition %}
 
 		{% comp_finished top_meme competition %}
 	</div>
@@ -140,8 +140,14 @@
 					unleashTheCrabs();
 					break;	
 				case 'do_tiebreaker':
+					$('#tiebreaker_votes').text('0');
+
 					doTieBreaker(message.data);
 					break;	
+				case 'meme_voted':
+					$("#num_votes").text(message.data);
+					$('#tiebreaker_votes').text(message.data);
+					break;
 			}
 		};
 
@@ -168,10 +174,10 @@
 			$("#participants").find(`li[data-participant-id="${participantId}"]`).length === 0
 		) {
 			$("#participants").prepend(`
-				<li class='list-group-item' data-participant-id="${participantId}">
-					<div class="d-flex justify-content-between align-items-center">
-						<span style="text-align:center">
-							${participantName}
+				<li class="list-group-item" data-participant-id="${participantId}">
+					<div class="d-flex justify-content-center align-items-center">
+						<span style="text-align:center; width:100%">
+							<a style="width:100%" class="btn btn-outline-dark" href="/user/${participantId}">${participantName}</a>
 						</span>
 					</div>
 				</li>
