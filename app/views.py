@@ -115,7 +115,8 @@ def lobby(request):
                         data = {
                             'num_participants':competition.participants.count(),
                             'name':participant.name,
-                            'id':participant.id
+                            'id':participant.id,
+                            'user_id':user.id,
                         }
                         send_channel_message(competition.name, 'user_joined', data)
                     else:
@@ -149,7 +150,8 @@ def competition(request, comp_name):
         data = {
             'num_participants':comp.participants.count(),
             'name':participant.name,
-            'id':participant.id
+            'id':participant.id,
+            'user_id':request.user.id
         }
         send_channel_message(comp.name, 'user_joined', data)
     
