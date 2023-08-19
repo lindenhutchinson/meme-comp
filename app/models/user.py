@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Avg, Count, F, Max, Min, Q
+from django.db.models import Avg, Count, F, Max, Min, Q, Case, When, FloatField
 
 class User(AbstractUser):
     groups = models.ManyToManyField(
@@ -82,18 +82,38 @@ class User(AbstractUser):
     # Property to get the user's library of memes.
     @property
     def meme_library(self):
-        return self.memes.all()
+        return self.memes.all().filter(competition__finished=True)
 
     # Property to get the highest average meme score given by the user.
     @property
     def highest_rated_user(self):
-        return User.objects.annotate(avg_score=Avg('memes__votes__score')).filter(
-            memes__competition__participants__user=self
+        return User.objects.annotate(
+            avg_score=Avg(
+                Case(
+                    When(
+                        memes__votes__user=self,
+                        then=F('memes__votes__score')
+                    ),
+                    output_field=FloatField()
+                )
+            )
+        ).filter(
+            memes__votes__user=self
         ).exclude(id=self.id).order_by('-avg_score').first()
     
     # Property to get the user who the current user has rated their memes the highest.
     @property
     def highest_user_rated_by(self):
         return User.objects.annotate(
-            avg_score_received=Avg('memes__votes__score', filter=Q(memes__user=self))
+            avg_score_received=Avg(
+                Case(
+                    When(
+                        memes__user=self,
+                        then=F('memes__votes__score')
+                    ),
+                    output_field=FloatField()
+                )
+            )
+        ).filter(
+            memes__user=self
         ).exclude(id=self.id).order_by('-avg_score_received').first()

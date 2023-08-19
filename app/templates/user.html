@@ -23,8 +23,8 @@
                     <p>Favourite Meme Creator: {{ highest_rated_user.username }} ({{ highest_rated_user.avg_score|floatformat:2 }})</p>
                 {% endif %}
             
-                {% if highest_rated_by_user %}
-                    <p>Biggest Fan: {{ highest_rated_by_user.username }} ({{ highest_rated_by_user.avg_score|floatformat:2 }})</p>
+                {% if highest_user_rated_by %}
+                    <p>Biggest Fan: {{ highest_user_rated_by.username }} ({{ highest_user_rated_by.avg_score|floatformat:2 }})</p>
                 {% endif %}
             </div>
         </div>
