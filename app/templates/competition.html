@@ -39,6 +39,7 @@
 		var y = getRandomNumber(0, self.innerHeight);
 		$('#button-div').css('left', x+'px')
 		$('#button-div').css('top', y+'px')
+		connectWebSocket()
 	})
 	function sleep(ms) {
 		return new Promise(resolve => setTimeout(resolve, ms));
@@ -96,6 +97,9 @@
 	// Open websocket connection
 	var socket = null; // Declare the socket variable outside the function
 	function connectWebSocket() {
+		if (!(socket === null || socket.readyState !== WebSocket.OPEN)) {
+			console.log('Not reopening socket')
+		}
 		socket = new WebSocket(
 			"{{websocket_scheme}}://" +
 			window.location.host +
@@ -162,9 +166,6 @@
 			setTimeout(connectWebSocket, 2000);
 		};
 	}
-
-	// Call the connectWebSocket function to establish the initial WebSocket connection
-	connectWebSocket();
 
 	function doUserJoined(data) {
 		var participantName = data.name;
