@@ -129,9 +129,7 @@
     	// restart the competition via AJAX
 	function cancelCompetition() {
 		var cancelCheck = 'Are you sure you want to cancel the competition? This will erase all votes.'
-		if(Math.random() < 0.01) {
-			cancelCheck = "Go ahead, cancel it. See if I care. I'm gonna delete all your votes if you do"
-		}
+
 		if(!confirm(cancelCheck)) {
 			return
 		}

@@ -230,6 +230,30 @@ class Competition(models.Model):
                     'score': round(lowest_score or 0, 2)
                 }
         return {}
+    
+    @property
+    def avg_vote_on_own_memes(self):
+        
+        comp_total = 0
+        # ensure participants have voted in this competition before continuing
+        if not (self.num_voters and self.num_memes):
+            return comp_total
+        
+        # get the average score all participants gave their own memes
+        for part in self.participants.all():
+            total = 0
+            for v in part.votes.all():
+                if v.meme.participant == part:
+                    total += v.score
+            
+            if part.votes.count() and part.memes.count():       
+                total /= part.memes.count()
+                comp_total += total
+               
+        # get the average score participants gave to their own memes in the competition 
+        comp_total_avg = comp_total / self.num_voters
+    
+        return comp_total_avg
 
     def __str__(self):
         return f"Competition {self.theme} ({self.name})"

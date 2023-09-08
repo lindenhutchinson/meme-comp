@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "app",
     "channels",
     "daphne",
+    "mathfilters",
     "rest_framework",
     "django.contrib.admin",
     "django.contrib.auth",

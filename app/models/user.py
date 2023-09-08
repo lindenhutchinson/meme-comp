@@ -59,10 +59,14 @@ class User(AbstractUser):
         
         return round(avg_own_vote, 2)
 
-    # Property to get the total voting time for all the user's votes.
+    # Property to get the total voting time for all the user's votes in minutes
     @property
     def total_voting_time(self):
+        '''
+        in seconds
+        '''
         voting_time = sum(v.voting_time for v in self.votes.all())
+        # get the time in minutes
         return round(voting_time, 2)
     
     @property
@@ -82,7 +86,7 @@ class User(AbstractUser):
     # Property to get the user's library of memes.
     @property
     def meme_library(self):
-        return self.memes.all().filter(competition__finished=True)
+        return self.memes.all().filter(competition__finished=True).order_by('-created_at')
 
     # Property to get the highest average meme score given by the user.
     @property

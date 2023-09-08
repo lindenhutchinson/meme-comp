@@ -14,6 +14,7 @@ from .models import Participant, Competition, User, Meme
 from django.views.decorators.http import require_POST
 from django.db.models import Count
 from datetime import datetime
+from django.db.models import Q, F, Avg
 @require_POST
 @login_required
 def logout_view(request):
@@ -170,6 +171,7 @@ def competition_results(request, comp_name):
     comp = get_object_or_404(Competition, name=comp_name)
     participant = get_object_or_404(Participant, user=request.user, competition=comp)
     participants = list(comp.participants.annotate(meme_count=Count('memes')).order_by('-meme_count'))
+    participants.sort(key=lambda p: p.top_meme.avg_score if p.top_meme else 0, reverse=True)
     participants.remove(participant)
     participants.insert(0, participant)
     context = {
@@ -200,45 +202,32 @@ def serve_file(request, comp_name, meme_id):
     response['Content-Disposition'] = f'attachment; filename="{meme.image.name}"'
     return response
 
+
 @login_required
 def user_page(request, id):
     user = get_object_or_404(User, id=id)
 
+
     if not user.shares_comp_with(request.user):
         return HttpResponse("Access Forbidden", status=403)
 
-    # check if the requesting user shares a competition with the page user
+    themes = user.participants.filter(competition__finished=True).values_list('competition__theme', flat=True).distinct()
+    # Retrieve sorting and filtering parameters from the GET request
+    sort_param = request.GET.get('sort')
+    filter_theme = request.GET.get('filter_theme')
 
-    '''
-    total competitions
-    total memes
-    total average meme score
-    total average vote given
-    total voting time
-    competitions won
-    their highest rated user on meme avg
-    user who has rated them the highest on meme avg
-    library of their memes
-    their highest rated meme (given and received)
+    # Start with the base queryset for the user's meme library
+    meme_library = Meme.objects.filter(user=user, competition__finished=True)
 
+    # Calculate the average score for each meme and annotate it to the queryset
+    meme_library = meme_library.annotate(average_score=Avg('votes__score')).order_by('-average_score')
 
-    '''
+    # Prefetch related fields to reduce database queries
+    meme_library = meme_library.select_related('competition', 'participant')
+
     context = {
         'view_user': user,
-        'total_competitions': user.total_competitions,
-        'total_memes': user.total_memes,
-        'total_votes': user.total_votes,
-        'total_avg_meme_score': user.total_avg_vote_received,
-        'total_avg_vote_given': user.total_avg_vote_given,
-        'total_avg_own_vote_given': user.total_avg_vote_received_from_self,
-        'total_voting_time': user.total_voting_time,
-        'total_avg_voting_time': user.total_avg_voting_time,
-        'competitions_won': user.competitions_won,
-        'highest_rated_user': user.highest_rated_user,
-        'highest_user_rated_by':user.highest_user_rated_by,
-        'meme_library': user.meme_library,
+        'meme_library': meme_library,
+        'themes':themes
     }
     return render(request, 'user.html', context)
-
-    
-

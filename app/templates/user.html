@@ -1,74 +1,90 @@
 {% extends "base.html" %}
+{% load mathfilters %}
 {% block content %}
 
-
 <body>
-    <div class="row results-container justify-content-center">
+    <div class="row results-container justify-content-center mb-4">
         <h1>{{ view_user.username }}'s Information</h1>
         <div class="m-2 results-item shadow">
             <div class="item-header row text-center">
                 <h4>Statistics</h4>
             </div>
             <div class="results-item-body row">
-                <p>Competitions Won: {{ competitions_won }}</p>
-                <p>Number of Competitions: {{ total_competitions }}</p>
-                <p>Number of Memes Submitted: {{ total_memes }}</p>
-                <p>Average Meme Score: {{ total_avg_meme_score }}</p>
-                <p>Number of Votes Submitted: {{ total_votes }}</p>
-                <p>Average Voting Time: {{ total_avg_voting_time }} seconds</p>
-                <p>Total Time Spent Voting: {{ total_voting_time }} seconds</p>
-                <p>Average Vote Score Given: {{ total_avg_vote_given }}</p>
-                <p>Average Vote Score Given to Own Memes: {{ total_avg_own_vote_given }}</p>
-                {% if highest_rated_user %}
-                    <p>Favourite Meme Creator: {{ highest_rated_user.username }} ({{ highest_rated_user.avg_score|floatformat:2 }})</p>
+                <p>Competitions Won: {{ view_user.competitions_won }}</p>
+                <p>Number of Competitions: {{ view_user.total_competitions }}</p>
+                <p>Number of Memes Submitted: {{ view_user.total_memes }}</p>
+                <p>Average Meme Score: {{ view_user.total_avg_vote_received }}</p>
+                <p>Number of Votes Submitted: {{ view_user.total_votes }}</p>
+                <p>Average Voting Time: {{ view_user.total_avg_voting_time }} seconds</p>
+                <p>
+                    Total Time Spent Voting: {% if  view_user.total_voting_time < 60 %}{{ view_user.total_voting_time }} seconds{% else %}{{ view_user.total_voting_time|div:60}} minutes{% endif %}
+                </p>
+                <p>Average Vote Score Given: {{ view_user.total_avg_vote_given }}</p>
+                <p>Average Vote Score Given to Own Memes: {{ view_user.total_avg_vote_received_from_self }}</p>
+                {% if view_user.highest_rated_user %}
+                    <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} ({{ view_user.highest_rated_user.avg_score|floatformat:2}})</p>
                 {% endif %}
-            
-                {% if highest_user_rated_by %}
+                {% comment %} S A D - this doesnt work {% endcomment %}
+                {% comment %} {% if highest_user_rated_by %}
                     <p>Biggest Fan: {{ highest_user_rated_by.username }} ({{ highest_user_rated_by.avg_score|floatformat:2 }})</p>
-                {% endif %}
+                {% endif %} {% endcomment %}
             </div>
         </div>
+       
         {% if meme_library %}
         <div class="m-2 results-item shadow">
             <div class="item-header row">
                 Meme Library
             </div>
             <div class="results-item-body row">
-                <div id="carouselExample" class="carousel slide carousel-fade" data-bs-ride="carousel"
-                    data-bs-interval="false">
-                    <div class="carousel-inner" id="submitted-memes-container">
-                        {% for meme in meme_library %}
-                        <div id="meme-{{ meme.id }}" class="item carousel-item {% if forloop.first %}active{% endif %}">
-                            <div class="card image-card">
-                                <div style="text-align: center; background-color: black;">
-                                    <p>Competition: {{meme.competition.theme}}</p>
-                                    <p>Score: {{meme.avg_score}}</p>
-                                </div>
-                                <div class="image-container">
-                                    <img
-                                        src="{% url 'serve_file' meme.competition.name meme.id %}"
-                                        alt="One of your dank memes" 
-                                        class="square-image d-block" 
-                                        loading="lazy"
-                                    />
+                <div id="memeFilters" class="mb-3 d-flex justify-content-evenly align-items-end">
+                    <div 
+                        class="d-flex flex-column flex-grow-1"
+                        style="margin-right:25px;"
+                    >
+                        <label for="filter-theme">Competition:</label>
+                        <select id="filter-theme" class="form-select">
+                            <option value="all">All</option>
+                            <!-- Add options for competition themes dynamically using JavaScript -->
+                        </select>
+                    </div>
+                
+                    <div 
+                        class=""
+                        style="margin-right:25px;"
+                    >
+                    <label for="sort">Score:&nbsp;</label>
+                        <button id="sort-score-asc" class="btn btn-dark"><i class="bi-arrow-up-circle"></i></button>
+                        <button id="sort-score-desc" class="btn btn-dark"><i class="bi-arrow-down-circle"> </i></button>
+                    </div>
+                    
+                    <button id="clear-button" type="flex flex-shrink button" class="btn btn-danger">Clear</button>
+                </div>
+                
 
+
+
+                <!-- Create a scrollable container for meme grid -->
+                <div id="meme-container" class="overflow-auto">
+                    <div id="meme-grid" class="row mt-3">
+                        {% for meme in meme_library %}
+                        <div class="col-md-4 col-sm-6 col-12 mb-4"
+                            data-competition-theme="{{ meme.competition.theme }}"
+                            data-score="{{ meme.avg_score }}"
+                            data-date="{{ meme.created_at }}">
+                            <div class="image-card">
+                                <div class="image-container">
+                                    <img loading="lazy" src="{% url 'serve_file' meme.competition.name meme.id %}" alt="One of your dank memes"
+                                        class="square-image d-block" />
+                                </div>
+                                <!-- Display competition theme and score details on mouseover -->
+                                <div class="card-details">
+                                    <small>{{ meme.competition.theme }}</small><br>
+                                    <small>Score: {{ meme.avg_score }}</small><br>
                                 </div>
                             </div>
                         </div>
-                        
                         {% endfor %}
-                    </div>
-                    <div id="carousel-controls">
-                        <button style="background-color:black" class="carousel-control-prev" type="button"
-                            data-bs-target="#carouselExample" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button style="background-color:black" class="carousel-control-next" type="button"
-                            data-bs-target="#carouselExample" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -76,5 +92,84 @@
         {% endif %}
     </div>
 </body>
+<script>
+    // Function to shuffle an array randomly
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    // Get references to filter and sort controls
+    const filterThemeSelect = document.getElementById('filter-theme');
+    const clearButton = document.getElementById('clear-button');
+    const memeGrid = document.getElementById('meme-grid');
+    const memeItems = Array.from(memeGrid.children);
+
+    // Populate filter theme select options dynamically
+    const themes = new Set(memeItems.map(item => item.getAttribute('data-competition-theme')));
+    themes.forEach(theme => {
+        const option = document.createElement('option');
+        option.value = theme;
+        option.textContent = theme;
+        filterThemeSelect.appendChild(option);
+    });
+
+    // Event listener for filter select change
+    filterThemeSelect.addEventListener('change', () => {
+        const selectedTheme = filterThemeSelect.value;
+        memeItems.forEach(item => {
+            item.style.display = selectedTheme === 'all' || item.getAttribute('data-competition-theme') === selectedTheme
+                ? 'block'
+                : 'none';
+        });
+    });
+
+    // Get references to the sorting buttons
+    const sortScoreAscButton = document.getElementById('sort-score-asc');
+    const sortScoreDescButton = document.getElementById('sort-score-desc');
+
+    // Event listener for sorting by score (ascending)
+    sortScoreAscButton.addEventListener('click', () => {
+        memeItems.sort((a, b) => {
+            const aValue = parseFloat(a.getAttribute('data-score'));
+            const bValue = parseFloat(b.getAttribute('data-score'));
+            return aValue - bValue;
+        });
+
+        // Clear the existing meme grid and append sorted memes
+        memeGrid.innerHTML = '';
+        memeItems.forEach(item => memeGrid.appendChild(item));
+    });
+
+    // Event listener for sorting by score (descending)
+    sortScoreDescButton.addEventListener('click', () => {
+        memeItems.sort((a, b) => {
+            const aValue = parseFloat(a.getAttribute('data-score'));
+            const bValue = parseFloat(b.getAttribute('data-score'));
+            return bValue - aValue;
+        });
+
+        // Clear the existing meme grid and append sorted memes
+        memeGrid.innerHTML = '';
+        memeItems.forEach(item => memeGrid.appendChild(item));
+    });
+        
+    // Event listener for clear button click
+    clearButton.addEventListener('click', () => {
+        // Reset the form, clearing all filters and sorting
+        filterThemeSelect.value = 'all';
+        // Shuffle the meme items randomly
+        shuffleArray(memeItems);
+        // Clear the existing meme grid and append shuffled memes
+        memeGrid.innerHTML = '';
+        memeItems.forEach((item) => {
+            item.style.display='block';
+            memeGrid.appendChild(item);
+        });
+    });
+</script>
+
 
 {% endblock %}

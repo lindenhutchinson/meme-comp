@@ -125,13 +125,6 @@ body {
     width: 100%;
     max-width: 300px;
 }
-#submitted-memes-container {
-    background-color:black;
-    
-}
-.image-card {
-    border-width:0;
-}
 .participants-box {
     border-top: lightgrey solid;
     border-bottom: lightgrey solid;
@@ -158,12 +151,6 @@ body {
     height: auto;
     max-width: 500px; /* Adjust the maximum width as needed */
     margin: 0 auto; /* Center the image horizontally */
-}
-.delete-button {
-    position: absolute;
-    top: 10px;
-    right: 40px;
-    z-index: 5;
 }
 
 .bi-x {
@@ -340,4 +327,39 @@ body {
 }
 .title-text:hover + .hide {
     display: inline;
+}
+
+
+
+/* Add custom styles for the meme cards */
+.image-card {
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.image-card:hover {
+    transform: scale(1.05);
+}
+
+/* Style for the competition theme and score details */
+.card-details {
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px;
+    color: white;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transition: opacity 0.3s;
+    opacity: 0; /* Initially hidden */
+}
+
+.image-card:hover .card-details {
+    opacity: 1; /* Show on hover */
+}
+
+#meme-container {
+    height:500px;
 }

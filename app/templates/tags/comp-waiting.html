@@ -3,7 +3,7 @@
         <div class="card-header">
             <h4 class="card-title">Memes</h4>
         </div>
-        <div class="row mt-2 mx-2">
+        <div class="row mt-2">
             <h5 class="card-title">Upload your memes</h5>
 
             <form id="upload-form" enctype="multipart/form-data" onchange="submitMeme()">
@@ -24,64 +24,38 @@
                 </div>
             </form>
         </div>
-        <small id="your-memes" class="mb-2">You have submitted {{participant.memes.all|length}}
-            meme{{participant.memes.all|pluralize}}</small>
-        <div class="card-body">
-            <div id="carouselExample" class="carousel slide carousel-fade" data-bs-ride="carousel"
-                data-bs-interval="false">
-                <div class="carousel-inner" id="submitted-memes-container">
-                    {% for meme in participant.memes.all %}
-                    <div id="meme-{{ meme.id }}" class="item carousel-item {% if forloop.first %}active{% endif %}">
-                        <div class="card image-card">
-                            <div class="image-container">
-                                <img {% if not competition.started and not competition.finished %}
-                                    src="{% url 'serve_file' competition.name meme.id %}" {% endif %}
-                                    alt="One of your dank memes" class="square-image d-block" />
-                                <button type="submit" class="btn btn-sm btn-danger delete-button"
-                                    onclick="deleteMeme(this)" data-meme-id="{{ meme.id }}">Delete</button>
-                            </div>
+        <div id="memes-body" class="card-body" {% if not participant.memes.count %} style="display: none" {% endif%}>  
+            <div class="d-flex align-items-center" title="Confirm before you delete your memes">
+                <i class="ms-auto bi bi-lock-fill"></i><input class="form-check-input" type="checkbox" id="delete-safety" checked>
+            </div>    
+            <div class="row mt-3 mx-2 pt-2" id="submitted-memes-container" style="height:475px; overflow-y:scroll">
+                {% for meme in participant.memes.all %}
+                <div id="meme-{{ meme.id }}" class="meme col-md-4 col-sm-6 col-12 mb-4">
+                    <div class="card image-card">
+                        <div class="image-container">
+                            <img src="{% url 'serve_file' competition.name meme.id %}" alt="One of your dank memes" class="square-image d-block" />
                         </div>
-
+                        <div class="card-details">
+                            <button type="button" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="{{ meme.id }}">Delete</button>
+                        </div>
                     </div>
-                    {% endfor %}
                 </div>
-                <div id="carousel-controls">
-                    <button style="background-color:black" class="carousel-control-prev" type="button"
-                        data-bs-target="#carouselExample" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button style="background-color:black" class="carousel-control-next" type="button"
-                        data-bs-target="#carouselExample" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 <script>
-    $(document).ready(function () {
-        $('#carouselExample').on('slide.bs.carousel', function (e) {
-            var $e = $(e.relatedTarget);
-            var idx = $e.index();
-            var itemsPerSlide = 1;
-            var totalItems = $('.carousel-item').length;
+    var deleteSafety = $('#delete-safety').is(':checked');
 
-            if (idx >= totalItems - (itemsPerSlide - 1)) {
-                var it = itemsPerSlide - (totalItems - idx);
-                for (var i = 0; i < it; i++) {
-                    if (e.direction == "left") {
-                        $('.carousel-item').eq(i).appendTo('.carousel-inner');
-                    }
-                    else {
-                        $('.carousel-item').eq(0).appendTo('.carousel-inner');
-                    }
-                }
-            }
-        });
+
+    $('#delete-safety').on('change', function (event) {
+        // Toggle the deleteSafety variable based on the checkbox state
+        deleteSafety = $(this).is(':checked');
+
     });
+        
+
     $('#upload-form').on('submit', function (event) {
         event.preventDefault();
         submitMeme();
@@ -110,6 +84,7 @@
                 } else {
                     showSnackbar('Meme uploaded', 'success');
                 }
+                $('#memes-body').css('display', '');
                 memeSubmitted(response);
             },
             error: function (xhr, status, error) {
@@ -126,42 +101,36 @@
 
     // load the submitted meme onto the page
     function memeSubmitted(id_list) {
-        var actualLength = 0;
+        var memes = $("#submitted-memes-container").find('.meme');
         for (i = 0; i < id_list.length; i++) {
             var id = id_list[i];
-            var memes = $("#submitted-memes-container").find('.item');
-            if (memes.length >= 1) {
-                $('#carousel-controls').css('display', 'inline')
-            }
-            var current = $("#submitted-memes-container").find('.active').first();
-            current.removeClass('active');
+
             element = `
-            <div id="meme-${id}" class="item carousel-item active">
-                <div class="card image-card">
-                    <div class="image-container">
-                        <img src="/competition/{{competition.name}}/memes/${id}" alt="Dank memez yeeeea boii" class="square-image" />
-                        <button type="submit" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="${id}">
-                            Delete
-                        </button>
+                <div id="meme-${id}" class="meme col-md-4 col-sm-6 col-12 mb-4">
+                    <div class="card image-card">
+                        <div class="image-container">
+                            <img src="/competition/{{competition.name}}/memes/${id}" alt="One of your dank memes" class="square-image d-block" />
+                        </div>
+                        <div class="card-details">
+                            <button type="button" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="${id}">Delete</button>
+                        </div>
                     </div>
                 </div>
-            </div>
             `
-            $('#submitted-memes-container').append(element);
-            actualLength = memes.length + 1;
+            $('#submitted-memes-container').prepend(element);
         }
-
-        $('#your-memes').text(`You have submitted ${actualLength} meme${actualLength == 1 ? '' : 's'}`);
     }
 
     // delete meme via AJAX
     function deleteMeme(button) {
-        var deleteCheck = 'Are you sure you want to delete that meme?'
-        if (Math.random() < 0.01) {
-            deleteCheck = "Try uploading the right image next time"
-        }
-        if (!confirm(deleteCheck)) {
-            return
+        if( deleteSafety ){
+            var deleteCheck = 'Are you sure you want to delete that meme?'
+            if (Math.random() < 0.01) {
+                deleteCheck = "Try uploading the right meme next time"
+            }
+            if (!confirm(deleteCheck)) {
+                return
+            }
         }
 
         const memeId = $(button).data('meme-id');
@@ -190,17 +159,8 @@
 
     // remove the delete meme from the page
     function memeDeleted(memeId) {
-        var memes = $("#submitted-memes-container").find('.item');
-        if (memes.length <= 2) {
-            $('#carousel-controls').css('display', 'none')
-        }
-        const carousel = $('#submitted-memes-container')
-
-        carousel.find(`[id="meme-${memeId}"]`).remove()
-        var next = carousel.find('.item').first();
-        next.addClass('active');
-        var actualLength = memes.length - 1;
-        $('#your-memes').text(`You have submitted ${actualLength} meme${actualLength == 1 ? '' : 's'}`);
+        const memesContainer = $('#submitted-memes-container')
+        memesContainer.find(`[id="meme-${memeId}"]`).remove()
 
     }
 
