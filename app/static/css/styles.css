@@ -385,7 +385,6 @@ body {
 .modal-content {
     max-width: 55%; /* Adjust as needed */
     max-height: 80vh; /* Adjust as needed */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow on the modal */
     overflow: hidden;
     display: flex; /* To center the image */
     justify-content: center;

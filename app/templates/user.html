@@ -13,6 +13,7 @@
                 <h4>Statistics</h4>
             </div>
             <div class="results-item-body row user-stats">
+
                 <p>Average Meme Rating: <strong>{{ view_user.total_avg_vote_received }}</strong></p>
                 <p>Average Rating Given to Others: <strong>{{ view_user.total_avg_vote_given }}</strong></p>
                 <p>Average Rating Given to Self: <strong>{{ view_user.total_avg_vote_received_from_self }}</strong></p>
@@ -21,12 +22,14 @@
                 <p>
                     Total Time Spent Voting: <strong>{% if  view_user.total_voting_time < 60 %}{{ view_user.total_voting_time }}</strong> seconds{% else %}{{ view_user.total_voting_time|div:60|floatformat:0}}</strong> minutes{% endif %}
                 </p>
+                {% if view_user.username == 'linden' %}
+                <p>Number of Meme Comp Platforms: <strong>1</strong></p>
+                {% endif %}
                 <p>Number of Memes Submitted: <strong>{{ view_user.total_memes }}</strong></p>
                 <p>Number of Votes Cast: <strong>{{ view_user.total_votes }}</strong></p>
                 <p>Number of Competitions: <strong>{{ view_user.total_competitions }}</strong></p>
                 <p>Competitions Won: <strong>{{ view_user.competitions_won }}</strong></p>
 
-                
                 {% if view_user.highest_rated_user %}
                     <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} ({{ view_user.highest_rated_user.avg_score|floatformat:2}})</p>
                 {% endif %}
@@ -39,8 +42,8 @@
        
         {% if meme_library %}
         <div class="m-2 results-item shadow">
-            <div class="item-header row">
-                Meme Library
+            <div class="item-header row text-center">
+                <h4>Meme Library</h4>
             </div>
             <div class="results-item-body row">
                 <div id="memeFilters" class="mb-3 d-flex justify-content-evenly align-items-end">
