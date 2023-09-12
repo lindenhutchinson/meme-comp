@@ -200,6 +200,7 @@ def serve_file(request, comp_name, meme_id):
     # Serve the file
     response = HttpResponse(file_data, content_type=file_data.content_type)
     response['Content-Disposition'] = f'attachment; filename="{meme.image.name}"'
+    response['Cache-Control'] = 'public, max-age=3600'
     return response
 
 
