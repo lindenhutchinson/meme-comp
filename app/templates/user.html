@@ -3,28 +3,34 @@
 {% block content %}
 
 <body>
-    <div class="row results-container justify-content-center mb-4">
+    <div id="imageModal" class="image-modal" style="display:none">
+        <img id="zoomedImage" class="modal-content" alt="Zoomed Image">
+    </div>
+    <div id="userContent" class="row results-container justify-content-center mb-4">
         <h1>{{ view_user.username }}'s Information</h1>
         <div class="m-2 results-item shadow">
             <div class="item-header row text-center">
                 <h4>Statistics</h4>
             </div>
-            <div class="results-item-body row">
-                <p>Competitions Won: {{ view_user.competitions_won }}</p>
-                <p>Number of Competitions: {{ view_user.total_competitions }}</p>
-                <p>Number of Memes Submitted: {{ view_user.total_memes }}</p>
-                <p>Average Meme Score: {{ view_user.total_avg_vote_received }}</p>
-                <p>Number of Votes Submitted: {{ view_user.total_votes }}</p>
-                <p>Average Voting Time: {{ view_user.total_avg_voting_time }} seconds</p>
+            <div class="results-item-body row user-stats">
+                <p>Average Meme Rating: <strong>{{ view_user.total_avg_vote_received }}</strong></p>
+                <p>Average Rating Given to Others: <strong>{{ view_user.total_avg_vote_given }}</strong></p>
+                <p>Average Rating Given to Self: <strong>{{ view_user.total_avg_vote_received_from_self }}</strong></p>
+
+                <p>Average Voting Time: <strong>{{ view_user.total_avg_voting_time }}</strong> seconds</p>
                 <p>
-                    Total Time Spent Voting: {% if  view_user.total_voting_time < 60 %}{{ view_user.total_voting_time }} seconds{% else %}{{ view_user.total_voting_time|div:60}} minutes{% endif %}
+                    Total Time Spent Voting: <strong>{% if  view_user.total_voting_time < 60 %}{{ view_user.total_voting_time }}</strong> seconds{% else %}{{ view_user.total_voting_time|div:60|floatformat:0}}</strong> minutes{% endif %}
                 </p>
-                <p>Average Vote Score Given: {{ view_user.total_avg_vote_given }}</p>
-                <p>Average Vote Score Given to Own Memes: {{ view_user.total_avg_vote_received_from_self }}</p>
+                <p>Number of Memes Submitted: <strong>{{ view_user.total_memes }}</strong></p>
+                <p>Number of Votes Cast: <strong>{{ view_user.total_votes }}</strong></p>
+                <p>Number of Competitions: <strong>{{ view_user.total_competitions }}</strong></p>
+                <p>Competitions Won: <strong>{{ view_user.competitions_won }}</strong></p>
+
+                
                 {% if view_user.highest_rated_user %}
                     <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} ({{ view_user.highest_rated_user.avg_score|floatformat:2}})</p>
                 {% endif %}
-                {% comment %} S A D - this doesnt work {% endcomment %}
+
                 {% comment %} {% if highest_user_rated_by %}
                     <p>Biggest Fan: {{ highest_user_rated_by.username }} ({{ highest_user_rated_by.avg_score|floatformat:2 }})</p>
                 {% endif %} {% endcomment %}
@@ -169,6 +175,41 @@
             memeGrid.appendChild(item);
         });
     });
+// Function to handle image card click
+function openImageModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+
+    // Set the image source to the clicked image
+    zoomedImage.src = imageSrc;
+
+    // Show the modal
+    modal.style.display = 'flex';
+}
+
+// Function to close the image modal
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    // Hide the modal
+    modal.style.display = 'none';
+}
+
+// Add click event listeners to image cards
+const imageCards = document.querySelectorAll('.image-card');
+
+imageCards.forEach(imageCard => {
+    imageCard.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent the click from propagating to the overlay
+        const imageSrc = imageCard.querySelector('img').src;
+        openImageModal(imageSrc);
+    });
+});
+
+// Add click event listener to close modal when clicking anywhere off the modal
+const imageModal = document.getElementById('imageModal');
+imageModal.addEventListener('click', (e) => {
+    closeImageModal();
+});
 </script>
 
 
