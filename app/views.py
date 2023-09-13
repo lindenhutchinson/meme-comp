@@ -208,14 +208,10 @@ def serve_file(request, comp_name, meme_id):
 def user_page(request, id):
     user = get_object_or_404(User, id=id)
 
-
     if not user.shares_comp_with(request.user):
         return HttpResponse("Access Forbidden", status=403)
 
     themes = user.participants.filter(competition__finished=True).values_list('competition__theme', flat=True).distinct()
-    # Retrieve sorting and filtering parameters from the GET request
-    sort_param = request.GET.get('sort')
-    filter_theme = request.GET.get('filter_theme')
 
     # Start with the base queryset for the user's meme library
     meme_library = Meme.objects.filter(user=user, competition__finished=True)

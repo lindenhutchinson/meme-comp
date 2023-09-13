@@ -83,8 +83,12 @@
                             data-date="{{ meme.created_at }}">
                             <div class="image-card">
                                 <div class="image-container">
-                                    <img loading="lazy" src="{% url 'serve_file' meme.competition.name meme.id %}" alt="One of your dank memes"
-                                        class="square-image d-block" />
+                                    <img 
+                                        loading="lazy" 
+                                        src="{% url 'serve_file' meme.competition.name meme.id %}" 
+                                        alt="One of your dank memes"
+                                        class="square-image d-block" 
+                                    />
                                 </div>
                                 <!-- Display competition theme and score details on mouseover -->
                                 <div class="card-details">
