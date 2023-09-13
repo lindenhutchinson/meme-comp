@@ -3,28 +3,45 @@ import json
 from channels.db import database_sync_to_async
 from .models import Competition, Participant
 from .utils import check_emoji_text
+import asyncio
+
+class WebSocketManager:
+    active_connections = {}  # A dictionary to store user WebSocket connections
+
+    @classmethod
+    async def add_connection(cls, user_id, websocket_instance):
+        
+        cls.active_connections[user_id] = websocket_instance
+
+    @classmethod
+    async def remove_connection(cls, user_id):
+        
+        if user_id in cls.active_connections:
+            del cls.active_connections[user_id]
+
+    @classmethod
+    async def close_connection(cls, user_id):
+        if user_id in cls.active_connections:
+            websocket_instance = cls.active_connections[user_id]
+            # Close the WebSocket connection gracefully
+            asyncio.create_task(websocket_instance.close(code=3000))
+            
+            del cls.active_connections[user_id]
+
 class CompetitionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # Get the competition name from the URL
         self.comp_name = self.scope["url_route"]["kwargs"]["competition_name"]
         self.participant_id = self.scope["url_route"]["kwargs"]["participant_id"]
+        if self.participant_id in WebSocketManager.active_connections:
+            await WebSocketManager.close_connection(self.participant_id)
         
-        # Join the competition group
         await self.channel_layer.group_add(self.comp_name, self.channel_name)
-
-        # this is causing problems - disabling user activity for now
-        # await self.channel_layer.group_send(self.comp_name, {"type":"update_active","data":{"id":self.participant_id, "active":True}})
-        # await self.toggle_active_participant(True)
-
-        # Accept the WebSocket connection
+        await WebSocketManager.add_connection(self.participant_id, self)
         await self.accept()
+
        
     async def disconnect(self, close_code):
-
-        # this is causing problems - disabling user activity for now
-        # await self.channel_layer.group_send(self.comp_name, {"type":"update_active","data":{"id":self.participant_id, "active":False}})
-        # await self.toggle_active_participant(False)
-        # Leave the competition group
         await self.channel_layer.group_discard(self.comp_name, self.channel_name)
 
     async def receive(self, text_data):

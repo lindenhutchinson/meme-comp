@@ -90,16 +90,27 @@
 		}, 2900); // Adjust the timeout duration as needed
 	}
 
+	function showSnackError(message) {
+		var snackbar = $("#snackbar");
+		if (snackbarTimeout) {
+			clearTimeout(snackbarTimeout);
+			snackbarTimeout = null;
+			snackbar.removeClass("show");
+		}
+
+		snackbar.removeClass(`btn-${prevColour}`)
+		snackbar.text(message);
+		snackbar.addClass(`btn-danger`)
+
+		prevColour = 'danger';
+		snackbar.addClass("show");
+	}
 	// ------------------------ WEB SOCKETS -----------------------------------	
 
 	const csrfToken = "{{csrf_token}}";
-
 	// Open websocket connection
 	var socket = null; // Declare the socket variable outside the function
 	function connectWebSocket() {
-		if (!(socket === null || socket.readyState !== WebSocket.OPEN)) {
-			console.log('Not reopening socket')
-		}
 		socket = new WebSocket(
 			"{{websocket_scheme}}://" +
 			window.location.host +
@@ -156,14 +167,15 @@
 		};
 
 		socket.onclose = function (event) {
-			console.log("Websocket connection closed.");
-			// Attempt to reconnect after a delay
-			setTimeout(connectWebSocket, 2000);
+			console.log("Websocket connection closed")
+			if (event.code === 3000) {
+				showSnackError('You have been disconnected. Refresh the page to reconnect.')
+			}
 		};
 
 		socket.onerror = function (error) {
 			console.error("Websocket error:", error);
-			setTimeout(connectWebSocket, 2000);
+			showSnackError('You have been disconnected. Refresh the page to reconnect.')
 		};
 	}
 
