@@ -51,7 +51,7 @@ class User(AbstractUser):
     @property
     def total_avg_vote_received(self):
         avg_vote_received = self.memes.aggregate(avg_score=Avg('votes__score')).get('avg_score') or 0
-        return round(avg_vote_received, 0)
+        return round(avg_vote_received, 2)
 
     @property
     def total_avg_vote_received_from_self(self):
