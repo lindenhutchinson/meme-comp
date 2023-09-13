@@ -12,6 +12,7 @@ LOGIN_URL = 'home'
 LOGIN_REDIRECT_URL = 'lobby'
 MEDIA_URL = '/media/'
 STATIC_URL = "/static/"
+CACHE_MIDDLEWARE_SECONDS = 604800 
 # Path where media is stored
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')

@@ -108,6 +108,8 @@
 	// ------------------------ WEB SOCKETS -----------------------------------	
 
 	const csrfToken = "{{csrf_token}}";
+	const compFinished = "{{competition.finished}}"
+	console.log(compFinished)
 	// Open websocket connection
 	var socket = null; // Declare the socket variable outside the function
 	function connectWebSocket() {
@@ -284,12 +286,14 @@
 		const numMemes = data.num_memes
 		$("#comp-started").css('display', '');
 		$("#comp-waiting").css('display', 'none');
-
 		$("#waiting-msg").text('Competition has started');
 		$('input[name="vote"]').prop('checked', false);
 		$("#num_votes").text('0');
 		$('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);
 
+		
+		$(".tiebreaker-image").attr("src", "");
+		$(".square-image").attr("src", "");
 		$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
 
 		showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
