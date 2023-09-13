@@ -34,7 +34,7 @@
                             <li class="list-group-item" data-participant-id="{{part.id}}">
                                 <div class="d-flex justify-content-center align-items-center">
                                     <span style="text-align:center; width:100%">
-                                        <a style="width:100%" class="btn btn-outline-dark" href="{% url 'user' part.user.id %}">{{ part.name }}</a>
+                                        <a target="_blank" style="width:100%" class="btn btn-outline-dark" href="{% url 'user' part.user.id %}">{{ part.name }}</a>
                                     </span>
                                     <!-- <span style="text-align:end">
                                         <i id="sleep-{{part.id}}" class="mr-2 bi bi-cup-hot {% if part.active %} hidden {% endif %}"></i>
