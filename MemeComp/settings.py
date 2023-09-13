@@ -12,19 +12,7 @@ LOGIN_URL = 'home'
 LOGIN_REDIRECT_URL = 'lobby'
 MEDIA_URL = '/media/'
 STATIC_URL = "/static/"
-WHITENOISE_MIMETYPES = {
-    ".js": "application/javascript",
-    ".css": "text/css",
-}
-STORAGES = {
-    "default": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    }
-}
-# CACHE_MIDDLEWARE_SECONDS = 604800 
+CACHE_MIDDLEWARE_SECONDS = 604800 
 # Path where media is stored
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
@@ -56,7 +44,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
