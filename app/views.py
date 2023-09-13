@@ -194,14 +194,16 @@ def serve_file(request, comp_name, meme_id):
     # only the uploader of the meme can access it before the competition has started
     if not competition.started and meme.participant.user != request.user:
         return HttpResponse("Access Forbidden", status=403)
-        
-    file_data = ContentFile(meme.image.read(), name=meme.image.name)
-    file_data.content_type = 'image/*'
-    # Serve the file
-    response = HttpResponse(file_data, content_type=file_data.content_type)
-    response['Content-Disposition'] = f'attachment; filename="{meme.image.name}"'
-    response['Cache-Control'] = 'public, max-age=3600'
-    return response
+    try:
+        file_data = ContentFile(meme.image.read(), name=meme.image.name)
+        file_data.content_type = 'image/*'
+        # Serve the file
+        response = HttpResponse(file_data, content_type=file_data.content_type)
+        response['Content-Disposition'] = f'attachment; filename="{meme.image.name}"'
+        response['Cache-Control'] = 'public, max-age=3600'
+        return response
+    except FileNotFoundError:
+        return HttpResponse("Not Found", status=404)
 
 
 @login_required

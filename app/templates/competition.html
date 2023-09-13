@@ -176,8 +176,8 @@
 		};
 
 		socket.onerror = function (error) {
-			console.error("Websocket error:", error);
-			showSnackError('You have been disconnected. Refresh the page to reconnect.')
+			console.log("Websocket error")
+			showSnackError("Something bad happened. Try refreshing the page. If that doesn't fix it, Linden will brb")
 		};
 	}
 
