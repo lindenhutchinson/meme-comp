@@ -107,17 +107,15 @@ class User(AbstractUser):
     
     # Property to get the user who the current user has rated their memes the highest.
     @property
-    def highest_user_rated_by(self):
-        return User.objects.annotate(
-            avg_score_received=Avg(
+    def highest_rated_by(self):
+        return User.objects.exclude(id=self.id).annotate(
+            avg_score_given=Avg(
                 Case(
                     When(
-                        memes__user=self,
-                        then=F('memes__votes__score')
+                        votes__meme__user=self,
+                        then=F('votes__score')
                     ),
                     output_field=FloatField()
                 )
             )
-        ).filter(
-            memes__user=self
-        ).exclude(id=self.id).order_by('-avg_score_received').first()
+        ).order_by('-avg_score_given').first()

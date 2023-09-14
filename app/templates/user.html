@@ -7,7 +7,7 @@
         <img id="zoomedImage" class="modal-content" alt="Zoomed Image">
     </div>
     <div id="userContent" class="row results-container justify-content-center mb-4">
-        <h1>{{ view_user.username }}'s Information</h1>
+        <h1 style="text-align:center">{{ view_user.username }}</h1>
         <div class="m-2 results-item shadow">
             <div class="item-header row text-center">
                 <h4>Statistics</h4>
@@ -31,12 +31,12 @@
                 <p>Competitions Won: <strong>{{ view_user.competitions_won }}</strong></p>
 
                 {% if view_user.highest_rated_user %}
-                    <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} ({{ view_user.highest_rated_user.avg_score|floatformat:2}})</p>
+                    <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} <strong>{{ view_user.highest_rated_user.avg_score|floatformat:2}}</strong></p>
                 {% endif %}
 
-                {% comment %} {% if highest_user_rated_by %}
-                    <p>Biggest Fan: {{ highest_user_rated_by.username }} ({{ highest_user_rated_by.avg_score|floatformat:2 }})</p>
-                {% endif %} {% endcomment %}
+                {% if view_user.highest_rated_by %}
+                    <p>Biggest Fan: {{ view_user.highest_rated_by.username }} <strong>{{ view_user.highest_rated_by.avg_score_given|floatformat:2 }}</strong></p>
+                {% endif %}
             </div>
         </div>
        
