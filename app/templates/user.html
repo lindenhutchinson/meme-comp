@@ -34,9 +34,9 @@
                     <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} <strong>{{ view_user.highest_rated_user.avg_score|floatformat:2}}</strong></p>
                 {% endif %}
 
-                {% if view_user.highest_rated_by %}
+                {% comment %} {% if view_user.highest_rated_by %}
                     <p>Biggest Fan: {{ view_user.highest_rated_by.username }} <strong>{{ view_user.highest_rated_by.avg_score_given|floatformat:2 }}</strong></p>
-                {% endif %}
+                {% endif %} {% endcomment %}
             </div>
         </div>
        

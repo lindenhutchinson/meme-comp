@@ -113,7 +113,7 @@ class User(AbstractUser):
                 Case(
                     When(
                         votes__meme__user=self,
-                        then=F('votes__score')
+                        then=F('memes__votes__score')
                     ),
                     output_field=FloatField()
                 )
