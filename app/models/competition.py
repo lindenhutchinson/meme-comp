@@ -229,7 +229,10 @@ class Competition(models.Model):
                     'participant': participant.name,
                     'score': round(lowest_score or 0, 2)
                 }
-        return {}
+        return {
+            'participant': '',
+            'score': ''
+        }
     
     @property
     def avg_vote_on_own_memes(self):
@@ -253,7 +256,7 @@ class Competition(models.Model):
         # get the average score participants gave to their own memes in the competition 
         comp_total_avg = comp_total / self.num_voters
     
-        return comp_total_avg
+        return round(comp_total_avg, 2)
 
     def __str__(self):
         return f"Competition {self.theme} ({self.name})"

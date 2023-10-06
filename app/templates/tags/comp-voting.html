@@ -85,6 +85,35 @@
 </div>
 
 <script>
+    const EMOJI_LIST = [
+        '&#127378', //'🆒'
+        '&#128175',//'💯',
+        '&#128170',//'💪',
+        '&#128169',//'💩',
+        '&#128293',//'🔥',
+        '&#128514',//'😂',
+        '&#128556',//'😬',
+        '&#128579',//'🙃',
+        '&#129312',//'🤠',
+        '&#129321',//'🤩',
+        '&#129408',//'🦀',
+        '&#129504',//'🧠',
+        '&#128079',//'👏',
+        '&#128076',//'👌',
+        '&#128077',//'👍',
+        '&#127942',//'🏆',
+        '&#127881',//'🎉',
+        '&#127752',//'🌈',
+        '&#10067',//'❓',
+        '&#9989',//'✅',
+        '&#9940',//'⛔',
+        '&#9889',//'⚡',
+        '&#11088',//'⭐',
+        '&#9749',//☕
+        '&#127383',//🆗
+        '&#127775',//🌟
+    ];
+
     var emojiTimeout;
     $(document).ready(function () {
         $(".e-btn").on('click', function () {
@@ -133,6 +162,7 @@
                 } else {
                     showSnackbar('Vote submitted', 'success')
                 }
+                $('#readyup-btn').prop('disabled', true);
             },
             error: function (xhr, status, error) {
                 if (xhr.status === 403) {
@@ -226,42 +256,13 @@
         return `&#${randomCodePoint};`;
     }
     function createEmojiBtns() {
-        const emojis = [
-            '&#127378', //'🆒'
-            '&#128175',//'💯',
-            '&#128170',//'💪',
-            '&#128169',//'💩',
-            '&#128293',//'🔥',
-            '&#128514',//'😂',
-            '&#128556',//'😬',
-            '&#128579',//'🙃',
-            '&#129312',//'🤠',
-            '&#129321',//'🤩',
-            '&#129408',//'🦀',
-            '&#129504',//'🧠',
-            '&#128079',//'👏',
-            '&#128076',//'👌',
-            '&#128077',//'👍',
-            '&#127942',//'🏆',
-            '&#127881',//'🎉',
-            '&#127752',//'🌈',
-            '&#10067',//'❓',
-            '&#9989',//'✅',
-            '&#9940',//'⛔',
-            '&#9889',//'⚡',
-            '&#11088',//'⭐',
-            '&#9749',//☕
-            '&#127383',//🆗
-            '&#127775',//🌟
-        ];
-
         $('#emoji-container').empty()
         const numBtns = 3;
         for (i = 0; i < numBtns; i++) {
-            var emoji = emojis[Math.floor(Math.random() * emojis.length)];
-            const index = emojis.indexOf(emoji);
+            var emoji = EMOJI_LIST[Math.floor(Math.random() * EMOJI_LIST.length)];
+            const index = EMOJI_LIST.indexOf(emoji);
             if (index > -1) { // only splice array when item is found
-                emojis.splice(index, 1); // 2nd parameter means remove one item only
+                EMOJI_LIST.splice(index, 1); // 2nd parameter means remove one item only
             }
             if (Math.random() < 0.1) {
                 emoji = getRandomEmoji();

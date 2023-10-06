@@ -6,7 +6,7 @@ class Participant(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='participants')
     competition = models.ForeignKey('Competition', on_delete=models.CASCADE, related_name='participants')
     active = models.BooleanField(default=True)
-    
+    ready = models.BooleanField(default=False)
     def __str__(self):
         return f'Participant {self.name}'
     

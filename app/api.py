@@ -129,7 +129,10 @@ def meme_vote(request, comp_name):
             send_shame_message(competition.name, request.user.username)
             return Response({'detail':'Bad Request'}, status=status.HTTP_400_BAD_REQUEST)
             
-
+    participant.ready=True
+    participant.save()
+    send_channel_message(competition.name, 'participant_ready', {'part_id':participant.id, 'is_ready':True})
+    
     try:
         vote = Vote.objects.get(
             meme=meme, 
@@ -285,7 +288,32 @@ def cancel_competition(request, comp_name):
     votes = Vote.objects.filter(meme__in=comp_memes)
     votes.delete()
 
+    Participant.objects.filter(competition=competition).exclude(user=competition.owner).update(ready=False)
     # alert the channel that the competition has been cancelled
     send_channel_message(competition.name, 'competition_cancelled')
     return Response(status=status.HTTP_200_OK)           
 
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def readyup_participant(request, part_id):
+    participant = get_object_or_404(Participant, id=part_id, user=request.user)
+    if participant.competition.finished:
+        return Response(
+            {"detail": "The competition has already finished."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+    )
+        
+    participant.ready = True
+    participant.save()
+    
+    send_channel_message(
+        participant.competition.name, 
+        'participant_ready', 
+        {
+            'is_ready':True,
+            'part_id':participant.id
+        }
+    )
+    return Response(status=status.HTTP_200_OK)           
+    

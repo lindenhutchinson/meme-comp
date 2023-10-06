@@ -97,7 +97,9 @@ def lobby(request):
                 competition.owner = request.user
                 competition.name = generate_random_string(8)
                 competition.save()
-                _, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
+                participant, created = Participant.objects.get_or_create(name=user.username, user=user, competition=competition)
+                participant.ready = True
+                participant.save()
                 if created:
                         return redirect('competition', comp_name=competition.name)
 

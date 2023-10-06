@@ -31,16 +31,18 @@
                 <div class="overflow-auto participants-box p-1" style="max-height: 200px;">
                     <ul id="participants" class="list-group">
                         {% for part in competition.sorted_participants %}
-                            <li class="list-group-item" data-participant-id="{{part.id}}">
-                                <div class="d-flex justify-content-center align-items-center">
-                                    <span style="text-align:center; width:100%">
-                                        <a target="_blank" style="width:100%" class="btn btn-outline-dark" href="{% url 'user' part.user.id %}">{{ part.name }}</a>
-                                    </span>
-                                    <!-- <span style="text-align:end">
-                                        <i id="sleep-{{part.id}}" class="mr-2 bi bi-cup-hot {% if part.active %} hidden {% endif %}"></i>
-                                    </span> -->
-                                </div>
-                            </li>
+                        <li class="list-group-item" data-participant-id="{{ part.id }}" data-is-host="{% if part.user == competition.owner %}true{% endif %}">
+                            <div class="d-flex justify-content-center align-items-center">
+                                <span style="text-align:center; width:100%" title="{{ part.name }}">
+                                    <a target="_blank" style="width:100%" class="btn btn-outline-dark" href="{% url 'user' part.user.id %}">{{ part.name|truncatechars:10 }}</a>
+                                </span>
+                                <span style="text-align:end">
+                                    <!-- Add an empty <i> element for the icon with a unique ID -->
+                                    <i id="icon-{{ part.id }}" class="m-3 bi {% if part.ready %}bi-check-circle-fill text-success{% else %}bi-x-circle-fill text-danger{% endif %}"></i>
+                                </span>
+                            </div>
+                        </li>                        
+                        
                         {% endfor %}
                     </ul>
                 </div>
@@ -75,14 +77,14 @@
                         </button>
                     </p>
                 {% else %}
-                    <p class="mt-3" id="waiting-msg">
-                        {% if competition.finished %}
-                        Competition has finished
-                        {% elif competition.started %}
-                        Competion has started
-                        {% else %}
-                        Waiting for {{competition.owner.username}} to start the competition...
-                        {% endif %}
+                    <p>
+                        <button id="readyup-btn"
+                                class="btn btn-success mx-auto mt-3 col-6"
+                                onclick="readyUp()"
+                                style="width:100%"
+                                {% if competition.finished or participant.ready %}disabled{% endif %}>
+                            Ready
+                        </button>
                     </p>
                 {% endif %}
             </div>
@@ -110,6 +112,24 @@
 		// Alert the copied text
 		showSnackbar("Competition URL has been copied", 'primary');
 	}
+
+    function readyUp() {
+        $.ajax({
+			url: "{% url 'readyup_participant' participant.id %}",
+			type: "POST",
+			data: {},
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader("X-CSRFToken", csrfToken);
+			},
+			success: function (response) {
+			},
+			error: function (xhr, status, error) {
+				showSnackbar('Unable to ready up. ask lh idk', 'danger');
+			}
+		});
+        $('#readyup-btn').prop('disabled', true)
+    }
+
     	// load next meme via AJAX
 	function advanceCompetition() {
 		$.ajax({

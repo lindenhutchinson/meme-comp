@@ -4,10 +4,11 @@ from django import template
 register = template.Library()
 
 @register.inclusion_tag('tags/comp-card.html')
-def comp_card(user, competition):
+def comp_card(user, participant, competition):
     return {
         'user':user,
-        'competition':competition
+        'competition':competition,
+        'participant':participant
     }
 
 @register.inclusion_tag('tags/comp-waiting.html')

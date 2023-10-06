@@ -22,7 +22,7 @@
 <div id="snackbar"></div>
 <div class="text-center g-0 mb-4">
 	<div class="row m-2">
-		{% comp_card request.user competition %}
+		{% comp_card request.user participant competition %}
 
 		{% comp_waiting participant competition %}
 
@@ -158,12 +158,14 @@
 					break;	
 				case 'do_tiebreaker':
 					$('#tiebreaker_votes').text('0');
-
 					doTieBreaker(message.data);
 					break;	
 				case 'meme_voted':
 					$("#num_votes").text(message.data);
 					$('#tiebreaker_votes').text(message.data);
+					break;
+				case 'participant_ready':
+					doParticipantReady(message.data);
 					break;
 			}
 		};
@@ -181,6 +183,22 @@
 		};
 	}
 
+	function doParticipantReady(data) {
+		const partId = data.part_id;
+		const isReady = data.is_ready;
+	
+		// Find the <i> element corresponding to the participant by data-participant-id
+		const iconElement = $(`#icon-${partId}`);
+	
+		// Update the icon based on the is_ready status
+		if (isReady) {
+			iconElement.removeClass('bi-x-circle-fill text-danger').addClass('bi-check-circle-fill text-success');
+		} else {
+			iconElement.removeClass('bi-check-circle-fill text-success').addClass('bi-x-circle-fill text-danger');
+		}
+	}
+	
+
 	function doUserJoined(data) {
 		var participantName = data.name;
 		const participantId = data.id;
@@ -192,7 +210,10 @@
 				<li class="list-group-item" data-participant-id="${participantId}">
 					<div class="d-flex justify-content-center align-items-center">
 						<span style="text-align:center; width:100%">
-							<a style="width:100%" class="btn btn-outline-dark" href="/user/${data.user_id}">${participantName}</a>
+							<a target="_blank" style="width:100%" class="btn btn-outline-dark" href="/user/${data.user_id}">${participantName.slice(0, 9) + (participantName.length > 9 ? '...' : '')}</a>
+						</span>
+						<span style="text-align:end">
+							<i id="icon-${participantId }" class="m-3 bi bi-x-circle-fill text-danger"></i>
 						</span>
 					</div>
 				</li>
@@ -211,14 +232,14 @@
 		}
 	}
 	function doCompetitionResults(results) {
+		// disable the ready up button
+        $('#readyup-btn').prop('disabled', true);		
 		$("#comp-started").css('display', 'none');
 		$("#comp-waiting").css('display', 'none');
 		$("#comp-tiebreaker").css('display', 'none');
 		$("#comp-finished").css('display', '');
 
 		$("#next-meme-btn").css('display', 'none');
-		$("#waiting-msg").text('Competition has finished');
-
 		showSnackbar('Competition has finished', 'info')
 
 		if (results) {
@@ -243,17 +264,18 @@
 		}
 	}
 	function doCompetitionCancelled() {
-		$("#comp-started").css('display', 'none');
+		window.location.reload();
+		// just reload the page lol ez fix
+		/*$("#comp-started").css('display', 'none');
 		$("#comp-finished").css('display', 'none');
 		$("#comp-tiebreaker").css('display', 'none');
 		$("#comp-waiting").css('display', '');
 
 		$('input[name="vote"]').prop('checked', false);
 		$("#num_votes").text('0');
-		$("#waiting-msg").text('Waiting for {{competition.owner.username}} to start the competition...');
 		$("#current-meme-image").attr('src', '');
 		$("#tiebreaker-images").empty()
-		showSnackbar('Competition cancelled', 'info');
+		showSnackbar('Competition cancelled', 'info');*/
 	}
 
 	function doTieBreaker(tiebreakMemes) {
@@ -277,16 +299,29 @@
 				`
 			$('#tiebreaker-images').append(html)
 		})
-		showSnackbar('T-T-T-T-TIEBREAKER!!!!!!!', 'warning')
+		showSnackbar('TIEBREAKER TIME!!!!!!!', 'warning')
 	}
 
 	function doNextMeme(data) {
 		const memeId = data.id;
 		const memeCtr = data.ctr;
 		const numMemes = data.num_memes
+
+		// update all participants to not be ready (except the host)
+		$('.list-group-item').each(function() {
+			const isHost = $(this).data('is-host');
+			const participantId = $(this).data('participant-id');
+			const iconElement = $(`#icon-${participantId}`);
+	
+			if (!isHost) {
+				iconElement.removeClass('bi-check-circle-fill text-success').addClass('bi-x-circle-fill text-danger');
+			}
+		});
+		// enable the ready button
+        $('#readyup-btn').prop('disabled', false)
+
 		$("#comp-started").css('display', '');
 		$("#comp-waiting").css('display', 'none');
-		$("#waiting-msg").text('Competition has started');
 		$('input[name="vote"]').prop('checked', false);
 		$("#num_votes").text('0');
 		$('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);

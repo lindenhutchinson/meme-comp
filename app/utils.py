@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 import random
 import string
 from django.db.models import Sum
-from .models import Competition, SeenMeme, Meme
+from .models import Competition, SeenMeme, Meme, Participant
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib import messages
@@ -135,6 +135,7 @@ def convert_to_localtime(utctime):
     return localtz.strftime(fmt)
 
 def do_advance_competition(competition):
+    competition.participants.exclude(user=competition.owner).update(ready=False)
     # attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition.id)
     if competition.current_meme:
@@ -157,6 +158,7 @@ def do_advance_competition(competition):
                 'avg_own_score':f'{competition.lowest_avg_own_memes["participant"]} gave themselves a {competition.lowest_avg_own_memes["score"]} average score',
                 'avg_meme_score':competition.avg_meme_score,
                 'avg_vote_time':competition.avg_vote_time,
+                'avg_vote_on_own_memes':competition.avg_vote_on_own_memes
         } if len(competition.votes.all()) else {}
 
         if len(competition.votes.all()):
