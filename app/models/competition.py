@@ -176,7 +176,7 @@ class Competition(models.Model):
                     participant = p
     
             return {
-                'participant':participant, 
+                'participant':participant.name, 
                 'vote_time': round(highest_avg, 2)
             }
         return {}
@@ -195,7 +195,7 @@ class Competition(models.Model):
                     
             if participant:
                 return {
-                    'participant':participant, 
+                    'participant':participant.name, 
                     'vote_time': round(lowest_avg, 2)
                 }
                 
