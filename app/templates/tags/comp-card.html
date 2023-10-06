@@ -124,7 +124,7 @@
 			success: function (response) {
 			},
 			error: function (xhr, status, error) {
-				showSnackbar('Unable to ready up. ask lh idk', 'danger');
+				showSnackbar('Failed to ready up...', 'danger');
 			}
 		});
         $('#readyup-btn').prop('disabled', true)
@@ -196,25 +196,5 @@
 			}
 		});
 	}
-    // function updateParticipantStatus(participantId, active) {
-    // 	const participantLi = $(`li[data-participant-id="${participantId}"]`);
-    // 	const sleepIcon = $(`li[data-participant-id="${participantId}"] i`);
-
-    // 	if (sleepIcon.length > 0) {
-    // 		if (active) {
-    // 			if (!sleepIcon.hasClass('hidden')) {
-    // 				sleepIcon.addClass('hidden');
-    // 				$('#participants').remove(participantLi);
-    // 				$("#participants").prepend(participantLi);
-    // 			}
-    // 		} else {
-    // 			if (sleepIcon.hasClass('hidden')) {
-    // 				sleepIcon.removeClass('hidden');
-    // 				$('#participants').remove(participantLi);
-    // 				$("#participants").append(participantLi);
-    // 			}
-    // 		}
-    // 	}
-    // }
 
 </script>

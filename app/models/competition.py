@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.db.models import Avg, Sum, Count,F, ExpressionWrapper, FloatField, StdDev, OuterRef, Subquery
 
+SUITABLY_HIGH_NUMBER=99999999
 
 class Competition(models.Model):
     name = models.CharField(unique=True, max_length=16)
@@ -170,16 +171,10 @@ class Competition(models.Model):
             highest_avg = 0
             participant = None
             for p in self.participants.all():
-                avg_vote_time = 0
-                for v in p.votes.all():
-                    avg_vote_time += v.voting_time
-
-                if avg_vote_time:
-                    avg_vote_time /= len(p.votes.all())
-                    if avg_vote_time > highest_avg:
-                        highest_avg = avg_vote_time
-                        participant = p.name
-
+                if p.avg_vote_time > highest_avg:
+                    highest_avg = p.avg_vote_time
+                    participant = p
+    
             return {
                 'participant':participant, 
                 'vote_time': round(highest_avg, 2)
@@ -188,29 +183,28 @@ class Competition(models.Model):
     
     @property
     def lowest_avg_vote_time(self):
+        # pretty gross but it works
+        # blame django for not letting you use computed properties in queries
         if len(self.votes.all()):
-            lowest_avg = 999999999999
+            lowest_avg = SUITABLY_HIGH_NUMBER
             participant = None
             for p in self.participants.all():
-                avg_vote_time = 0
-                for v in p.votes.all():
-                    avg_vote_time += v.voting_time
-
-                if avg_vote_time:
-                    avg_vote_time /= len(p.votes.all())
-                    if avg_vote_time < lowest_avg:
-                        lowest_avg = avg_vote_time
-                        participant = p.name
-
-            return {
-                'participant':participant, 
-                'vote_time': round(lowest_avg, 2)
-            }
+                if p.avg_vote_time < lowest_avg and p.avg_vote_time > 0:
+                    lowest_avg = p.avg_vote_time
+                    participant = p
+                    
+            if participant:
+                return {
+                    'participant':participant, 
+                    'vote_time': round(lowest_avg, 2)
+                }
+                
+            return 
         return {}
         
     @property
     def lowest_avg_own_memes(self):
-        lowest_score = 999999
+        lowest_score = SUITABLY_HIGH_NUMBER
         participant = None
         for part in self.participants.all():
             total = 0
@@ -229,33 +223,24 @@ class Competition(models.Model):
                     'participant': participant.name,
                     'score': round(lowest_score or 0, 2)
                 }
-        return {
-            'participant': '',
-            'score': ''
-        }
+        return {}
     
     @property
     def avg_vote_on_own_memes(self):
-        
-        comp_total = 0
         # ensure participants have voted in this competition before continuing
         if not (self.num_voters and self.num_memes):
-            return comp_total
-        
-        # get the average score all participants gave their own memes
-        for part in self.participants.all():
-            total = 0
-            for v in part.votes.all():
-                if v.meme.participant == part:
-                    total += v.score
-            
-            if part.votes.count() and part.memes.count():       
-                total /= part.memes.count()
-                comp_total += total
-               
-        # get the average score participants gave to their own memes in the competition 
-        comp_total_avg = comp_total / self.num_voters
-    
+            return 0.0
+                
+        own_votes = self.votes.filter(meme__participant=F('participant'))
+        own_votes_aggregate = own_votes.aggregate(
+            total_score=Sum('score'),
+            num_votes=Count('id')
+        )
+        # Calculate the average score participants gave to their own memes in the competition
+        comp_total_avg = (
+            own_votes_aggregate['total_score'] / own_votes_aggregate['num_votes']
+        ) if own_votes_aggregate['num_votes'] else 0.0
+
         return round(comp_total_avg, 2)
 
     def __str__(self):
