@@ -112,6 +112,27 @@
         '&#9749',//☕
         '&#127383',//🆗
         '&#127775',//🌟
+        '&#128512', //'😀',
+        '&#128525', //'😅',
+        '&#128520', //'😈',
+        '&#128568', //'😸',
+        '&#128539', //'😋',
+        '&#128523', //'😃',
+        '&#128540', //'😌',
+        '&#128570', //'😺',
+        '&#128519', //'😇',
+        '&#128526', //'😆',
+        '&#128536', //'😔',
+        '&#128579', //'🙃',
+        '&#128541', //'😍',
+        '&#128557', //'😭',
+        '&#128522', //'😂',
+        '&#128527', //'😇',
+        '&#128578', //'🙆',
+        '&#128515', //'😃',
+        '&#128534', //'😆',
+        '&#128566', //'😾',
+        '&#128546', //'😎',
     ];
 
     var emojiTimeout;
@@ -258,11 +279,13 @@
     function createEmojiBtns() {
         $('#emoji-container').empty()
         const numBtns = 3;
+        // get a copy of the emoji constant to avoid modifying it
+        const emojiList = EMOJI_LIST.slice(0);
         for (i = 0; i < numBtns; i++) {
-            var emoji = EMOJI_LIST[Math.floor(Math.random() * EMOJI_LIST.length)];
-            const index = EMOJI_LIST.indexOf(emoji);
+            var emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            const index = emojiList.indexOf(emoji);
             if (index > -1) { // only splice array when item is found
-                EMOJI_LIST.splice(index, 1); // 2nd parameter means remove one item only
+                emojiList.splice(index, 1); // 2nd parameter means remove one item only
             }
             if (Math.random() < 0.1) {
                 emoji = getRandomEmoji();
