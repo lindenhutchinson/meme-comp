@@ -212,7 +212,8 @@ def serve_file(request, comp_name, meme_id):
 def user_page(request, id):
     user = get_object_or_404(User, id=id)
 
-    if not user.shares_comp_with(request.user):
+    # only allow users to view the users they share a competition with
+    if not user.shares_comp_with(request.user) and not user == request.user:
         return HttpResponse("Access Forbidden", status=403)
 
     themes = user.participants.filter(competition__finished=True).values_list('competition__theme', flat=True).distinct()
