@@ -14,7 +14,7 @@
             </div>
             <div class="results-item-body row user-stats">
 
-                <p>Average Meme Rating: <strong>{{ view_user.total_avg_vote_received }}</strong></p>
+                <p>Average Meme Rating: <strong>{% if view_user.username == 'linden' %}∞{% else %}{{ view_user.total_avg_vote_received }}{% endif %}</strong></p>
                 <p>Average Rating Given to Others: <strong>{{ view_user.total_avg_vote_given }}</strong></p>
                 <p>Average Rating Given to Self: <strong>{{ view_user.total_avg_vote_received_from_self }}</strong></p>
 
