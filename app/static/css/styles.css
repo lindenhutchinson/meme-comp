@@ -405,3 +405,15 @@ body {
     font-size:larger;
     padding-bottom:15px;
 }
+
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.meme-footer {
+    display: flex;
+    justify-content: end;
+    padding:8px;
+}

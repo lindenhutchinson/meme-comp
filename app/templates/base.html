@@ -81,12 +81,15 @@
                 </div>
             </div>
         {% endif %}
-        <div class="container mt-3">
+        <div class="container mt-3 main">
             {% block content %}
             {% endblock content %}
         </div>
         {% block js %}{% endblock js %}
     </body>
+    <footer class="bg-dark text-light meme-footer">
+        made with ❤️ by linden
+    </footer>
     <script>
         $(document).ready(function() {
             // Set the timeout duration in milliseconds (e.g., 3000ms for 3 seconds)
