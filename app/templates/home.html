@@ -54,9 +54,6 @@
                         </form>
                     </div>
                 </div>
-                <div class="row">
-                    <p id="joke"></p>
-                </div>
             </div>
         </div>
     </div>
@@ -82,21 +79,6 @@
             $(".nav-link").removeClass("active");
             $(this).addClass("active");
         });
-        if(Math.random() < 0.3) {
-            $.ajax({
-                url: "https://icanhazdadjoke.com/",
-                headers: {
-                    Accept: "application/json"
-                },
-                type: "GET",
-                success: function (response) {
-                    $('#joke').text(response.joke)
-                },
-                error: function (xhr, status, error) {
-                    console.error(xhr.responseText);
-                }
-            });
-        }
     });
 </script>
 {% endblock content %}
