@@ -288,7 +288,7 @@ def cancel_competition(request, comp_name):
     votes = Vote.objects.filter(meme__in=comp_memes)
     votes.delete()
 
-    Participant.objects.filter(competition=competition).exclude(user=competition.owner).update(ready=False)
+    Participant.objects.filter(competition=competition).update(ready=False)
     # alert the channel that the competition has been cancelled
     send_channel_message(competition.name, 'competition_cancelled')
     return Response(status=status.HTTP_200_OK)           

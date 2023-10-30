@@ -309,13 +309,9 @@
 
 		// update all participants to not be ready (except the host)
 		$('.list-group-item').each(function() {
-			const isHost = $(this).data('is-host');
 			const participantId = $(this).data('participant-id');
 			const iconElement = $(`#icon-${participantId}`);
-	
-			if (!isHost) {
-				iconElement.removeClass('bi-check-circle-fill text-success').addClass('bi-x-circle-fill text-danger');
-			}
+			iconElement.removeClass('bi-check-circle-fill text-success').addClass('bi-x-circle-fill text-danger');
 		});
 		// enable the ready button
         $('#readyup-btn').prop('disabled', false)

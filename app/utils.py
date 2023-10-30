@@ -135,7 +135,7 @@ def convert_to_localtime(utctime):
     return localtz.strftime(fmt)
 
 def do_advance_competition(competition):
-    competition.participants.exclude(user=competition.owner).update(ready=False)
+    competition.participants.update(ready=False)
     # attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition.id)
     if competition.current_meme:
