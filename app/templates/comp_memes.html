@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<body >
+
+    <div id="imageModal" class="image-modal" style="display:none">
+        <img id="zoomedImage" class="modal-content" alt="Zoomed Image">
+    </div>
+    <a href="{% url 'competition' competition.name %}" class="btn btn-sm btn-primary back-btn">Back to Competition</a>
+    <h1 class="d-flex justify-content-center pb-4">{{competition.theme}}</h1>
+    <div id="meme-grid" class="row mt-3">
+        {% for meme in competition.top_memes %}
+        <div class="col-md-4 col-sm-6 col-12 mb-4"
+            data-score="{{ meme.avg_score }}">
+            <div class="image-card">
+                <div class="image-container">
+                    <img 
+                        loading="lazy" 
+                        src="{% url 'serve_file' meme.competition.name meme.id %}" 
+                        alt="A seriously dank meme"
+                        class="square-image d-block" 
+                    />
+                </div>
+                <!-- Display competition theme and score details on mouseover -->
+                <div class="card-details">
+                    <small>Score: {{ meme.avg_score }}</small><br>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+<script>
+    // Function to handle image card click
+function openImageModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+
+    // Set the image source to the clicked image
+    zoomedImage.src = imageSrc;
+
+    // Show the modal
+    modal.style.display = 'flex';
+}
+
+// Function to close the image modal
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    // Hide the modal
+    modal.style.display = 'none';
+}
+
+// Add click event listeners to image cards
+const imageCards = document.querySelectorAll('.image-card');
+
+imageCards.forEach(imageCard => {
+    imageCard.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent the click from propagating to the overlay
+        const imageSrc = imageCard.querySelector('img').src;
+        openImageModal(imageSrc);
+    });
+});
+
+// Add click event listener to close modal when clicking anywhere off the modal
+const imageModal = document.getElementById('imageModal');
+imageModal.addEventListener('click', (e) => {
+    closeImageModal();
+});
+</script>
+{% endblock %}

@@ -4,7 +4,10 @@
             <div class="card-title">
                 <h2>Competition Results</h2>
             </div>
-            <div class="to-details">
+            <div class="d-flex justify-content-evenly">
+                <a href="{% url 'competition_memes' competition.name %}" class="btn btn-sm btn-primary back-btn">
+                    All Memes
+                </a>
                 <a href="{% url 'competition_results' competition.name %}"
                     class="btn btn-sm btn-primary back-btn">Detailed Results</a>
             </div>

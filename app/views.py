@@ -233,3 +233,16 @@ def user_page(request, id):
         'themes':themes
     }
     return render(request, 'user.html', context)
+
+
+@login_required
+def competition_memes(request, comp_name):
+    comp = get_object_or_404(Competition, name=comp_name)
+    # only users that have joined the competition are allowed to view the memes
+    if not comp.participants.filter(user=request.user).exists():
+        return HttpResponse("Access Forbidden", status=403)
+    
+    if not comp.finished:
+        return HttpResponse("You're not allowed to view the memes of an unfinished competition", status=403)
+    
+    return render(request, 'comp_memes.html', {'competition': comp})
