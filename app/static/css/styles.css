@@ -78,6 +78,7 @@ body {
     color:white;
     border-bottom-left-radius:25px;
     border-bottom-right-radius:25px;
+    justify-content: space-evenly;
 }
 .results-item-body {
     display: flex;
