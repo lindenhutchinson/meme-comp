@@ -11,8 +11,10 @@ from django.db.models import (
     StdDev,
     OuterRef,
     Subquery,
+    BooleanField,
 )
 from django.db.models.functions import Coalesce
+from django.db.models import Case, When
 
 SUITABLY_HIGH_NUMBER = 99999999
 
@@ -229,24 +231,30 @@ class Competition(models.Model):
 
     @property
     def lowest_avg_own_memes(self):
-        lowest_score = SUITABLY_HIGH_NUMBER
-        participant = None
-        for part in self.participants.all():
-            total = 0
-            for v in part.votes.all():
-                if v.meme.participant == part:
-                    total += v.score
+        lowest_avg_participant = (
+            self.participants.annotate(
+                avg_score=Coalesce(
+                    Avg(
+                        ExpressionWrapper(F("votes__score"), output_field=FloatField()),
+                        filter=Case(
+                            When(votes__meme__participant=F("id"), then=True),
+                            default=False,
+                            output_field=BooleanField(),
+                        ),
+                    ),
+                    # use a high number here to not assign this to any participants
+                    # that didnt submit memes or didnt vote on their own memes
+                    10.0,
+                )
+            )
+            .order_by("avg_score")
+            .first()
+        )
 
-            if part.votes.count() and part.memes.count():
-                total /= part.memes.count()
-
-                if total < lowest_score:
-                    lowest_score = total
-                    participant = part
-        if participant:
+        if lowest_avg_participant:
             return {
-                "participant": participant.name,
-                "score": round(lowest_score or 0, 2),
+                "participant": lowest_avg_participant.name,
+                "score": round(lowest_avg_participant.avg_score or 0, 2),
             }
         return {"participant": "No one", "score": 0.0}
 

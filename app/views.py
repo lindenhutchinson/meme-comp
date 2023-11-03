@@ -26,6 +26,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Count
 from datetime import datetime
 from django.db.models import Q, F, Avg
+from django.db.models.functions import Coalesce
 
 
 @require_POST
@@ -264,7 +265,7 @@ def user_page(request, id):
     meme_library = Meme.objects.filter(user=user, competition__finished=True)
 
     # Calculate the average score for each meme and annotate it to the queryset
-    meme_library = meme_library.annotate(average_score=Avg("votes__score")).order_by(
+    meme_library = meme_library.annotate(average_score=Coalesce(Avg("votes__score"), 0.0)).order_by(
         "-average_score"
     )
 
