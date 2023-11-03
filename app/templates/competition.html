@@ -328,6 +328,13 @@
 		$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
 
 		showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
+
+		// Disable the next meme button for 3 seconds after advancing
+		// hopefully this will avoid accidental clicks
+		$('#next-meme-btn').prop("disabled", true);
+		setTimeout(function() {
+			$("#next-meme-btn").prop("disabled", false);
+		}, 3000);
 	}
 	function doMemeUploaded(data) {
 		const num_uploaders = data.num_uploaders;

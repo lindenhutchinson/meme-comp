@@ -11,23 +11,29 @@ from django.shortcuts import redirect
 import pytz
 from django.utils import timezone
 
+
 def redirect_and_flash_error(request, error):
     messages.error(request, error)
-    return redirect('home')
+    return redirect("home")
+
 
 def send_channel_message(comp_name, command, data=None):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        comp_name, {"type": 'send_update', "data": data, "command":command}
+        comp_name, {"type": "send_update", "data": data, "command": command}
     )
+
 
 def generate_random_string(length):
     """Generate a random string up to the given maximum length."""
-    valid_chars = [c for c in string.ascii_letters if c not in ['l', 'I', 'i', 'O', 'o']]
-    return ''.join(random.choice(valid_chars) for _ in range(length))
+    valid_chars = [
+        c for c in string.ascii_letters if c not in ["l", "I", "i", "O", "o"]
+    ]
+    return "".join(random.choice(valid_chars) for _ in range(length))
+
 
 def get_current_user(request):
-    user_id = request.session.get('user_id')
+    user_id = request.session.get("user_id")
     if user_id:
         User = get_user_model()
         try:
@@ -37,8 +43,8 @@ def get_current_user(request):
             pass
     return None
 
-def set_next_meme_for_competition(competition_id):
 
+def set_next_meme_for_competition(competition_id):
     # Get the competition
     competition = Competition.objects.get(id=competition_id)
 
@@ -46,7 +52,9 @@ def set_next_meme_for_competition(competition_id):
     all_memes = competition.memes.all()
 
     # Get the list of seen memes for the competition
-    seen_memes = SeenMeme.objects.filter(competition=competition).values_list('meme', flat=True)
+    seen_memes = SeenMeme.objects.filter(competition=competition).values_list(
+        "meme", flat=True
+    )
 
     # Exclude the seen memes from the list of all memes
     available_memes = all_memes.exclude(id__in=seen_memes)
@@ -61,10 +69,11 @@ def set_next_meme_for_competition(competition_id):
         SeenMeme.objects.create(meme=random_meme, competition=competition)
     else:
         competition.current_meme = None
-    
+
     competition.save()
 
     return competition
+
 
 # def get_top_meme(competition_name):
 #     # Get the competition instance
@@ -76,14 +85,13 @@ def set_next_meme_for_competition(competition_id):
 #     sorted_memes = sorted(memes, key=lambda meme: meme.total_score/(len(meme.votes.all()) or 1), reverse=True)
 #     meme = sorted_memes[0]
 #     score = round(meme.total_score / (len(meme.votes.all()) or 1), 2)
-    
+
 #     results = {
 #         'id':meme.id,
 #         'participant':meme.participant.name,
 #         'score': score
 #     }
 #     return results
-
 
 
 def get_top_memes(comp_name):
@@ -93,14 +101,12 @@ def get_top_memes(comp_name):
     # get the memes in order of their avg scores
     memes = competition.top_memes
     meme = memes.first()
-    tying_memes =  memes.filter(vote_score=meme.vote_score)
-    
-    return [{
-        'id': m.id,
-        'participant': m.participant.name,
-        'score':round(m.vote_score, 2)
-    } for m in tying_memes]
+    tying_memes = memes.filter(vote_score=meme.vote_score)
 
+    return [
+        {"id": m.id, "participant": m.participant.name, "score": round(m.vote_score, 2)}
+        for m in tying_memes
+    ]
 
 
 def send_shame_message(comp_name, username):
@@ -118,74 +124,77 @@ def send_shame_message(comp_name, username):
         f"Warning: {username} is conducting a secret hacking mission.",
     ]
     message = random.choice(messages)
-    send_channel_message(comp_name, 'update_shame', message)
+    send_channel_message(comp_name, "update_shame", message)
+
 
 def check_emoji_text(text):
     try:
-        emoji = re.search(r'(\d{4,6})', f'{ord(text)}')
+        emoji = re.search(r"(\d{4,6})", f"{ord(text)}")
         emoji_text = chr(int(emoji.group(1)))
         return emoji_text or False
     except TypeError:
         return False
 
+
 def convert_to_localtime(utctime):
-    fmt = '%A %d %b - %I:%M%p'
+    fmt = "%A %d %b - %I:%M%p"
     utc = utctime.replace(tzinfo=pytz.UTC)
     localtz = utc.astimezone(timezone.get_current_timezone())
     return localtz.strftime(fmt)
+
 
 def do_advance_competition(competition):
     competition.participants.update(ready=False)
     # attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition.id)
     if competition.current_meme:
-    # if we were able to set a random meme, update the channel to show it on the page
+        # if we were able to set a random meme, update the channel to show it on the page
         data = {
-            'id':competition.current_meme.id,
-            'num_memes':competition.num_memes,
-            'ctr':competition.meme_ctr
+            "id": competition.current_meme.id,
+            "num_memes": competition.num_memes,
+            "ctr": competition.meme_ctr,
         }
-        send_channel_message(competition.name, 'next_meme', data)
+        send_channel_message(competition.name, "next_meme", data)
     else:
-        # if no meme was set, end the competition - update the channel to show the competition results info
         statistics = {
-                'fastest_voter':f'{competition.lowest_avg_vote_time["participant"]} averaged {competition.lowest_avg_vote_time["vote_time"]} seconds per vote',
-                'slowest_voter':f'{competition.highest_avg_vote_time["participant"]} averaged {competition.highest_avg_vote_time["vote_time"]} seconds per vote',
-                'highest_score_given':f'{competition.highest_avg_score_given["participant"]} gave a {competition.highest_avg_score_given["score"]} average score',
-                'lowest_score_given':f'{competition.lowest_avg_score_given["participant"]} gave a {competition.lowest_avg_score_given["score"]} average score',
-                'most_submitted':f'{competition.highest_memes_submitted["participant"]} submitted {competition.highest_memes_submitted["num_memes"]} memes',
-                'highest_avg_score':f'{competition.highest_avg_score_received["participant"]} received a {competition.highest_avg_score_received["score"]} weighted score',
-                'avg_own_score':f'{competition.lowest_avg_own_memes["participant"]} gave themselves a {competition.lowest_avg_own_memes["score"]} average score',
-                'avg_meme_score':competition.avg_meme_score,
-                'avg_vote_time':competition.avg_vote_time,
-                'avg_vote_on_own_memes':competition.avg_vote_on_own_memes
-        } if len(competition.votes.all()) else {}
+            "fastest_voter": f'{competition.lowest_avg_vote_time["participant"]} averaged {competition.lowest_avg_vote_time["vote_time"]} seconds per vote',
+            "slowest_voter": f'{competition.highest_avg_vote_time["participant"]} averaged {competition.highest_avg_vote_time["vote_time"]} seconds per vote',
+            "highest_score_given": f'{competition.highest_avg_score_given["participant"]} gave a {competition.highest_avg_score_given["score"]} average score',
+            "lowest_score_given": f'{competition.lowest_avg_score_given["participant"]} gave a {competition.lowest_avg_score_given["score"]} average score',
+            "most_submitted": f'{competition.highest_memes_submitted["participant"]} submitted {competition.highest_memes_submitted["num_memes"]} memes',
+            "highest_avg_score": f'{competition.highest_avg_score_received["participant"]} received a {competition.highest_avg_score_received["score"]} weighted score',
+            "avg_own_score": f'{competition.lowest_avg_own_memes["participant"]} gave themselves a {competition.lowest_avg_own_memes["score"]} average score',
+            "avg_meme_score": competition.avg_meme_score,
+            "avg_vote_time": competition.avg_vote_time,
+            "avg_vote_on_own_memes": competition.avg_vote_on_own_memes,
+        }
+        top_memes = get_top_memes(competition.name)
+        if len(top_memes) == 1:
+            top_meme = Meme.objects.get(id=top_memes[0]["id"])
+            competition.winning_meme = top_meme
+            competition.finished = True
+            competition.tiebreaker = False
 
-        if len(competition.votes.all()):
-            top_memes = get_top_memes(competition.name)
-            if len(top_memes) == 1:
-                top_meme = Meme.objects.get(id=top_memes[0]['id'])
-                competition.winning_meme = top_meme
-                competition.finished = True
-                competition.tiebreaker = False
+            competition.save()
+            results = {
+                "participant": top_meme.participant.name,
+                "score": top_meme.avg_score,
+                "id": top_meme.id,
+                "statistics": statistics,
+            }
+            send_channel_message(competition.name, "competition_results", results)
 
-                competition.save()
-                results = {
-                    'participant':top_meme.participant.name,
-                    'score':top_meme.avg_score,
-                    'id':top_meme.id,
-                    'statistics':statistics
-
-                }
-                send_channel_message(competition.name, 'competition_results', results)
-                
-            else:
-                competition.tiebreaker = True
-                competition.save()
-                send_channel_message(competition.name, 'do_tiebreaker', top_memes)
+        else:
+            competition.tiebreaker = True
+            competition.save()
+            send_channel_message(competition.name, "do_tiebreaker", top_memes)
 
 
-def num_votes_for_tiebreaker(competition):   
+def num_votes_for_tiebreaker(competition):
     # Get the votes updated before the competition's updated_at timestamp
-    votes_updated_before_competition = competition.votes.filter(updated_at__gt=competition.updated_at).values('user_id').distinct()
+    votes_updated_before_competition = (
+        competition.votes.filter(updated_at__gt=competition.updated_at)
+        .values("user_id")
+        .distinct()
+    )
     return votes_updated_before_competition.count()

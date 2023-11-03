@@ -10,47 +10,52 @@ from io import BytesIO
 class MemeManager(models.Manager):
     def save(self, *args, **kwargs):
         image_file = self.instance.image
-        
+
         if image_file:
             try:
                 with Image.open(image_file) as image:
                     image.verify()
-                    if image.format.lower() == 'gif':
+                    if image.format.lower() == "gif":
                         # Skip resizing for GIF images
                         return super().save(*args, **kwargs)
 
                     # Resize the image
                     image.thumbnail((1000, 1000), Image.Resampling.BICUBIC)
                     meme = super().save(*args, **kwargs)
-                    image.save(meme.image.path, format='JPEG')
+                    image.save(meme.image.path, format="JPEG")
 
             except UnidentifiedImageError:
-                return   
+                return
+
 
 class Meme(models.Model):
-    image = models.ImageField(upload_to='memes')
+    image = models.ImageField(upload_to="memes")
     created_at = models.DateTimeField(default=timezone.now)
-    competition = models.ForeignKey('Competition', on_delete=models.CASCADE, related_name='memes')
-    participant = models.ForeignKey('Participant', on_delete=models.CASCADE, related_name='memes')
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='memes')
+    competition = models.ForeignKey(
+        "Competition", on_delete=models.CASCADE, related_name="memes"
+    )
+    participant = models.ForeignKey(
+        "Participant", on_delete=models.CASCADE, related_name="memes"
+    )
+    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="memes")
     objects = MemeManager()
-    
+
     def __str__(self):
-        return f'Meme {self.id} by {self.participant}'       
+        return f"Meme {self.id} by {self.participant}"
 
     @property
     def num_votes(self):
         return self.votes.count()
-    
+
     @property
     def total_score(self):
-        return self.votes.aggregate(models.Sum('score')).get('score__sum') or 0
-    
+        return self.votes.aggregate(models.Sum("score")).get("score__sum") or 0
+
     @property
     def avg_score(self):
-        score = self.votes.aggregate(models.Avg('score')).get('score__avg') or 0
+        score = self.votes.aggregate(models.Avg("score")).get("score__avg") or 0
         return round(score, 2)
-    
+
     @property
     def real_avg_score(self):
-        return self.votes.aggregate(models.Avg('score')).get('score__avg') or 0
+        return self.votes.aggregate(models.Avg("score")).get("score__avg") or 0
