@@ -195,9 +195,11 @@
         });
     }
 
-    const ctr_thresh = 100;
+    const EMOJI_TIMEOUT_THRESHOLD = 10;
+    const REFRESH_TIMEOUT_SECONDS = 2;
+    const TIMEOUT_SECONDS = 30;
     var end = null;
-    var timeout = 30;
+    var last = null;
     var emojiCtr = 0;
 
     function getTimeSeconds() {
@@ -206,14 +208,13 @@
     }
     function checkEmojiCtr() {
         emojiCtr++;
-
-        if (emojiCtr > ctr_thresh) {
+        var current = getTimeSeconds();
+        if (emojiCtr > EMOJI_TIMEOUT_THRESHOLD) {
             if (!end) {
                 alert('You are sending too many requests. Please calm down.')
-                end = getTimeSeconds() + timeout;
+                end = getTimeSeconds() + TIMEOUT_SECONDS;
                 return false;
             }
-            var current = getTimeSeconds();
             if (current < end) {
                 showSnackbar(`You have been timed out, try again in ${Math.ceil(end - current)} seconds`, "danger");
                 return false
@@ -221,7 +222,13 @@
                 end = null;
                 emojiCtr = 0;
             }
+        } else if (current - last >= REFRESH_TIMEOUT_SECONDS) {
+            console.log('💩');
+            // reset the emoji ctr so normal users dont get timed out
+            emojiCtr = 0;
         }
+        last = getTimeSeconds();
+
         return true
     }
 
