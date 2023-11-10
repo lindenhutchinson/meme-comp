@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "daphne",
     "mathfilters",
     "rest_framework",
+    "celery",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

@@ -38,4 +38,4 @@ RUN python manage.py migrate app
 EXPOSE 8000
 
 # Start the Daphne server
-CMD ["daphne", "-p", "8000", "-b", "0.0.0.0", "MemeComp.asgi:application"]
+# CMD ["daphne", "-p", "8000", "-b", "0.0.0.0", "MemeComp.asgi:application"]

@@ -13,7 +13,6 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from .utils import (
-    do_advance_competition,
     num_votes_for_tiebreaker,
     send_shame_message,
     set_next_meme_for_competition,
@@ -22,7 +21,8 @@ from .utils import (
 from .models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
 import time
-
+import asyncio
+from .tasks import do_advance_competition
 
 @api_view(["DELETE"])
 @authentication_classes([SessionAuthentication])
@@ -201,7 +201,9 @@ def meme_vote(request, comp_name):
         if competition.tiebreaker and (
             tiebreaker_votes >= competition.num_participants
         ):
-            do_advance_competition(competition)
+            do_advance_competition.apply_async(args=[competition], countdown=0)
+
+            
         else:
             send_channel_message(competition.name, "meme_voted", tiebreaker_votes)
 
@@ -219,30 +221,25 @@ def meme_vote(request, comp_name):
             started_at=competition.updated_at,
         )
 
-        total_votes = Vote.objects.filter(meme_id=meme.id).aggregate(
-            total_votes=Count("id")
-        )
+        total_votes = Vote.objects.filter(meme_id=meme.id).count()
 
         # if all participants have voted,
         # automatically advance the competition
         competition.refresh_from_db()
-        voting_skip = False
         # if current_meme is set, we are in the middle of a competition
         if competition.current_meme:
-            # skip the competition if all participants have voted
-            voting_skip = (
-                competition.current_meme.votes.count() == competition.num_participants
-            )
+            print('lets start this timer ay????')
 
-        #
-        tiebreaker_skip = (
-            num_votes_for_tiebreaker(competition) >= competition.num_participants
-        )
-        if voting_skip or (competition.is_tie and tiebreaker_skip):
-            do_advance_competition(competition)
-        else:
+            if not competition.timer_active and (total_votes / competition.num_participants) >= 0.5:
+                print('lets start this timer ay')
+                do_advance_competition.apply_async(args=[competition], countdown=10)
+
+                send_channel_message(
+                    competition.name, "timer_start"
+                )
+            
             send_channel_message(
-                competition.name, "meme_voted", total_votes["total_votes"]
+                competition.name, "meme_voted", total_votes
             )
 
         return Response({"success": True}, status=status.HTTP_201_CREATED)
@@ -311,7 +308,8 @@ def advance_competition(request, comp_name):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-    do_advance_competition(competition)
+    advance_competition.apply_async(args=[competition], countdown=0)
+
 
     return Response(status=status.HTTP_200_OK)
 

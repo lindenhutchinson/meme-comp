@@ -38,6 +38,7 @@ def parse_redis_url(url):
 
 
 REDIS_URL = os.environ.get("REDIS", default="redis://localhost:6379")
+CELERY_BROKER_URL = os.environ.get("REDIS", default="redis://localhost:6379/")
 REDIS_HOST, REDIS_PORT, REDIS_USER, REDIS_PASSWORD, REDIS_DB = parse_redis_url(
     REDIS_URL
 )

@@ -40,6 +40,8 @@ class Competition(models.Model):
     )
     tiebreaker = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
+    timer_active = models.BooleanField(default=False)
+
 
     def start_competition(self):
         self.started = True

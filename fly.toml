@@ -1,8 +1,3 @@
-# fly.toml app configuration file generated for meme-competition on 2023-05-27T12:14:58+10:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
 app = "meme-competition"
 primary_region = "syd"
 kill_signal = "SIGINT"
@@ -11,6 +6,13 @@ console_command = "/code/manage.py shell"
 
 [deploy]
   release_command = "python manage.py migrate"
+
+[processes]
+  # Django app process
+  app = "daphne -p 8000 -b 0.0.0.0 MemeComp.asgi:application"
+
+  # Celery worker process
+  celery = "celery -A MemeComp worker -l info"
 
 [env]
   PORT = "8000"
@@ -22,7 +24,7 @@ console_command = "/code/manage.py shell"
 [[services]]
   protocol = "tcp"
   internal_port = 8000
-  processes = ["app"]
+  processes = ["app", "celery"]  # Include the Celery worker process in the services
 
   [[services.ports]]
     port = 80
