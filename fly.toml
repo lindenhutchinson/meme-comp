@@ -12,7 +12,7 @@ console_command = "/code/manage.py shell"
   app = "daphne -p 8000 -b 0.0.0.0 MemeComp.asgi:application"
 
   # Celery worker process
-  celery = "celery -A MemeComp worker -l info"
+  celery = "celery -A MemeComp worker -l info -E -Q memes --without-gossip --without-mingle --without-heartbeat -Ofair --concurrency 1 -P solo"
 
 [env]
   PORT = "8000"
@@ -24,7 +24,7 @@ console_command = "/code/manage.py shell"
 [[services]]
   protocol = "tcp"
   internal_port = 8000
-  processes = ["app", "celery"]  # Include the Celery worker process in the services
+  processes = ["app"]
 
   [[services.ports]]
     port = 80

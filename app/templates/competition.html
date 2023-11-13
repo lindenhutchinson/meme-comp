@@ -21,7 +21,9 @@
 </script>
 <div id="snackbar"></div>
 <div class="text-center g-0 mb-4">
-	<div class="row m-2">
+	<div id="card-container" class="row m-2">
+		{% comp_timer '10' %}
+
 		{% comp_card request.user participant competition %}
 
 		{% comp_waiting participant competition %}
@@ -109,7 +111,6 @@
 
 	const csrfToken = "{{csrf_token}}";
 	const compFinished = "{{competition.finished}}"
-	console.log(compFinished)
 	// Open websocket connection
 	var socket = null; // Declare the socket variable outside the function
 	function connectWebSocket() {
@@ -167,15 +168,26 @@
 				case 'participant_ready':
 					doParticipantReady(message.data);
 					break;
+				case 'timer_start':
+					doTimerStarted();
+					break;
 			}
 		};
 
 		socket.onclose = function (event) {
 			console.log("Websocket connection closed")
-			if (event.code === 3000) {
-				showSnackError('You have been disconnected. Refresh the page to reconnect.')
-			} else {
-				showSnackError('You have been disconnected ¯\\_(ツ)_/¯ Refresh the page to reconnect.')
+			switch(event.code) {
+				case 3000:
+					showSnackError('You have been disconnected. Refresh the page to reconnect.')
+					break;
+				case 1000:
+				// normal socket close
+					break;
+				case 1001:
+				// tab was closed
+					break;
+				default:
+					showSnackError('You have been disconnected ¯\\_(ツ)_/¯ Try refreshing the page to reconnect.')
 			}
 		};
 
@@ -183,6 +195,12 @@
 			console.log("Websocket error")
 			showSnackError("Something bad happened. Try refreshing the page.")
 		};
+	}
+
+	function doTimerStarted() {
+		$('#comp-timer').css('display','')
+		$('#comp-info-card').css('display', 'none')
+		startTimer()
 	}
 
 	function doParticipantReady(data) {
@@ -234,6 +252,9 @@
 		}
 	}
 	function doCompetitionResults(results) {
+		// switch out the timer for the info card
+		$('#comp-timer').css('display','none')
+		$('#comp-info-card').css('display', '')
 		// disable the ready up button
         $('#readyup-btn').prop('disabled', true);		
 		$("#comp-started").css('display', 'none');
@@ -285,6 +306,15 @@
 		$("#comp-tiebreaker").css('display', '');
 		$("#num_votes").text('0');
 		$('#tiebreaker-images').empty()
+
+		// make sure the form is enabled lol
+		$('#vote-form')[0].reset();
+		// renable the buttons
+		$('.vote-radio').prop('disabled', false)
+		// switch out the timer for the info card
+		$('#comp-timer').css('display','none')
+		$('#comp-info-card').css('display', '')
+
 		tiebreakMemes.forEach((meme) => {
 			var html = `
 				<div 
@@ -305,6 +335,14 @@
 	}
 
 	function doNextMeme(data) {
+		// make sure the form is enabled lol
+		$('#vote-form')[0].reset();
+		// renable the buttons
+		$('.vote-radio').prop('disabled', false)
+		// switch out the timer for the info card
+		$('#comp-timer').css('display','none')
+		$('#comp-info-card').css('display', '')
+
 		const memeId = data.id;
 		const memeCtr = data.ctr;
 		const numMemes = data.num_memes
@@ -337,6 +375,8 @@
 		setTimeout(function() {
 			$("#next-meme-btn").prop("disabled", false);
 		}, 3000);
+		$("#vote-form :input").prop('readonly', false);
+
 	}
 	function doMemeUploaded(data) {
 		const num_uploaders = data.num_uploaders;

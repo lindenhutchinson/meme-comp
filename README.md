@@ -55,6 +55,10 @@ To run a docker container as the channel message broker:
 
 Access the app in your browser at <http://localhost:8000>.
 
+To run celery:
+
+    celery -A MemeComp worker -l info -E -Q memes --without-gossip --without-mingle --without-heartbeat -Ofair --concurrency 1 -P solo
+
 ## Usage
 
 - Register a new user account or log in with an existing account.

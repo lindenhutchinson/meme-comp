@@ -11,9 +11,24 @@ CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1", "http://0.0.0.0", "http://localhost"
 CSRF_ALLOWED_ORIGINS = ["http://127.0.0.1", "http://0.0.0.0", "http://localhost"]
 CORS_ORIGINS_WHITELIST = ["http://127.0.0.1", "http://0.0.0.0", "http://localhost"]
 
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer",
+#         "CONFIG": {},
+#     },
+# }
+
+REDIS_URL = CELERY_BROKER_URL = "redis://localhost:6379"
+
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-        "CONFIG": {},
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                {
+                    "address": REDIS_URL,
+                }
+            ],
+        },
     },
 }

@@ -1,16 +1,24 @@
-{% load competition_tags %}
 <div id="comp-started" class="col text-center" 
 {% if not competition.started or not competition.current_meme%}style="display:none" {% endif %}>
     <div class="vote-container">
         <div class="card shadow" style="width:100%">
             <div class="card-header">
-                <div class="row pt-2">
-                    <div class="col">
+                <div class="card-title">
+                    <div class="d-flex align-items-center justify-content-around">
                         <h4 id="meme-ctr">
                             Meme {{ competition.meme_ctr }}/{{ competition.num_memes }}
                         </h4>
-                    </div>
-                    <div class="col">
+                        <div class="d-flex justify-content-center align-items-center">
+                            <div id="fill-div"></div>
+                            <button title="Refresh your emoji choices" onclick="createEmojiBtns()" id="refresh-emojis"
+                                class="btn btn-sm btn-dark"><i class="bi bi-arrow-clockwise"></i></button>
+
+                            <div id="emoji-container">
+                                <button class="btn btn-light emoji-button e-btn">&#128514</button>
+                                <button class="btn btn-light emoji-button e-btn">&#128076</button>
+                                <button class="btn btn-light emoji-button e-btn">&#128169</button>
+                            </div>
+                        </div>
                         <h4>
                             Total votes: 
                             <span id="num_votes">
@@ -20,23 +28,7 @@
                             </span>
                         </h4>
                     </div>
-                </div>
-                <div class="row">
-
-                </div>
-                <div class="card-title">
-                    <div class="mb-1 row d-flex align-items-center justify-content-center">
-                        <div id="fill-div"></div>
-                        <button title="Refresh your emoji choices" onclick="createEmojiBtns()" id="refresh-emojis"
-                            class="btn btn-sm btn-dark"><i class="bi bi-arrow-clockwise"></i></button>
-
-                        <div id="emoji-container">
-                            <button class="btn btn-light emoji-button e-btn">&#128514</button>
-                            <button class="btn btn-light emoji-button e-btn">&#128076</button>
-                            <button class="btn btn-light emoji-button e-btn">&#128169</button>
-                        </div>
-                    </div>
-                    <div class="row d-flex align-items-center justify-content-center">
+                    <div class="d-flex align-items-center justify-content-center">
                         <form id="vote-form">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input vote-radio" type="radio" name="vote" id="vote-option0"

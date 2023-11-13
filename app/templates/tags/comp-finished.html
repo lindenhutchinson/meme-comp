@@ -2,20 +2,24 @@
     <div class="card shadow">
         <div class="card-header">
             <div class="card-title">
+                <div class="d-flex justify-content-evenly align-items-center">
+                    <a href="{% url 'competition_memes' competition.name %}" class="btn btn-sm btn-primary">
+                        All Memes
+                    </a>
                 <h2>Competition Results</h2>
+                <a href="{% url 'competition_results' competition.name %}"
+                class="btn btn-sm btn-primary">Detailed Results</a>
+                </div>
             </div>
             <div class="d-flex justify-content-evenly">
-                <a href="{% url 'competition_memes' competition.name %}" class="btn btn-sm btn-primary back-btn">
-                    All Memes
-                </a>
-                <a href="{% url 'competition_results' competition.name %}"
-                    class="btn btn-sm btn-primary back-btn">Detailed Results</a>
+                
+               
             </div>
         </div>
         <div class="card-body g-0">
             <div class="row results-container justify-content-center">
                 <div id="winning-meme" class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
-                    {% if competition.winning_meme %}
+                    {% if competition.winning_meme and competition.finished %}
                     <div class="row item-header">
                         <h5 class="card-title">{{ competition.winning_meme.participant.name }}</h5>
                         <h6 class="card-subtitle">Score: {{  competition.winning_meme.avg_score }}</h6>

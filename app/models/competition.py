@@ -24,6 +24,7 @@ class Competition(models.Model):
     theme = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    round_started_at = models.DateTimeField(default=None, null=True)
     started = models.BooleanField(default=False)
     owner = models.ForeignKey(
         "User", on_delete=models.CASCADE, related_name="created_competition"
@@ -41,7 +42,6 @@ class Competition(models.Model):
     tiebreaker = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
     timer_active = models.BooleanField(default=False)
-
 
     def start_competition(self):
         self.started = True

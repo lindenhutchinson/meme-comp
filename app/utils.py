@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 import random
 import string
 from django.db.models import Sum
+from django.db import transaction
 from .models import Competition, SeenMeme, Meme, Participant
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -10,6 +11,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 import pytz
 from django.utils import timezone
+from datetime import datetime
 
 
 def redirect_and_flash_error(request, error):
@@ -17,6 +19,7 @@ def redirect_and_flash_error(request, error):
     return redirect("home")
 
 
+# todo - add signals to model changes and use this
 def send_channel_message(comp_name, command, data=None):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
@@ -69,10 +72,9 @@ def set_next_meme_for_competition(competition_id):
         SeenMeme.objects.create(meme=random_meme, competition=competition)
     else:
         competition.current_meme = None
-
-    competition.timer_active = False
+        
+    competition.round_started_at = datetime.now(tz=timezone.get_current_timezone())
     competition.save()
-
     return competition
 
 
@@ -144,11 +146,13 @@ def convert_to_localtime(utctime):
     return localtz.strftime(fmt)
 
 
-
-def num_votes_for_tiebreaker(competition):
-    # Get the votes updated before the competition's updated_at timestamp
+def num_votes_for_round(competition):
+    competition.refresh_from_db()
+    # Get the votes updated before the competition's round_started_at timestamp
+    # the competition was last updated when the current_meme was set at the start of this round.   
+    
     votes_updated_before_competition = (
-        competition.votes.filter(updated_at__gt=competition.updated_at)
+        competition.votes.filter(updated_at__gt=competition.round_started_at)
         .values("user_id")
         .distinct()
     )

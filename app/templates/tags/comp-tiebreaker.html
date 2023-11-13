@@ -21,6 +21,7 @@
         </div>
         <div class="card-body">
             <div id="tiebreaker-images" class="d-flex justify-content-around">
+                {% if competition.is_tie and competition.tiebreaker %}
                 {% for meme in competition.tying_memes %}
                 <div 
                     class="tiebreaker-image-div d-flex"
@@ -34,6 +35,7 @@
                     />
                 </div>
                 {% endfor %}
+                {% endif %}
             </div>
             
         </div>
@@ -49,8 +51,8 @@
 
         imgEle.addClass('selected-tiebreaker-image')
 
-        console.log('yes vote for this meme!');
         submitTiebreakerVote(imgEle.attr('id'));
+        $('#tiebreaker-images').prop('disabled', true)
     }
 
     function submitTiebreakerVote(memeId) {

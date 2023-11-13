@@ -13,7 +13,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from .utils import (
-    num_votes_for_tiebreaker,
+    num_votes_for_round,
     send_shame_message,
     set_next_meme_for_competition,
     send_channel_message,
@@ -23,6 +23,8 @@ from .serializers import MemeSerializer
 import time
 import asyncio
 from .tasks import do_advance_competition
+from django.db import transaction
+
 
 @api_view(["DELETE"])
 @authentication_classes([SessionAuthentication])
@@ -132,6 +134,23 @@ def meme_upload(request, comp_name):
 
 
 BREAK_TIE_SCORE = 0.001
+VOTING_TIMEOUT_SECONDS = 10
+TIMEOUT_VOTING_THRESHOLD = 0.5
+
+@transaction.atomic
+def check_and_start_timer(total_votes, competition):
+    # only start the timer if it hasnt already been started
+    # and if a certain percentage of participants have voted
+    voters_exceed_threshold = (
+        total_votes / competition.num_participants
+    ) >= TIMEOUT_VOTING_THRESHOLD
+    if not competition.timer_active and voters_exceed_threshold:
+        do_advance_competition.apply_async(
+            args=[competition.id], countdown=VOTING_TIMEOUT_SECONDS, queue="memes"
+        )
+        competition.timer_active = True
+        competition.save()
+        send_channel_message(competition.name, "timer_start")
 
 
 @api_view(["POST"])
@@ -146,71 +165,74 @@ def meme_vote(request, comp_name):
         Participant, user=request.user, competition=competition
     )
 
+    # if meme id is set, this is a tiebreaker vote
     if meme_id:
+        # make sure it exists
         meme = get_object_or_404(Meme, id=meme_id)
     else:
         meme = competition.current_meme
         if not meme:
             # cant do anything here - there's no meme to vote on
-            send_shame_message(competition.name, request.user.username)
             return Response(
-                {"detail": "Bad Request"}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Where's your meme?"}, status=status.HTTP_400_BAD_REQUEST
             )
         try:
             score = int(score)
         except TypeError:
-            print(f"{request.user.username} attempted an invalid vote - {score}")
             send_shame_message(competition.name, request.user.username)
             return Response(
                 {"detail": "Bad Request"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         if score < 0 or score > 5:
-            print(f"{request.user.username} attempted an invalid vote - {score}")
             send_shame_message(competition.name, request.user.username)
             return Response(
                 {"detail": "Bad Request"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    participant.ready = True
-    participant.save()
-    send_channel_message(
-        competition.name,
-        "participant_ready",
-        {"part_id": participant.id, "is_ready": True},
-    )
-
     try:
+        
         vote = Vote.objects.get(
             meme=meme,
             participant=participant,
             competition=competition,
             user=request.user,
         )
+        # finding an existing vote means the user is changing their vote, or voting on a tiebreaker
+        
         # if meme_id is set, the user is voting on a tiebreaker
         if meme_id:
-            vote.score += BREAK_TIE_SCORE
-        # this is a normal vote, being changed by the user, simply set the score.
+            # if vote score is an integer, the user hasnt yet voted on this meme for this tiebreaking round.
+            if vote.score.is_integer():
+                # increase the existing score by a tiny amount so it breaks the tie but doesnt change averages
+                # make it random so recurring tiebreaker rounds are very unlikely
+                vote.score += random.random()*0.0001
+                vote.save()
+                competition.refresh_from_db()
+                
+                round_votes = num_votes_for_round(competition)
+
+                # only check for the timer if this is a tiebreaker vote and the timer isnt already active
+                # an existing vote can never trigger the timer
+                if not competition.timer_active:
+                    check_and_start_timer(round_votes, competition)
+                
+                # this is a new vote, so update the total on the page
+                send_channel_message(competition.name, "meme_voted", round_votes)
         else:
+            # this is a normal vote, being changed by the user, so simply set the score.
             vote.score = score
-
-        vote.save()
-        competition.refresh_from_db()
-        tiebreaker_votes = num_votes_for_tiebreaker(competition)
-        # automatically advance the competition if all participants have voted in the tiebreaker
-        if competition.tiebreaker and (
-            tiebreaker_votes >= competition.num_participants
-        ):
-            do_advance_competition.apply_async(args=[competition], countdown=0)
-
-            
-        else:
-            send_channel_message(competition.name, "meme_voted", tiebreaker_votes)
-
+            vote.save()
+   
         return Response({"success": True}, status=status.HTTP_204_NO_CONTENT)
     except Vote.DoesNotExist:
+        if meme_id:
+            # meme_id is set, the user is voting on a tiebreaker, but they missed voting on this meme earlier
+            # so just default to the random amount 
+            score = random.random()*0.0001
+            
         # create a vote using the meme, participant and the given score
-        # also set "started_at" to when the competition last updated
+        # also set "started_at" to when the competition last updated (which was the start of the round)
         # this will allow calculations of how long the user took to vote
         vote = Vote.objects.create(
             competition=competition,
@@ -218,30 +240,24 @@ def meme_vote(request, comp_name):
             participant=participant,
             user=request.user,
             score=score,
-            started_at=competition.updated_at,
+            started_at=competition.round_started_at,
         )
 
-        total_votes = Vote.objects.filter(meme_id=meme.id).count()
-
-        # if all participants have voted,
-        # automatically advance the competition
         competition.refresh_from_db()
-        # if current_meme is set, we are in the middle of a competition
-        if competition.current_meme:
-            print('lets start this timer ay????')
-
-            if not competition.timer_active and (total_votes / competition.num_participants) >= 0.5:
-                print('lets start this timer ay')
-                do_advance_competition.apply_async(args=[competition], countdown=10)
-
-                send_channel_message(
-                    competition.name, "timer_start"
-                )
+        
+        round_votes = num_votes_for_round(competition)
+        send_channel_message(competition.name, "meme_voted", round_votes)
+        # dont run the check if we already see the timer active
+        if not competition.timer_active:
+            check_and_start_timer(round_votes, competition)
             
-            send_channel_message(
-                competition.name, "meme_voted", total_votes
-            )
-
+        participant.ready = True
+        participant.save()
+        send_channel_message(
+            competition.name,
+            "participant_ready",
+            {"part_id": participant.id, "is_ready": True},
+        )
         return Response({"success": True}, status=status.HTTP_201_CREATED)
 
 
@@ -307,9 +323,12 @@ def advance_competition(request, comp_name):
             {"detail": "You cannot advance a competition that hasn't started"},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
-
-    advance_competition.apply_async(args=[competition], countdown=0)
-
+    # only manually advance the competition is the timer hasnt already started
+    if competition.timer_active:
+        return Response(status=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
+    
+    do_advance_competition(competition.id)
+    
 
     return Response(status=status.HTTP_200_OK)
 
