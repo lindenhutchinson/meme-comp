@@ -69,7 +69,7 @@
 
 	var snackbarTimeout;
 	var prevColour;
-	function showSnackbar(message, colour) {
+	function showSnackbar(message, colour, timeout=3000) {
 		var snackbar = $("#snackbar");
 		if (snackbarTimeout) {
 			clearTimeout(snackbarTimeout);
@@ -89,7 +89,7 @@
 
 		snackbarTimeout = setTimeout(function () {
 			snackbar.removeClass("show");
-		}, 2900); // Adjust the timeout duration as needed
+		}, timeout); // Adjust the timeout duration as needed
 	}
 
 	function showSnackError(message) {

@@ -57,7 +57,7 @@ Access the app in your browser at <http://localhost:8000>.
 
 To run celery:
 
-    celery -A MemeComp worker -l info -E -Q memes --without-gossip --without-mingle --without-heartbeat -Ofair --concurrency 1 -P solo
+    celery -A MemeComp worker -l info -E -Q memes -c 1 --without-mingle -O fair -P solo
 
 ## Usage
 

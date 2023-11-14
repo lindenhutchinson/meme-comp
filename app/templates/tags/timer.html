@@ -31,7 +31,7 @@
     };
 
     const TIME_LIMIT = "{{time_limit}}";
-
+    let displayedApology = false;
     let timerInterval = null;
 
     function onTimesUp() {
@@ -75,7 +75,18 @@
             if (timeLeft === 0.5) {
                 $('.vote-radio').prop('disabled', true)
                 setTimeout(function() {
+                    // for sanity, re-enable all the voting buttons, 
+                    // and switch out the timer for the info card
+                    // 3 seconds after the timer ends.
+                    // stability is not what this app is known for
                     $(".vote-radio").prop("disabled", false);
+
+                    if($('#comp-timer').is(':visible') && !displayedApology) {
+                        showSnackbar('Meme Competitions Inc. would like to apologize for the fuck up involving the timer. We promise to have further issues in the future', 'primary', 15000)
+                        displayedApology = true
+                    }
+                    $('#comp-timer').css('display','none')
+                    $('#comp-info-card').css('display', '')
                 }, 3000);
             }
             if (timeLeft === 0) {

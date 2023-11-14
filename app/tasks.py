@@ -1,21 +1,20 @@
 from datetime import datetime
 from celery import shared_task
-from .models import Meme, Competition 
+from .models import Meme, Competition
 from .utils import (
     get_top_memes,
     send_channel_message,
     set_next_meme_for_competition,
-) 
+)
 
 
 @shared_task(ignore_result=True)
 def do_advance_competition(competition_id):
-    
     competition = Competition.objects.get(id=competition_id)
     competition.participants.update(ready=False)
     # attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition.id)
-    
+
     if competition.current_meme:
         # if we were able to set a random meme, update the channel to show it on the page
         data = {
@@ -55,7 +54,7 @@ def do_advance_competition(competition_id):
         else:
             competition.tiebreaker = True
             send_channel_message(competition.name, "do_tiebreaker", top_memes)
-            
+
     # competition has been advanced, toggle the timer inactive
     competition.timer_active = False
     competition.save()

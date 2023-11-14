@@ -14,6 +14,32 @@ from django.utils import timezone
 from datetime import datetime
 
 
+from celery import Celery
+
+def is_broker_connected():
+    """
+    Check if any Celery workers are running.
+
+    Returns:
+        bool: True if there are active workers, False otherwise.
+    """
+    try:
+        # Create a Celery instance
+        app = Celery('your_project_name')
+
+        # Connect to the Celery broker
+        app.config_from_object('django.conf:settings', namespace='CELERY')
+
+        # Inspect active workers
+        inspector = app.control.inspect()
+        active_workers = inspector.active()
+
+        return bool(active_workers)
+    except Exception as e:
+        # Handle exceptions if any (e.g., Celery not configured, connection issues)
+        print(f"An error occurred: {e}")
+        return False
+
 def redirect_and_flash_error(request, error):
     messages.error(request, error)
     return redirect("home")
