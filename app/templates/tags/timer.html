@@ -13,7 +13,7 @@
     // Credit: Mateusz Rybczonec
 
     const FULL_DASH_ARRAY = 283;
-    const WARNING_THRESHOLD = 10;
+    const WARNING_THRESHOLD = 7;
     const ALERT_THRESHOLD = 5;
 
     const COLOR_CODES = {
@@ -30,18 +30,27 @@
     }
     };
 
-    const TIME_LIMIT = "{{time_limit}}";
+    const TIME_LIMIT = parseFloat("{{time_limit}}");
     let displayedApology = false;
     let timerInterval = null;
-
+    let timeLeft = TIME_LIMIT
+    let timePassed = 0;
+    // disabled but also we're doing this alot, should probably use a function for it.
+    // this frontend is such a mess
+    {% comment %} function resetInfoCardTimer() {
+        $(".vote-radio").prop("disabled", false);
+        $('#comp-timer').css('display','none')
+        $('#comp-info-card').css('display', '')
+    } {% endcomment %}
     function onTimesUp() {
         clearInterval(timerInterval);
     }
 
+    const TIMER_SMOOTHING = 2
     function startTimer() {
         $('#timer-app').empty();
-        let timePassed = 0;
-        let timeLeft = TIME_LIMIT;
+        timePassed = 0;
+        timeLeft = TIME_LIMIT;
         let remainingPathColor = COLOR_CODES.info.color;
         const html = `
             <div class="base-timer">
@@ -50,7 +59,7 @@
                 <circle class="base-timer__path-elapsed" cx="50" cy="50" r="45"></circle>
                 <path
                     id="base-timer-path-remaining"
-                    stroke-dasharray="283"
+                    stroke-dasharray="${FULL_DASH_ARRAY}"
                     class="base-timer__path-remaining ${remainingPathColor}"
                     d="
                     M 50, 50
@@ -66,33 +75,21 @@
         `
         $('#timer-app').append(html)
         timerInterval = setInterval(() => {
-            timePassed = timePassed += 0.5;
+            timePassed = timePassed += (1.0 / TIMER_SMOOTHING);
             timeLeft = TIME_LIMIT - timePassed;
-            document.getElementById("base-timer-label").innerHTML = Math.ceil(timeLeft)
+            document.getElementById("base-timer-label").innerHTML = Math.floor(timeLeft)
             
             setCircleDasharray(timeLeft);
             setRemainingPathColor(timeLeft);
-            if (timeLeft === 0.5) {
+            if (timeLeft <= 0.5) {
+                // disable voting half a second before the comp advances
+                // this avoids a user's vote accidentally hitting the next meme if they time it right
                 $('.vote-radio').prop('disabled', true)
-                setTimeout(function() {
-                    // for sanity, 
-                    // - re-enable all the voting buttons, 
-                    // - switch out the timer for the info card,
-                    // 5 seconds after the timer ends, just in case ;)
-                    $(".vote-radio").prop("disabled", false);
-
-                    if($('#comp-timer').is(':visible') && !displayedApology) {
-                        showSnackbar('Meme Competitions Inc. would like to apologize for the fuck up involving the timer. We promise to have further issues in the future', 'primary', 15000)
-                        displayedApology = true
-                    }
-                    $('#comp-timer').css('display','none')
-                    $('#comp-info-card').css('display', '')
-                }, 5000);
             }
-            if (timeLeft === 0) {
+            if (timeLeft <= 0) {
                 onTimesUp();
             }
-        }, 500);
+        }, 1000 / TIMER_SMOOTHING);
     }
 
     function setRemainingPathColor(timeLeft) {
@@ -116,13 +113,14 @@
 
     function calculateTimeFraction(timeLeft) {
         const rawTimeFraction = timeLeft / TIME_LIMIT;
-        return rawTimeFraction - (1 / TIME_LIMIT) * (1 - rawTimeFraction);
+        return (rawTimeFraction - ((1 / TIMER_SMOOTHING) / TIME_LIMIT) * ((1 / TIMER_SMOOTHING) - rawTimeFraction)) % FULL_DASH_ARRAY;
     }
 
     function setCircleDasharray(timeLeft) {
-        const circleDasharray = `${(
-            calculateTimeFraction(timeLeft) * FULL_DASH_ARRAY
-        ).toFixed(0)} 283`;
+        let timeFraction = calculateTimeFraction(timeLeft)
+        let pathLength = (timeFraction * FULL_DASH_ARRAY).toFixed(1)
+
+        const circleDasharray = `${pathLength} ${FULL_DASH_ARRAY}`;
         document
             .getElementById("base-timer-path-remaining")
             .setAttribute("stroke-dasharray", circleDasharray);
