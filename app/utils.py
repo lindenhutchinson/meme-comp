@@ -12,9 +12,26 @@ from django.shortcuts import redirect
 import pytz
 from django.utils import timezone
 from datetime import datetime
-
-
 from celery import Celery
+
+import redis
+from contextlib import contextmanager
+
+from django.conf import settings
+import redis
+from contextlib import contextmanager
+
+@contextmanager
+def redis_lock(lock_key, timeout=60):
+    redis_client = redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
+    lock = redis_client.lock(lock_key, timeout=timeout)
+
+    acquired = lock.acquire(blocking=True)
+    try:
+        yield acquired
+    finally:
+        if acquired:
+            lock.release()
 
 def is_broker_connected():
     """
