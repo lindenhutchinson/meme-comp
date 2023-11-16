@@ -31,17 +31,27 @@
     };
 
     const TIME_LIMIT = parseFloat("{{time_limit}}");
+    // how long to wait after the timer finishes before we try to swap the timer object with the info card
+    const AUTO_CARD_RESET_TIMEOUT = 5000;
+    let infoCardTimeout = null;
     let displayedApology = false;
     let timerInterval = null;
     let timeLeft = TIME_LIMIT
     let timePassed = 0;
-    // disabled but also we're doing this alot, should probably use a function for it.
-    // this frontend is such a mess
-    {% comment %} function resetInfoCardTimer() {
-        $(".vote-radio").prop("disabled", false);
-        $('#comp-timer').css('display','none')
-        $('#comp-info-card').css('display', '')
-    } {% endcomment %}
+    let toggledButtons = false;
+    function resetInfoCardTimer() {
+        if(timeLeft <= 0) {
+            if($('#comp-timer').is(':visible') && !displayedApology) {
+                console.log("OwO, there was a wittle issue with the timer, and we're super sowwy! >_<")
+                showSnackbar('We here at Meme Competitions Inc. would like to apologize for the fuck up involving the timer. We promise to have more issues in the future', 'primary', 10000)
+                displayedApology = true
+            }
+            $(".vote-radio").prop("disabled", false);
+            $('#comp-timer').css('display','none');
+            $('#comp-info-card').css('display', '');
+            toggledButtons=false;
+        }
+    }
     function onTimesUp() {
         clearInterval(timerInterval);
     }
@@ -81,10 +91,12 @@
             
             setCircleDasharray(timeLeft);
             setRemainingPathColor(timeLeft);
-            if (timeLeft <= 0.5) {
+            if (timeLeft <= 0.5 && !toggledButtons) {
+                toggledButtons = true;
                 // disable voting half a second before the comp advances
                 // this avoids a user's vote accidentally hitting the next meme if they time it right
                 $('.vote-radio').prop('disabled', true)
+                infoCardTimeout = setTimeout(resetInfoCardTimer, AUTO_CARD_RESET_TIMEOUT)
             }
             if (timeLeft <= 0) {
                 onTimesUp();
