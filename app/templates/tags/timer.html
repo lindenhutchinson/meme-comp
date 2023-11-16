@@ -75,10 +75,10 @@
             if (timeLeft === 0.5) {
                 $('.vote-radio').prop('disabled', true)
                 setTimeout(function() {
-                    // for sanity, re-enable all the voting buttons, 
-                    // and switch out the timer for the info card
-                    // 3 seconds after the timer ends.
-                    // stability is not what this app is known for
+                    // for sanity, 
+                    // - re-enable all the voting buttons, 
+                    // - switch out the timer for the info card,
+                    // 5 seconds after the timer ends, just in case ;)
                     $(".vote-radio").prop("disabled", false);
 
                     if($('#comp-timer').is(':visible') && !displayedApology) {
@@ -87,7 +87,7 @@
                     }
                     $('#comp-timer').css('display','none')
                     $('#comp-info-card').css('display', '')
-                }, 3000);
+                }, 5000);
             }
             if (timeLeft === 0) {
                 onTimesUp();

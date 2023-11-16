@@ -75,8 +75,11 @@
             error: function (xhr, status, error) {
                 if (xhr.status === 403) {
                     showSnackbar(xhr.responseJSON.detail, 'danger')
+                } else if (xhr.status === 451) {
+                    showSnackbar("You managed to cast that vote at exactly the wrong time. Congratulations on being an edge case.", 'success');
                 } else {
-                    showSnackbar('Unable to submit vote', 'danger')
+                    showSnackbar("That vote was not submitted. Don't ask me, ask yourself.", 'danger');
+
                 }
             }
         });
