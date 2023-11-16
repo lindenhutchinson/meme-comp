@@ -153,9 +153,10 @@ def check_and_start_timer(total_votes, competition):
         ) >= TIMEOUT_VOTING_THRESHOLD
         # only start timer if workers are connected and it hasnt already started
         if (
-            is_broker_connected()
-            and not competition.timer_active
+            not competition.timer_active
             and voters_exceed_threshold
+            # and is_broker_connected() - slow and unnecessary!
+            # implemented so we dont add the task when the broker is down but whatever she'll be roight m8
         ):
             competition.timer_active = True
             competition.save()
