@@ -47,14 +47,18 @@
                 displayedApology = true
             }
             $(".vote-radio").prop("disabled", false);
+            $('.emoji-button').prop('disabled', false);
             $('#comp-timer').css('display','none');
             $('#comp-info-card').css('display', '');
+        } else {
+            console.log('aint no need to reset for this', timeLeft)
         }
     }
     function onTimesUp() {
         clearInterval(timerInterval);
     }
 
+    
     const TIMER_SMOOTHING = 2
     function startTimer() {
         $('#timer-app').empty();
@@ -85,7 +89,7 @@
         $('#timer-app').append(html)
         timerInterval = setInterval(() => {
             timePassed = timePassed += (1.0 / TIMER_SMOOTHING);
-            timeLeft = TIME_LIMIT - timePassed;
+            timeLeft = Math.max(TIME_LIMIT - timePassed, 0);
             document.getElementById("base-timer-label").innerHTML = Math.floor(timeLeft)
             
             setCircleDasharray(timeLeft);
@@ -94,7 +98,8 @@
                 toggledButtons = true;
                 // disable voting half a second before the comp advances
                 // this avoids a user's vote accidentally hitting the next meme if they time it right
-                $('.vote-radio').prop('disabled', true)
+                $('.vote-radio').prop('disabled', true);
+                $('.emoji-button').prop('disabled', true);
                 infoCardTimeout = setTimeout(resetInfoCardTimer, AUTO_CARD_RESET_TIMEOUT)
             }
             if (timeLeft <= 0) {

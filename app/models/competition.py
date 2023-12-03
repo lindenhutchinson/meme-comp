@@ -12,10 +12,11 @@ from django.db.models import (
     OuterRef,
     Subquery,
     BooleanField,
+    Q
 )
 from django.db.models.functions import Coalesce
 from django.db.models import Case, When
-
+from django.db.models import Subquery, Value
 SUITABLY_HIGH_NUMBER = 99999999
 
 
@@ -47,30 +48,51 @@ class Competition(models.Model):
         self.started = True
         self.save()
 
-    @property
+
     def top_memes(self):
         return (
             self.memes.filter(competition=self)
-            .annotate(vote_count=Count("votes"), total=Sum("votes__score"))
             .annotate(
-                vote_score=Coalesce(F("total") / Count("votes", distinct=True), 0.0)
+                vote_count=Count("votes"),
+                total=Sum("votes__score"),
+                distinct_votes=Count("votes__participant", distinct=True),
+            )
+            .annotate(
+                vote_score=Case(
+                    When(distinct_votes=0, then=Value(0.0)),
+                    default=F("total") / F("distinct_votes"),
+                    output_field=FloatField(),
+                )
             )
             .order_by("-vote_score")
         )
 
-    @property
-    def is_tie(self):
-        top_meme = self.top_memes.first()
-        if top_meme:
-            return len(self.top_memes.filter(vote_score=top_meme.real_avg_score)) > 1
-        return False
 
-    @property
     def tying_memes(self):
-        top_meme = self.top_memes.first()
-        if top_meme:
-            return self.top_memes.filter(vote_score=top_meme.real_avg_score).values()
-        return []
+        top_meme_subquery = (
+            self.top_memes()
+            .annotate(count=Count("id"))
+            .order_by("-count")
+            .values("vote_score")[:1]
+        )
+
+        return (
+            self.memes.filter(competition=self)
+            .annotate(
+                vote_count=Count("votes"),
+                total=Sum("votes__score"),
+                distinct_votes=Count("votes__participant", distinct=True),
+            )
+            .annotate(
+                vote_score=Case(
+                    When(distinct_votes=0, then=Value(0.0)),
+                    default=F("total") / F("distinct_votes"),
+                    output_field=FloatField(),
+                )
+            )
+            .filter(vote_score=Subquery(top_meme_subquery))
+            .values()
+        )
 
     @property
     def num_memes(self):
@@ -100,138 +122,128 @@ class Competition(models.Model):
     def has_updates_within_last_24_hours(self):
         return self.updated_at >= timezone.now() - timezone.timedelta(hours=1)
 
-    @property
+
     def avg_meme_score(self):
-        result = self.memes.aggregate(
-            avg_rating=Coalesce(models.Avg("votes__score"), 0.0)
-        )["avg_rating"]
-        if result:
-            return round(result, 2)
-        return 0
+        avg_rating = (
+            self.memes.filter(votes__isnull=False)
+            .aggregate(avg_score=Coalesce(Avg("votes__score"), 0.0))["avg_score"]
+        )
+        
+        return round(avg_rating, 2) if avg_rating is not None else 0.0
 
-    @property
+
     def avg_vote_time(self):
-        avg_time = 0
-        for v in self.votes.all():
-            avg_time += v.voting_time
-
-        if avg_time:
-            avg_time /= len(self.votes.all())
-            avg_time = round(avg_time, 2)
-        return avg_time
-
-    @property
-    def highest_avg_score_given(self):
-        result = (
-            self.votes.values("participant__name")
-            .annotate(avg_score_given=Avg("score"))
-            .order_by("-avg_score_given")
-            .first()
-        )
-        if result:
-            return {
-                "participant": result["participant__name"],
-                "score": round(result["avg_score_given"], 2),
-            }
-        return {"participant": "No one", "score": 0.0}
-
-    @property
-    def lowest_avg_score_given(self):
-        result = (
-            self.votes.values("participant__name")
-            .annotate(avg_score_given=Avg("score"))
-            .order_by("-avg_score_given")
-            .last()
-        )
-        if result:
-            return {
-                "participant": result["participant__name"],
-                "score": round(result["avg_score_given"], 2),
-            }
-        return {"participant": "No one", "score": 0.0}
-
-    @property
-    def highest_avg_score_received(self):
-        if len(self.votes.all()):
-            participants = self.participants.filter(
-                memes__votes__isnull=False
-            ).distinct()
-            # Calculate the mean score for each participant
-            participants = participants.annotate(mean_score=Avg("memes__votes__score"))
-
-            # Calculate the standard deviation of scores for each participant
-            participants = participants.annotate(
-                score_stddev=StdDev("memes__votes__score")
-            )
-
-            # Calculate the weighted score for each participant with penalization
-            participants = participants.annotate(
-                penalization_factor=ExpressionWrapper(
-                    Count("memes") / self.num_memes, output_field=FloatField()
-                ),
-                weighted_score=ExpressionWrapper(
-                    (F("mean_score") - (F("score_stddev")) * F("penalization_factor")),
+        avg_time = (
+            self.votes
+            .annotate(
+                voting_duration=ExpressionWrapper(
+                    F("created_at") - F("started_at"),
                     output_field=FloatField(),
+                )
+            )
+            .aggregate(avg_time=Sum("voting_duration") / Count("id"))["avg_time"]
+        )
+        
+        return round(avg_time, 2) if avg_time is not None else 0.0
+
+
+    def get_avg_score_given_extrema(self):
+        result = (
+            self.votes
+            .values("participant__name")
+            .annotate(
+                avg_score_given=ExpressionWrapper(
+                    Avg("score"), output_field=FloatField()
                 ),
             )
-            # Retrieve the participant with the highest weighted score
-            highest_score_participant = participants.order_by("-weighted_score").first()
-            if highest_score_participant:
-                return {
-                    "participant": highest_score_participant.name,
-                    "score": round(highest_score_participant.weighted_score, 2),
-                }
+            .order_by("-avg_score_given", "avg_score_given")
+        )
+
+        highest_result = result.first()
+        lowest_result = result.last()
+
+        highest = {
+            "participant": highest_result["participant__name"],
+            "score": round(highest_result["avg_score_given"], 2),
+        } if highest_result else {"participant": "No one", "score": 0.0}
+
+        lowest = {
+            "participant": lowest_result["participant__name"],
+            "score": round(lowest_result["avg_score_given"], 2),
+        } if lowest_result else {"participant": "No one", "score": 0.0}
+
+        return {"highest": highest, "lowest": lowest}
+
+
+    def highest_avg_score_received(self):
+        participants = self.participants.filter(memes__votes__isnull=False).distinct()
+
+        # Calculate the mean score for each participant
+        participants = participants.annotate(mean_score=Avg("memes__votes__score"))
+
+        # Retrieve the participant with the highest average score
+        highest_score_participant = participants.order_by("-mean_score").first()
+
+        if highest_score_participant:
+            return {
+                "participant": highest_score_participant.name,
+                "score": round(highest_score_participant.mean_score, 2),
+            }
+
         return {"participant": "No one", "score": 0.0}
 
-    @property
+
     def highest_memes_submitted(self):
-        result = (
-            self.memes.values("participant__name")
-            .annotate(num_memes=Count("id"))
-            .order_by("-num_memes")
+        participant_with_most_memes = (
+            self.participants.annotate(
+                num_memes=Count('memes', distinct=True)
+            )
+            .order_by('-num_memes')
+            .values('name', 'num_memes')
             .first()
         )
-        if result:
+
+        if participant_with_most_memes:
             return {
-                "participant": result["participant__name"],
-                "num_memes": result["num_memes"],
+                "participant": participant_with_most_memes["name"],
+                "num_memes": participant_with_most_memes["num_memes"],
             }
+
         return {"participant": "No one", "num_memes": 0}
 
-    @property
-    def highest_avg_vote_time(self):
-        if len(self.votes.all()):
-            highest_avg = 0
-            participant = None
-            for p in self.participants.all():
-                if p.avg_vote_time > highest_avg:
-                    highest_avg = p.avg_vote_time
-                    participant = p
 
-            return {"participant": participant.name, "vote_time": round(highest_avg, 2)}
-        return {"participant": "No one", "vote_time": 0.0}
+    def get_avg_vote_time_extrema(self):
+        participants_with_avg_time = (
+            self.participants
+            .annotate(
+                avg_vote_time=ExpressionWrapper(
+                    Avg(Case(
+                        When(votes__voting_time__gt=0, then=F('votes__voting_time')),
+                        default=Value(0),
+                        output_field=FloatField()
+                    )),
+                    output_field=FloatField()
+                )
+            )
+            .order_by("-avg_vote_time")
+            .values("name", "avg_vote_time")
+        )
 
-    @property
-    def lowest_avg_vote_time(self):
-        # pretty gross but it works
-        # blame django for not letting you use computed properties in queries
-        if len(self.votes.all()):
-            lowest_avg = SUITABLY_HIGH_NUMBER
-            participant = None
-            for p in self.participants.all():
-                if p.avg_vote_time < lowest_avg and p.avg_vote_time > 0:
-                    lowest_avg = p.avg_vote_time
-                    participant = p
+        highest_result = participants_with_avg_time.first()
+        lowest_result = participants_with_avg_time.last()
 
-            if participant:
-                return {
-                    "participant": participant.name,
-                    "vote_time": round(lowest_avg, 2),
-                }
+        highest_result = {
+            "participant": highest_result["name"],
+            "vote_time": round(highest_result["avg_vote_time"], 2)
+        } if highest_result else {"participant": 'No one', "vote_time": 0.0}
 
-        return {"participant": "No one", "vote_time": 0.0}
+        lowest_result = {
+            "participant": lowest_result["name"],
+            "vote_time": round(lowest_result["avg_vote_time"], 2)
+        } if lowest_result else {"participant": 'No one', "vote_time": 0.0}
 
-    @property
+        return {"highest": highest_result, "lowest": lowest_result}
+
     def lowest_avg_own_memes(self):
         lowest_avg_participant = (
             self.participants.annotate(
@@ -256,12 +268,14 @@ class Competition(models.Model):
         if lowest_avg_participant:
             return {
                 "participant": lowest_avg_participant.name,
-                "score": round(lowest_avg_participant.avg_score or 0, 2),
+                "score": round(lowest_avg_participant.avg_score, 2),
             }
+
         return {"participant": "No one", "score": 0.0}
 
-    @property
+
     def avg_vote_on_own_memes(self):
+        # the average score each participant gave to their own memes
         # ensure participants have voted in this competition before continuing
         if not (self.num_voters and self.num_memes):
             return 0.0

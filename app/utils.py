@@ -2,7 +2,7 @@ import re
 from django.contrib.auth import get_user_model
 import random
 import string
-from django.db.models import Sum
+from django.db.models import Sum, OuterRef, Subquery, F
 from django.db import transaction
 from .models import Competition, SeenMeme, Meme, Participant
 from channels.layers import get_channel_layer
@@ -91,11 +91,8 @@ def get_current_user(request):
 
 
 def set_next_meme_for_competition(competition_id):
-    # Get the competition
-    competition = Competition.objects.get(id=competition_id)
-
-    # Get the list of all memes for the competition
-    all_memes = competition.memes.all()
+    # Get the competition and prefetch related memes
+    competition = Competition.objects.select_related("current_meme").get(id=competition_id)
 
     # Get the list of seen memes for the competition
     seen_memes = SeenMeme.objects.filter(competition=competition).values_list(
@@ -103,11 +100,12 @@ def set_next_meme_for_competition(competition_id):
     )
 
     # Exclude the seen memes from the list of all memes
-    available_memes = all_memes.exclude(id__in=seen_memes)
+    available_memes = competition.memes.exclude(id__in=Subquery(seen_memes))
 
     # Select a random meme from the available memes
-    if available_memes.exists():
-        random_meme = random.choice(available_memes)
+    random_meme = available_memes.order_by('?').first()
+
+    if random_meme:
         # Set the competition's current_meme to the randomly selected meme
         competition.current_meme = random_meme
 
@@ -115,7 +113,7 @@ def set_next_meme_for_competition(competition_id):
         SeenMeme.objects.create(meme=random_meme, competition=competition)
     else:
         competition.current_meme = None
-        
+
     competition.round_started_at = datetime.now(tz=timezone.get_current_timezone())
     competition.save()
     return competition
@@ -144,16 +142,22 @@ def get_top_memes(comp_name):
     # Get the competition instance
     competition = Competition.objects.get(name=comp_name)
 
-    # get the memes in order of their avg scores
-    memes = competition.top_memes
-    meme = memes.first()
-    tying_memes = memes.filter(vote_score=meme.vote_score)
+    
+    tying_memes = competition.tying_memes()
+    if tying_memes:
+        # Fetch only necessary fields to reduce database load
+        tying_memes_data = tying_memes.values("id", "participant__name", "vote_score")
 
-    return [
-        {"id": m.id, "participant": m.participant.name, "score": round(m.vote_score, 2)}
-        for m in tying_memes
-    ]
+        return [
+            {
+                "id": meme["id"],
+                "participant": meme["participant__name"],
+                "score": round(meme["vote_score"], 2),
+            }
+            for meme in tying_memes_data
+        ]
 
+    return []
 
 def send_shame_message(comp_name, username):
     messages = [

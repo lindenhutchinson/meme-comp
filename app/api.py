@@ -143,21 +143,24 @@ TIMEOUT_VOTING_THRESHOLD = 0.5
 
 @transaction.atomic
 def check_and_start_timer(total_votes, competition):
+    voters_exceed_threshold = (
+        total_votes / competition.num_participants
+    ) >= TIMEOUT_VOTING_THRESHOLD
     lock_key = f"advance_comp_task_lock_{competition.id}"
-    with redis_lock(lock_key):
-        # Refresh the competition instance to get the latest data within the transaction
-        competition.refresh_from_db()
-        # only start if a certain percentage of participants have voted
-        voters_exceed_threshold = (
-            total_votes / competition.num_participants
-        ) >= TIMEOUT_VOTING_THRESHOLD
-        # only start timer if workers are connected and it hasnt already started
-        if (
-            not competition.timer_active
-            and voters_exceed_threshold
-            # and is_broker_connected() - slow and unnecessary!
-            # implemented so we dont add the task when the broker is down but whatever she'll be roight m8
-        ):
+    
+    if (
+        voters_exceed_threshold
+        and not competition.timer_active
+        # and is_broker_connected() - slow and unnecessary!
+        # implemented so we dont add the task when the broker is down but whatever she'll be roight m8
+    ):
+        with redis_lock(lock_key):
+            # Refresh the competition instance to get the latest data within the transaction
+            competition.refresh_from_db()
+            # only start if a certain percentage of participants have voted
+
+            # only start timer if workers are connected and it hasnt already started
+
             competition.timer_active = True
             competition.save()
             do_advance_competition.apply_async(
@@ -220,9 +223,7 @@ def meme_vote(request, comp_name):
                 vote.score = score
             vote.save()
 
-        competition.refresh_from_db()
         round_votes = num_votes_for_round(competition)
-
         send_channel_message(competition.name, "meme_voted", round_votes)
         with transaction.atomic():
             if not competition.timer_active:
@@ -350,12 +351,10 @@ def cancel_competition(request, comp_name):
     # delete the seen memes of the competition
     SeenMeme.objects.filter(competition=competition).delete()
     comp_memes = competition.memes.all()
-    votes = Vote.objects.filter(meme__in=comp_memes)
-    votes.delete()
-
+    Vote.objects.filter(meme__in=comp_memes).delete()
     Participant.objects.filter(competition=competition).update(ready=False)
     # alert the channel that the competition has been cancelled
-    send_channel_message(competition.name, "competition_cancelled")
+    # send_channel_message(competition.name, "competition_cancelled")
     return Response(status=status.HTTP_200_OK)
 
 

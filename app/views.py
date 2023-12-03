@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404, HttpResponse
 from .utils import (
     convert_to_localtime,
     generate_random_string,
-    get_top_memes,
     send_channel_message,
 )
 from .forms import (

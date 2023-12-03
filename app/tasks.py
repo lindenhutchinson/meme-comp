@@ -28,18 +28,24 @@ def do_advance_competition(competition_id):
     else:
         top_memes = get_top_memes(competition.name)
         if len(top_memes) == 1:
-            # wtf who would write this shit
+            fastest_slowest_voter = competition.get_avg_vote_time_extrema()
+            highest_avg_score_given = competition.get_avg_score_given_extrema()['highest']
+            lowest_avg_score_given = competition.get_avg_score_given_extrema()['lowest']
+            most_submitted = competition.highest_memes_submitted()
+            highest_avg_score_received = competition.highest_avg_score_received()
+            lowest_avg_own_memes = competition.lowest_avg_own_memes()
+
             statistics = {
-                "fastest_voter": f'{competition.lowest_avg_vote_time["participant"]} averaged {competition.lowest_avg_vote_time["vote_time"]} seconds per vote',
-                "slowest_voter": f'{competition.highest_avg_vote_time["participant"]} averaged {competition.highest_avg_vote_time["vote_time"]} seconds per vote',
-                "highest_score_given": f'{competition.highest_avg_score_given["participant"]} gave a {competition.highest_avg_score_given["score"]} average score',
-                "lowest_score_given": f'{competition.lowest_avg_score_given["participant"]} gave a {competition.lowest_avg_score_given["score"]} average score',
-                "most_submitted": f'{competition.highest_memes_submitted["participant"]} submitted {competition.highest_memes_submitted["num_memes"]} memes',
-                "highest_avg_score": f'{competition.highest_avg_score_received["participant"]} received a {competition.highest_avg_score_received["score"]} weighted score',
-                "avg_own_score": f'{competition.lowest_avg_own_memes["participant"]} gave themselves a {competition.lowest_avg_own_memes["score"]} average score',
-                "avg_meme_score": competition.avg_meme_score,
-                "avg_vote_time": competition.avg_vote_time,
-                "avg_vote_on_own_memes": competition.avg_vote_on_own_memes,
+                "fastest_voter": f"{fastest_slowest_voter['lowest']['participant']} averaged {fastest_slowest_voter['lowest']['vote_time']} seconds per vote",
+                "slowest_voter": f"{fastest_slowest_voter['highest']['participant']} averaged {fastest_slowest_voter['highest']['vote_time']} seconds per vote",
+                "highest_score_given": f"{highest_avg_score_given['participant']} gave a {highest_avg_score_given['score']} average score",
+                "lowest_score_given": f"{lowest_avg_score_given['participant']} gave a {lowest_avg_score_given['score']} average score",
+                "most_submitted": f"{most_submitted['participant']} submitted {most_submitted['num_memes']} memes",
+                "highest_avg_score": f"{highest_avg_score_received['participant']} received a {highest_avg_score_received['score']} weighted score",
+                "avg_own_score": f"{lowest_avg_own_memes['participant']} gave themselves a {lowest_avg_own_memes['score']} average score",
+                "avg_meme_score": competition.avg_meme_score(),
+                "avg_vote_time": competition.avg_vote_time(),
+                "avg_vote_on_own_memes": competition.avg_vote_on_own_memes(),
             }
             top_meme = Meme.objects.get(id=top_memes[0]["id"])
             competition.winning_meme = top_meme
