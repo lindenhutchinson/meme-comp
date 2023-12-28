@@ -1,3 +1,5 @@
+{% load websocket_tags %}
+
 <div 
     id="comp-info-card"
     class="col-lg-3 col-12 text-center mb-2"
@@ -34,19 +36,8 @@
                 </button>
                 <div class="overflow-auto participants-box p-1" style="max-height: 200px;">
                     <ul id="participants" class="list-group">
-                        {% for part in competition.sorted_participants %}
-                        <li class="list-group-item" data-participant-id="{{ part.id }}" data-is-host="{% if part.user == competition.owner %}true{% endif %}">
-                            <div class="d-flex justify-content-center align-items-center">
-                                <span style="text-align:center; width:100%" title="{{ part.name }}">
-                                    <a target="_blank" style="width:100%" class="btn btn-outline-dark" href="{% url 'user' part.user.id %}">{{ part.name|truncatechars:10 }}</a>
-                                </span>
-                                <span style="text-align:end">
-                                    <!-- Add an empty <i> element for the icon with a unique ID -->
-                                    <i id="icon-{{ part.id }}" class="m-3 bi {% if part.ready %}bi-check-circle-fill text-success{% else %}bi-x-circle-fill text-danger{% endif %}"></i>
-                                </span>
-                            </div>
-                        </li>                        
-                        
+                        {% for participant in competition.sorted_participants %}
+                            {% participant_li participant.id %}
                         {% endfor %}
                     </ul>
                 </div>
@@ -97,6 +88,38 @@
 </div>
 
 <script>
+    $(document).on('participantJoined', (e, data) => {
+        const participantLi = data.participant_html
+        $('#participants').prepend(participantLi);
+
+        const numParticipants = data.num_participants;
+        const participantName = data.participant_name;
+    
+        $('#num-participants').text(`(${numParticipants})`);
+
+        if (Math.random() < 0.05) {
+            showSnackbar(`Oh look, ${participantName} is here!`, 'success')
+        } else if (Math.random() < 0.05) {
+            showSnackbar(`Look who showed up, it's ${participantName}`, 'success')
+        } else if (Math.random() < 0.05) {
+            showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`, 'success')
+        } else {
+            showSnackbar(`${participantName} joined`, 'success');
+        }
+    });
+
+    $(document).on('memeUploaded', (e, data) => {
+        const num_uploaders = data.num_uploaders;
+        const num_memes = data.num_memes;
+        const text = `${num_memes} meme${num_memes != 1 ? 's' : ''} submitted by ${num_uploaders} ${num_uploaders != 1 ? 'people' : 'person'}`
+        $("#num_memes").text(text);
+    });
+
+    $(document).on('competitionCancelled', (e, data) => {
+        console.log('Competiton has been cancelled');
+        window.location.reload();
+    })
+
     function toggleShowParticipants() {
 		const box = $('.participants-box');
 		if(box.hasClass('collapse')) {
@@ -116,23 +139,6 @@
 		// Alert the copied text
 		showSnackbar("Competition URL has been copied", 'primary');
 	}
-
-    function readyUp() {
-        $.ajax({
-			url: "{% url 'readyup_participant' participant.id %}",
-			type: "POST",
-			data: {},
-			beforeSend: function (xhr) {
-				xhr.setRequestHeader("X-CSRFToken", csrfToken);
-			},
-			success: function (response) {
-			},
-			error: function (xhr, status, error) {
-				showSnackbar('Failed to ready up...', 'danger');
-			}
-		});
-        $('#readyup-btn').prop('disabled', true)
-    }
 
     	// load next meme via AJAX
 	function advanceCompetition() {

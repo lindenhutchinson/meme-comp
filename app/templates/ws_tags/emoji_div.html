@@ -1,0 +1,269 @@
+{% load static %}
+<script src="{% static 'js/emojis.js' cache 6004800 %}"></script>
+<div id="emoji-container">
+    <button class="btn btn-light emoji-button e-btn">&#128514</button>
+    <button class="btn btn-light emoji-button e-btn">&#128076</button>
+    <button class="btn btn-light emoji-button e-btn">&#128169</button>
+</div>
+<script>
+     var emojiTimeout;
+    $(document).ready(function () {
+        $(".e-btn").on('click', function () {
+            var $this = $(this);
+            const emojiText = $this.text();
+            sendEmoji(emojiText);
+            const fillDiv = $('#fill-div');
+            fillDiv.css('background-color', 'black');
+            fillDiv.addClass('div-fill');
+            $('.emoji-button').attr('disabled', true);
+
+            emojiTimeout = setTimeout(function () {
+                fillDiv.removeClass('div-fill');
+                $('.emoji-button').attr('disabled', false);
+                fillDiv.css('background-color', 'white');
+                emojiTimeout = 0;
+            }, 2000); // Adjust the cooldown duration as desired
+        });
+        $('input[type=radio][name=vote]').on('change', function () {
+            const memeId = $(this).data('meme-id');
+            submitVote(memeId);
+        });
+    });
+
+    const EMOJI_TIMEOUT_THRESHOLD = 10;
+    const REFRESH_TIMEOUT_SECONDS = 2;
+    const TIMEOUT_SECONDS = 30;
+    var end = null;
+    var last = null;
+    var emojiCtr = 0;
+
+    function getTimeSeconds() {
+        var date = new Date();
+        return (date.getTime() / 1000);
+    }
+    function checkEmojiCtr() {
+        emojiCtr++;
+        var current = getTimeSeconds();
+        if (emojiCtr > EMOJI_TIMEOUT_THRESHOLD) {
+            if (!end) {
+                alert('You are sending too many requests. Please calm down.')
+                end = getTimeSeconds() + TIMEOUT_SECONDS;
+                return false;
+            }
+            if (current < end) {
+                showSnackbar(`You have been timed out, try again in ${Math.ceil(end - current)} seconds`, "danger");
+                return false
+            } else {
+                end = null;
+                emojiCtr = 0;
+            }
+        } else if (current - last >= REFRESH_TIMEOUT_SECONDS) {
+            console.log('💩');
+            // reset the emoji ctr so normal users dont get timed out
+            emojiCtr = 0;
+        }
+        last = getTimeSeconds();
+
+        return true
+    }
+
+    function sendEmoji(emojiText) {
+        if (checkEmojiCtr()) {
+            // send emoji via socket rather than via request
+            socket.send(JSON.stringify({
+                'command': 'send_emoji',
+                'message': emojiText
+            }));
+        }
+    }
+    function getRandomEmoji() {
+        var randomCodePoint = Math.floor(Math.random() * (0x1F601 - 0x1F64F  + 1)) + 0x1F64F;
+        return `&#${randomCodePoint};`;
+    }
+    function createEmojiBtns() {
+        $('#emoji-container').empty()
+        const numBtns = 3;
+        // get a copy of the emoji constant to avoid modifying it
+        const emojiList = EMOJI_LIST.slice(0);
+        for (i = 0; i < numBtns; i++) {
+            var emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            const index = emojiList.indexOf(emoji);
+            if (index > -1) { // only splice array when item is found
+                emojiList.splice(index, 1); // 2nd parameter means remove one item only
+            }
+            if (Math.random() < 0.1) {
+                emoji = getRandomEmoji();
+            }
+
+            $('<button>', {
+                id: `emoji-${i}`,
+                class: 'btn btn-light emoji-button e-btn',
+                html: emoji,
+                disabled: emojiTimeout ? true : false
+            }).appendTo('#emoji-container');
+        }
+        // the event trigger needs to be repeated after the elements are created
+        $(".e-btn").on('click', function () {
+            var $this = $(this);
+            const emojiText = $this.text();
+            sendEmoji(emojiText);
+            const fillDiv = $('#fill-div');
+            fillDiv.css('background-color', 'black');
+            fillDiv.addClass('div-fill');
+            $('.emoji-button').attr('disabled', true);
+
+            emojiTimeout = setTimeout(function () {
+                fillDiv.removeClass('div-fill');
+                $('.emoji-button').attr('disabled', false);
+                fillDiv.css('background-color', 'white');
+                emojiTimeout = 0;
+            }, 2000); // Adjust the cooldown duration as desired
+        });
+    }
+    /**
+     * Generates a random number within the specified range.
+     *
+     * @param {number} min - The minimum value of the range (inclusive).
+     * @param {number} max - The maximum value of the range (inclusive).
+     * @returns {number} A random number within the specified range.
+     */
+    function getRandomNumber(min, max) {
+        return Math.ceil(Math.random() * (max - min) + min);
+    }
+
+    /**
+     * Sets random movement values for an emoji element.
+     *
+     * @param {jQuery} emojiElement - The jQuery object representing the emoji element.
+     * @param {string} emojiText - The text to be displayed in the emoji element.
+     */
+    function setRandomMovement(emojiElement, emojiText) {
+        emojiElement.css('display', '');
+        var startX = `${50 + getRandomNumber(-30, 30)}%`;
+        var startY = `${25 + getRandomNumber(0, 25)}%`;
+        var deg = 10;
+        var posRotation = `${deg}deg`;
+        var negRotation = `${-1*deg}deg`;
+        // document.documentElement.style.setProperty('--start-x', startX);
+        // document.documentElement.style.setProperty('--start-y', startY);
+        document.documentElement.style.setProperty('--neg-rotation', negRotation);
+        document.documentElement.style.setProperty('--pos-rotation', posRotation);
+        emojiElement.css('top', startY);
+        emojiElement.css('left', startX)
+        emojiElement.text(emojiText);
+    }
+
+    /**
+     * Creates an emoji element with random movement and removes it after a certain time.
+     *
+     * @param {string} emojiText - The text to be displayed in the emoji element.
+     */
+    function createEmoji(emojiText) {
+        const id = getRandomNumber(1000, 9999);
+        const emojiBody = $('#emoji');
+        const emojiElement = $('<div>', {
+                id: id,
+                class: 'emoji',
+                style: 'display:none'
+        }).appendTo('#emoji');
+
+        setRandomMovement(emojiElement, emojiText);
+
+        setTimeout(function() {
+            emojiElement.text('');
+            emojiElement.css('display', 'none');
+            emojiBody.remove(emojiElement);
+        }, 1750);
+    }
+</script>
+
+<style>
+	#refresh-emojis {
+		margin-left:10px;
+		flex-basis:fit-content;
+		border-radius:50%;
+
+	}
+	#emoji-container {
+		display:flex;
+		flex-direction: row;
+		justify-content: center;
+		flex-wrap:wrap;
+	}
+	.emoji-button {
+		border-radius:50%;
+		width:40px;
+		height:40px;
+		font-size:20px;
+		display:flex;
+		justify-content: center;
+		align-items: center;
+		margin: 15px;
+	}
+	#fill-div {
+		border-radius:30px;
+		width: 100px;
+		height: 10px;
+		background-color: white;
+		border: none;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.div-fill::after {
+		content:'';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background-color: white;
+		animation: fillAnimation 2s linear forwards;
+		pointer-events: none;
+	}
+
+	@keyframes fillAnimation {
+	0% { left: -100%; }
+	100% { left: 0; }
+	}
+
+	.emoji {
+		z-index:99999;
+		position: absolute;
+		/* top: var(--start-y);
+		left:  var(--start-x); */
+		transform: translate(-50%, -50%);
+		transform: rotate(var(--neg-rotation));
+		font-size: 5rem;
+		animation: moveEmoji ease-in 2s;
+		animation-duration: 2s;
+		animation-name: moveEmoji;
+		animation-iteration-count: 1;
+		animation-timing-function: ease-in
+	}
+
+	@keyframes moveEmoji {
+		0% { 
+			/* transform: translate(-50%, -50%);  */
+			scale: 0.2;
+			opacity: 1;
+			transform: rotate(var(--neg-rotation));
+		}
+		25% {
+			transform: rotate(var(--pos-rotation));
+		}
+		50% {
+			transform: rotate(var(--neg-rotation));
+		}
+		75% {
+			transform: rotate(var(--pos-rotation));
+		}
+		100% { 
+			/* transform: translate(calc(-50% + var(--move-x)), calc(-50% + var(--move-y)));  */
+			opacity: 0;
+			scale: 1;
+			display: none;
+			transform: rotate(var(--neg-rotation));
+		}
+	}
+</style>

@@ -26,13 +26,6 @@ CORS_ORIGINS_WHITELIST = [
     "http://192.168.1.2",
 ]
 
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer",
-#         "CONFIG": {},
-#     },
-# }
-
 REDIS_URL = CELERY_BROKER_URL = "redis://localhost:6379"
 
 CHANNEL_LAYERS = {

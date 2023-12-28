@@ -4,8 +4,7 @@ from . import consumers
 
 websocket_urlpatterns = [
     re_path(
-        settings.WEBSOCKET_SCHEME
-        + r"/competitions/(?P<competition_name>\w+)/participant/(?P<participant_id>\d+)/$",
+        r"competitions/(?P<competition_name>\w+)/$",
         consumers.CompetitionConsumer.as_asgi(),
     ),
 ]

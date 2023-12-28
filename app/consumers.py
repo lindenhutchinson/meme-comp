@@ -1,7 +1,6 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from channels.db import database_sync_to_async
-from .models import Competition, Participant
 from .utils import check_emoji_text
 import asyncio
 
@@ -32,12 +31,12 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # Get the competition name from the URL
         self.comp_name = self.scope["url_route"]["kwargs"]["competition_name"]
-        self.participant_id = self.scope["url_route"]["kwargs"]["participant_id"]
-        if self.participant_id in WebSocketManager.active_connections:
-            await WebSocketManager.close_connection(self.participant_id)
+        self.user_id = self.scope["user"].id
+        if self.user_id in WebSocketManager.active_connections:
+            await WebSocketManager.close_connection(self.user_id)
 
         await self.channel_layer.group_add(self.comp_name, self.channel_name)
-        await WebSocketManager.add_connection(self.participant_id, self)
+        await WebSocketManager.add_connection(self.user_id, self)
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -65,14 +64,6 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
                 self.comp_name,
                 {"type": "send_update", "data": user, "command": "update_button"},
             )
-
-    # this is causing problems - disabling for now
-    # @database_sync_to_async
-    # def toggle_active_participant(self, active):
-    #     part = Participant.objects.get(id=self.participant_id)
-    #     if part:
-    #         part.active = active
-    #         part.save()
 
     async def send_update(self, event):
         await self.send(

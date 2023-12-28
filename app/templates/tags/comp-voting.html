@@ -1,3 +1,4 @@
+{% load websocket_tags %}
 <div id="comp-started" class="col text-center" 
 {% if not competition.started or not competition.current_meme%}style="display:none" {% endif %}>
     <div class="vote-container">
@@ -13,11 +14,8 @@
                             <button title="Refresh your emoji choices" onclick="createEmojiBtns()" id="refresh-emojis"
                                 class="btn btn-sm btn-dark"><i class="bi bi-arrow-clockwise"></i></button>
 
-                            <div id="emoji-container">
-                                <button class="btn btn-light emoji-button e-btn">&#128514</button>
-                                <button class="btn btn-light emoji-button e-btn">&#128076</button>
-                                <button class="btn btn-light emoji-button e-btn">&#128169</button>
-                            </div>
+                            {% emoji_div %}
+
                         </div>
                         <h4>
                             Total votes: 
@@ -77,302 +75,38 @@
 </div>
 
 <script>
-    const EMOJI_LIST = [
-        '&#127378', //'🆒'
-        '&#128175',//'💯',
-        '&#128170',//'💪',
-        '&#128169',//'💩',
-        '&#128293',//'🔥',
-        '&#128514',//'😂',
-        '&#128556',//'😬',
-        '&#128579',//'🙃',
-        '&#129312',//'🤠',
-        '&#129321',//'🤩',
-        '&#129408',//'🦀',
-        '&#129504',//'🧠',
-        '&#127942',//'🏆',
-        '&#127881',//'🎉',
-        '&#127752',//'🌈',
-        '&#10067',//'❓',
-        '&#9989',//'✅',
-        '&#9940',//'⛔',
-        '&#9889',//'⚡',
-        '&#11088',//'⭐',
-        '&#9749',//☕
-        '&#127383',//🆗
-        '&#127775',//🌟
-        '&#128512', //😀
-        '&#128526', //😎
-        '&#128540', //😜
-        '&#128514', //😂
-        '&#128525', //😍
-        '&#129395', //🥳
-        '&#129302', //🤖
-        '&#128640', //🚀
-        '&#128188', //💼
-        '&#129488', //🧐
-        '&#127752', //🌈
-        '&#128293', //🔥
-        '&#128175', //💯
-        '&#127881', //🎉
-        '&#128642', //🚂
-        '&#127775', //🌟
-        '&#127829', //🍕
-        '&#127928', //🎸
-        '&#127849', //🍩
-        '&#128125', //👽
-        '&#127880', //🎈
-        '&#127866', //🍺
-        '&#127829', //🍕
-        '&#129311', //🤟
-        '&#129304', //🤘
-        '&#128378', //🕺
-        '&#127875', //🎃
-        '&#127754', //🌊
-        '&#128269', //🔍
-        '&#127922', //🎲
-        '&#128197', //📅
-        '&#128161', //💡
-        '&#128678', //🚦
-        '&#127756', //🌌
-        '&#127808', //🍀
-        '&#127984', //🏰
-        '&#127843', //🍣
-        '&#127828', //🍔
-        '&#127908', //🎤
-        '&#127929', //🎹
-        '&#127917', //🎭
-        '&#127790', //🌮
-        '&#128641', //🚁
-        '&#128760', //🛸
-        '&#127905', //🎡
-        '&#127906', //🎢
-        '&#128640', //🚀
-        '&#128641', //🚁
-        '&#127943', //🏇
-        '&#127797', //🌵
-        '&#128511', //🗿
-        '&#127920', //🎰
-        '&#128218', //📚
-        '&#128225', //📡
-        '&#128302', //🔮
-        '&#127942', //🏆
-        '&#127865', //🍹
-        '&#127867', //🍻
-        '&#127863', //🍷
-        '&#127853', //🍭
-        '&#127852', //🍬
-        '&#128641', //🚁
-        '&#127922', //🎲
-        '&#127918', //🎮
-        '&#127923', //🎳
-        '&#127955', //🏓
-        '&#127919', //🎯
-        '&#127992', //🏸
-        '&#127921', //🎱
-        '&#127912', //🎨
-        '&#127908', //🎤
-        '&#127911', //🎧
-        '&#127932', //🎼
-        '&#127928', //🎸
-        '&#129345', //🥁
-        '&#127927', //🎷
-        '&#127930', //🎺
-        '&#127931', //🎻
-        '&#127982', //🏮
-        '&#128248', //📸
-        '&#127909', //🎥
-        '&#128225', //📡
-        '&#128250', //📺
-        '&#128251', //📻
-        '&#128240', //📰
-        '&#128200', //📈
-        '&#128201', //📉
-        '&#128273', //🔑
-        '&#128296', //🔨
-        '&#128295', //🔧
-        '&#128297', //🔩
-        '&#128279', //🔗
-        '&#128137', //💉
-        '&#127993', //🏹
-        '&#128299', //🔫
-        '&#128163', //💣
-        '&#128298', //🔪
-        '&#128684', //🚬
-        '&#128138', //💊
-        '&#128136', //💈
-        '&#128176', //💰
-        '&#128179', //💳
-        '&#128142', //💎
-        '&#128276', //🔔
-        '&#128161', //💡
-        '&#128701', //🚽
-        '&#128703', //🚿
-        '&#128705', //🛁
-        '&#128682', //🚪
-        '&#128716', //🛌
-        '&#128722', //🛒
-        '&#127873', //🎁
-        '&#127880', //🎈
-        '&#127872', //🎀
-        '&#127882', //🎊
-        '&#127881', //🎉
-        '&#127886', //🎎
-        '&#127982', //🏮
-        '&#128512', //😀
-        '&#128515', //😃
-        '&#128516', //😄
-        '&#128513', //😁
-        '&#128518', //😆
-        '&#128517', //😅
-        '&#128514', //😂
-        '&#129315', //🤣
-        '&#128522', //😊
-        '&#128519', //😇
-        '&#128578', //🙂
-        '&#128579', //🙃
-        '&#128521', //😉
-        '&#128524', //😌
-        '&#128525', //😍
-        '&#129392', //🥰
-        '&#128536', //😘
-        '&#128535', //😗
-        '&#128537', //😙
-        '&#128538', //😚
-        '&#128523', //😋
-        '&#128539', //😛
-        '&#128540', //😜
-        '&#129322', //🤪
-        '&#128541', //😝
-        '&#129297', //🤑
-        '&#129303', //🤗
-        '&#129325', //🤭
-        '&#129323', //🤫
-        '&#129300', //🤔
-        '&#129296', //🤐
-        '&#129320', //🤨
-        '&#128528', //😐
-        '&#128529', //😑
-        '&#128566', //😶
-        '&#128527', //😏
-        '&#128530', //😒
-        '&#128580', //🙄
-        '&#128556', //😬
-        '&#129317', //🤥
-        '&#128524', //😌
-        '&#128532', //😔
-        '&#128554', //😪
-        '&#129316', //🤤
-        '&#128564', //😴
-        '&#128567', //😷
-        '&#129298', //🤒
-        '&#129301', //🤕
-        '&#129314', //🤢
-        '&#129326', //🤮
-        '&#129319', //🤧
-        '&#128565', //😵
-        '&#129327', //🤯
-        '&#129312', //🤠
-        '&#129395', //🥳
-        '&#128526', //😎
-        '&#129299', //🤓
-        '&#129488', //🧐
-        '&#128533', //😕
-        '&#128543', //😟
-        '&#128577', //🙁
-        '&#128558', //😮
-        '&#128559', //😯
-        '&#128562', //😲
-        '&#128563', //😳
-        '&#129402', //🥺
-        '&#128550', //😦
-        '&#128551', //😧
-        '&#128552', //😨
-        '&#128560', //😰
-        '&#128549', //😥
-        '&#128546', //😢
-        '&#128557', //😭
-        '&#128561', //😱
-        '&#128534', //😖
-        '&#128547', //😣
-        '&#128542', //😞
-        '&#128531', //😓
-        '&#128553', //😩
-        '&#128555', //😫
-        '&#128548', //😤
-        '&#128545', //😡
-        '&#128544', //😠
-        '&#129324', //🤬
-        '&#128520', //😈
-        '&#128127', //👿
-        '&#128128', //💀
-        '&#128169', //💩
-        '&#129313', //🤡
-        '&#128121', //👹
-        '&#128122', //👺
-        '&#128123', //👻
-        '&#128125', //👽
-        '&#128126', //👾
-        '&#129302', //🤖
-        '&#128570', //😺
-        '&#128568', //😸
-        '&#128569', //😹
-        '&#128571', //😻
-        '&#128572', //😼
-        '&#128573', //😽
-        '&#128576', //🙀
-        '&#128575', //😿
-        '&#128574', //😾
-        '&#128080', //👐
-        '&#128588', //🙌
-        '&#128079', //👏
-        '&#128591', //🙏
-        '&#129330', //🤲
-        '&#129309', //🤝
-        '&#129310', //🤞
-        '&#129311', //🤟
-        '&#129304', //🤘
-        '&#129305', //🤙
-        '&#128072', //👈
-        '&#128073', //👉
-        '&#128070', //👆
-        '&#128405', //🖕
-        '&#128071', //👇
-        '&#128074', //👊
-        '&#129307', //🤛
-        '&#129308', //🤜
-        '&#128076', //👌
-        '&#128077', //👍
-        '&#128078', //👎
-        '&#9994', //✊
-        '&#128074', //👊
-    ];
+    $(document).on('nextMeme', (e, data) => {
+        console.log('advancing to next meme');
 
-    var emojiTimeout;
-    $(document).ready(function () {
-        $(".e-btn").on('click', function () {
-            var $this = $(this);
-            const emojiText = $this.text();
-            sendEmoji(emojiText);
-            const fillDiv = $('#fill-div');
-            fillDiv.css('background-color', 'black');
-            fillDiv.addClass('div-fill');
-            $('.emoji-button').attr('disabled', true);
+        // reset the page
+        $('#vote-form')[0].reset();
+        $('.vote-radio').prop('disabled', false)
+        $('#comp-timer').css('display','none')
+        $('#comp-info-card').css('display', '')
+        $("#comp-started").css('display', '');
+        $("#comp-waiting").css('display', 'none');
+        $('input[name="vote"]').prop('checked', false);
+        $("#num_votes").text('0');
+        $(".square-image").attr("src", "");
 
-            emojiTimeout = setTimeout(function () {
-                fillDiv.removeClass('div-fill');
-                $('.emoji-button').attr('disabled', false);
-                fillDiv.css('background-color', 'white');
-                emojiTimeout = 0;
-            }, 2000); // Adjust the cooldown duration as desired
-        });
-        $('input[type=radio][name=vote]').on('change', function () {
-            const memeId = $(this).data('meme-id');
-            submitVote(memeId);
-        });
+        const memeUrl = data.url;
+        const memeCtr = data.ctr;
+        const numMemes = data.num_memes
+
+
+        $('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);
+        $("#current-meme-image").attr('src', memeUrl)
+        showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
+
+        // Disable the next meme button for 3 seconds after advancing
+        // hopefully this will avoid accidental clicks
+        $('#next-meme-btn').prop("disabled", true);
+        setTimeout(function() {
+            $("#next-meme-btn").prop("disabled", false);
+        }, 3000);
+        $("#vote-form :input").prop('readonly', false);
+
     });
-
-
 
     // submit vote via AJAX
     function submitVote() {
@@ -392,7 +126,7 @@
             },
             success: function (response) {
                 if (Math.random() < 0.05 && selectedOption == 0) {
-                    showSnackbar("Damn that's harsh, even for you...", 'success');
+                    showSnackbar("Everyone's a critic", 'success');
                 } else {
                     showSnackbar('Vote submitted', 'success')
                 }
@@ -401,52 +135,25 @@
             error: function (xhr, status, error) {
                 if (xhr.status === 403) {
                     showSnackbar(xhr.responseJSON.detail, 'danger')
-                } else if (xhr.status === 451) {
-                    showSnackbar("You managed to cast that vote at exactly the wrong time. Congratulations on being an edge case.", 'success');
                 } else {
-                    showSnackbar("That vote was not submitted. Don't ask me, ask yourself.", 'danger')
+                    showSnackbar("That vote was not submitted...", 'danger')
                 }
             }
         });
     }
 
-    const EMOJI_TIMEOUT_THRESHOLD = 10;
-    const REFRESH_TIMEOUT_SECONDS = 2;
-    const TIMEOUT_SECONDS = 30;
-    var end = null;
-    var last = null;
-    var emojiCtr = 0;
 
-    function getTimeSeconds() {
-        var date = new Date();
-        return (date.getTime() / 1000);
-    }
-    function checkEmojiCtr() {
-        emojiCtr++;
-        var current = getTimeSeconds();
-        if (emojiCtr > EMOJI_TIMEOUT_THRESHOLD) {
-            if (!end) {
-                alert('You are sending too many requests. Please calm down.')
-                end = getTimeSeconds() + TIMEOUT_SECONDS;
-                return false;
-            }
-            if (current < end) {
-                showSnackbar(`You have been timed out, try again in ${Math.ceil(end - current)} seconds`, "danger");
-                return false
-            } else {
-                end = null;
-                emojiCtr = 0;
-            }
-        } else if (current - last >= REFRESH_TIMEOUT_SECONDS) {
-            console.log('💩');
-            // reset the emoji ctr so normal users dont get timed out
-            emojiCtr = 0;
+
+    function sendEmoji(emojiText) {
+        if (checkEmojiCtr()) {
+            // send emoji via socket rather than via request
+            socket.send(JSON.stringify({
+                'command': 'send_emoji',
+                'message': emojiText
+            }));
         }
-        last = getTimeSeconds();
-
-        return true
     }
-
+    
     function sendEmoji(emojiText) {
         if (checkEmojiCtr()) {
             // send emoji via socket rather than via request
@@ -494,194 +201,4 @@
         img.style.transform = "scale(1)";
     }
 
-    function getRandomEmoji() {
-        var randomCodePoint = Math.floor(Math.random() * (0x1F601 - 0x1F64F  + 1)) + 0x1F64F;
-        return `&#${randomCodePoint};`;
-    }
-    function createEmojiBtns() {
-        $('#emoji-container').empty()
-        const numBtns = 3;
-        // get a copy of the emoji constant to avoid modifying it
-        const emojiList = EMOJI_LIST.slice(0);
-        for (i = 0; i < numBtns; i++) {
-            var emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
-            const index = emojiList.indexOf(emoji);
-            if (index > -1) { // only splice array when item is found
-                emojiList.splice(index, 1); // 2nd parameter means remove one item only
-            }
-            if (Math.random() < 0.1) {
-                emoji = getRandomEmoji();
-            }
-
-            $('<button>', {
-                id: `emoji-${i}`,
-                class: 'btn btn-light emoji-button e-btn',
-                html: emoji,
-                disabled: emojiTimeout ? true : false
-            }).appendTo('#emoji-container');
-        }
-        // the event trigger needs to be repeated after the elements are created
-        $(".e-btn").on('click', function () {
-            var $this = $(this);
-            const emojiText = $this.text();
-            sendEmoji(emojiText);
-            const fillDiv = $('#fill-div');
-            fillDiv.css('background-color', 'black');
-            fillDiv.addClass('div-fill');
-            $('.emoji-button').attr('disabled', true);
-
-            emojiTimeout = setTimeout(function () {
-                fillDiv.removeClass('div-fill');
-                $('.emoji-button').attr('disabled', false);
-                fillDiv.css('background-color', 'white');
-                emojiTimeout = 0;
-            }, 2000); // Adjust the cooldown duration as desired
-        });
-    }
-    /**
-     * Generates a random number within the specified range.
-     *
-     * @param {number} min - The minimum value of the range (inclusive).
-     * @param {number} max - The maximum value of the range (inclusive).
-     * @returns {number} A random number within the specified range.
-     */
-    function getRandomNumber(min, max) {
-        return Math.ceil(Math.random() * (max - min) + min);
-    }
-
-    /**
-     * Sets random movement values for an emoji element.
-     *
-     * @param {jQuery} emojiElement - The jQuery object representing the emoji element.
-     * @param {string} emojiText - The text to be displayed in the emoji element.
-     */
-    function setRandomMovement(emojiElement, emojiText) {
-        emojiElement.css('display', '');
-        var startX = `${50 + getRandomNumber(-30, 30)}%`;
-        var startY = `${25 + getRandomNumber(0, 25)}%`;
-        var deg = 10;
-        var posRotation = `${deg}deg`;
-        var negRotation = `${-1*deg}deg`;
-        // document.documentElement.style.setProperty('--start-x', startX);
-        // document.documentElement.style.setProperty('--start-y', startY);
-        document.documentElement.style.setProperty('--neg-rotation', negRotation);
-        document.documentElement.style.setProperty('--pos-rotation', posRotation);
-        emojiElement.css('top', startY);
-        emojiElement.css('left', startX)
-        emojiElement.text(emojiText);
-    }
-
-    /**
-     * Creates an emoji element with random movement and removes it after a certain time.
-     *
-     * @param {string} emojiText - The text to be displayed in the emoji element.
-     */
-    function createEmoji(emojiText) {
-        const id = getRandomNumber(1000, 9999);
-        const emojiBody = $('#emoji');
-        const emojiElement = $('<div>', {
-                id: id,
-                class: 'emoji',
-                style: 'display:none'
-        }).appendTo('#emoji');
-
-        setRandomMovement(emojiElement, emojiText);
-
-        setTimeout(function() {
-            emojiElement.text('');
-            emojiElement.css('display', 'none');
-            emojiBody.remove(emojiElement);
-        }, 1750);
-    }
 </script>
-
-<style>
-	#refresh-emojis {
-		margin-left:10px;
-		flex-basis:fit-content;
-		border-radius:50%;
-
-	}
-	#emoji-container {
-		display:flex;
-		flex-direction: row;
-		justify-content: center;
-		flex-wrap:wrap;
-	}
-	.emoji-button {
-		border-radius:50%;
-		width:40px;
-		height:40px;
-		font-size:20px;
-		display:flex;
-		justify-content: center;
-		align-items: center;
-		margin: 15px;
-	}
-	#fill-div {
-		border-radius:30px;
-		width: 100px;
-		height: 10px;
-		background-color: white;
-		border: none;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.div-fill::after {
-		content:'';
-		position: absolute;
-		top: 0;
-		left: -100%;
-		width: 100%;
-		height: 100%;
-		background-color: white;
-		animation: fillAnimation 2s linear forwards;
-		pointer-events: none;
-	}
-
-	@keyframes fillAnimation {
-	0% { left: -100%; }
-	100% { left: 0; }
-	}
-
-	.emoji {
-		z-index:99999;
-		position: absolute;
-		/* top: var(--start-y);
-		left:  var(--start-x); */
-		transform: translate(-50%, -50%);
-		transform: rotate(var(--neg-rotation));
-		font-size: 5rem;
-		animation: moveEmoji ease-in 2s;
-		animation-duration: 2s;
-		animation-name: moveEmoji;
-		animation-iteration-count: 1;
-		animation-timing-function: ease-in
-	}
-
-	@keyframes moveEmoji {
-		0% { 
-			/* transform: translate(-50%, -50%);  */
-			scale: 0.2;
-			opacity: 1;
-			transform: rotate(var(--neg-rotation));
-		}
-		25% {
-			transform: rotate(var(--pos-rotation));
-		}
-		50% {
-			transform: rotate(var(--neg-rotation));
-		}
-		75% {
-			transform: rotate(var(--pos-rotation));
-		}
-		100% { 
-			/* transform: translate(calc(-50% + var(--move-x)), calc(-50% + var(--move-y)));  */
-			opacity: 0;
-			scale: 1;
-			display: none;
-			transform: rotate(var(--neg-rotation));
-		}
-	}
-</style>

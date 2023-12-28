@@ -1,0 +1,11 @@
+<div class="row item-header">
+    <h5 class="card-title">{{winning_meme.participant.name|escape}}</h5>
+    <h6 class="card-subtitle">Score: {{winning_meme.avg_score}}</h6>
+</div>
+<div class="row meme-item-body">
+    <div class="winning-container">
+        <img src="{% url 'serve_file' winning_meme.competition.name winning_meme.id %}"
+                alt="Meme Image"
+                class="card-img-top">
+    </div>
+</div>

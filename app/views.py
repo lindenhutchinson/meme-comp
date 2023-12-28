@@ -1,23 +1,18 @@
 from django.shortcuts import render, redirect
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404, HttpResponse
+
+from api.ws_actions import send_participant_joined
 from .utils import (
-    convert_to_localtime,
     generate_random_string,
-    get_top_memes,
-    send_channel_message,
 )
 from .forms import (
     CompetitionForm,
     JoinCompetitionForm,
     LoginForm,
     UserForm,
-    UploadMemeForm,
 )
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
@@ -134,13 +129,7 @@ def lobby(request):
                         name=user.username, user=user, competition=competition
                     )
                     if created:
-                        data = {
-                            "num_participants": competition.participants.count(),
-                            "name": participant.name,
-                            "id": participant.id,
-                            "user_id": user.id,
-                        }
-                        send_channel_message(competition.name, "user_joined", data)
+                        send_participant_joined(competition, participant)
                     else:
                         messages.warning(
                             request, "You have already joined this competition."
@@ -176,6 +165,8 @@ def lobby(request):
     )
 
 
+
+
 @login_required
 def competition(request, comp_name):
     comp = get_object_or_404(Competition, name=comp_name)
@@ -183,13 +174,7 @@ def competition(request, comp_name):
         name=request.user.username, user=request.user, competition=comp
     )
     if created:
-        data = {
-            "num_participants": comp.participants.count(),
-            "name": participant.name,
-            "id": participant.id,
-            "user_id": request.user.id,
-        }
-        send_channel_message(comp.name, "user_joined", data)
+        send_participant_joined(comp, participant)
 
     request.session["competition_id"] = comp.id
     request.session["participant_id"] = participant.id

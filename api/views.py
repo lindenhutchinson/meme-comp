@@ -1,6 +1,7 @@
 import os
 import random
 from django.conf import settings
+from django.urls import reverse
 from rest_framework.decorators import (
     api_view,
     authentication_classes,
@@ -12,7 +13,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
-from .utils import (
+from api.ws_actions import send_meme_uploaded, send_next_meme
+from app.utils import (
     is_broker_connected,
     num_votes_for_round,
     redis_lock,
@@ -20,13 +22,16 @@ from .utils import (
     set_next_meme_for_competition,
     send_channel_message,
 )
-from .models import Meme, Competition, Vote, Participant, SeenMeme
+from app.models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
 import time
-from .tasks import do_advance_competition
+from app.tasks import do_advance_competition
 from django.db import transaction
 from django.db.utils import OperationalError
 import sqlite3
+
+
+
 
 
 @api_view(["DELETE"])
@@ -71,12 +76,8 @@ def meme_delete(request, meme_id):
     # Delete the meme
     meme.delete()
     # Update total memes count
-    total_memes = competition.memes.count()
-    send_channel_message(
-        competition.name,
-        "meme_uploaded",
-        {"num_memes": total_memes, "num_uploaders": competition.num_uploaders},
-    )
+    send_meme_uploaded(competition)
+
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -124,124 +125,52 @@ def meme_upload(request, comp_name):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        competition.refresh_from_db()
-        total_memes = competition.memes.count()
-        send_channel_message(
-            competition.name,
-            "meme_uploaded",
-            {"num_memes": total_memes, "num_uploaders": competition.num_uploaders},
-        )
+        send_meme_uploaded(competition)
         return Response(meme_list, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-BREAK_TIE_SCORE = 0.001
-VOTING_TIMEOUT_SECONDS = 10
-TIMEOUT_VOTING_THRESHOLD = 0.5
-
-
-@transaction.atomic
-def check_and_start_timer(total_votes, competition):
-    lock_key = f"advance_comp_task_lock_{competition.id}"
-    with redis_lock(lock_key):
-        # Refresh the competition instance to get the latest data within the transaction
-        competition.refresh_from_db()
-        # only start if a certain percentage of participants have voted
-        voters_exceed_threshold = (
-            total_votes / competition.num_participants
-        ) >= TIMEOUT_VOTING_THRESHOLD
-        # only start timer if workers are connected and it hasnt already started
-        if (
-            not competition.timer_active
-            and voters_exceed_threshold
-            # and is_broker_connected() - slow and unnecessary!
-            # implemented so we dont add the task when the broker is down but whatever she'll be roight m8
-        ):
-            competition.timer_active = True
-            competition.save()
-            do_advance_competition.apply_async(
-                args=[competition.id], countdown=VOTING_TIMEOUT_SECONDS, queue="memes"
-            )
-
-            send_channel_message(competition.name, "timer_start")
-
-
-from django.db import transaction
 
 
 @api_view(["POST"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def meme_vote(request, comp_name):
-    score = request.data.get("vote", BREAK_TIE_SCORE)
-    meme_id = request.data.get("meme_id", False)
 
     competition = get_object_or_404(Competition, name=comp_name)
     participant = get_object_or_404(
         Participant, user=request.user, competition=competition
     )
-
+    score = request.data.get("vote", 0)
     try:
-        if meme_id:
-            # If meme_id is set, this is a tiebreaker vote
-            meme = get_object_or_404(Meme, id=meme_id)
-        else:
-            # If meme_id is not set, this is a regular vote
-            meme = competition.current_meme
-
-            if not meme:
-                return Response(
-                    {"detail": "Where's your meme?"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            score = int(score)
-            if score < 0 or score > 5:
-                send_shame_message(competition.name, request.user.username)
-                return Response(
-                    {"detail": "Bad Request"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-        vote, created = Vote.objects.get_or_create(
-            meme=meme,
-            participant=participant,
-            competition=competition,
-            user=request.user,
-            defaults={"score": score, "started_at": competition.round_started_at},
-        )
-
-        if not created:
-            # If the vote already exists, update the score
-            if meme_id:
-                vote.score += random.random() * 0.0001
-            else:
-                vote.score = score
-            vote.save()
-
-        competition.refresh_from_db()
-        round_votes = num_votes_for_round(competition)
-
-        send_channel_message(competition.name, "meme_voted", round_votes)
-        with transaction.atomic():
-            if not competition.timer_active:
-                check_and_start_timer(round_votes, competition)
-
-        return Response({"success": True}, status=status.HTTP_204_NO_CONTENT)
-
-    except OperationalError as e:
-        print("oopsy doopsy locked database. it will probably still work in a bit")
+        score = int(score)
+        #( todo - set change this to settings values)
+        if score < 0 or score > 5:
+            raise ValueError
+    except Exception as e:
+        send_shame_message(competition.name, request.user.username)
         return Response(
-            {"success": "maybe"},
-            status=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
+            {"detail": "Bad Request"},
+            status=status.HTTP_400_BAD_REQUEST,
         )
-    except:
-        # Handle other exceptions that may occur during the process
-        return Response(
-            {"detail": "Internal Server Error"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+
+
+    vote, created = Vote.objects.get_or_create(
+        meme=competition.current_meme,
+        participant=participant,
+        competition=competition,
+        user=request.user,
+        defaults={"score": score, "started_at": competition.round_started_at},
+    )
+    if not created:
+        vote.score = score
+        vote.save()
+
+    round_votes = num_votes_for_round(competition)
+
+    send_channel_message(competition.name, "meme_voted", round_votes)
+    
+    return Response({"success": True}, status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])
@@ -253,6 +182,7 @@ def start_competition(request, comp_name):
 
     # Check if the request user is the owner of the competition
     if competition.owner != request.user:
+        # log...
         print(f"{request.user.username} attempted to start the competition")
         send_shame_message(competition.name, request.user.username)
         return Response(
@@ -268,15 +198,12 @@ def start_competition(request, comp_name):
         )
 
     competition = set_next_meme_for_competition(competition.id)
+    competition.refresh_from_db()
     if competition.current_meme:
         competition.started = True
         competition.save()
-        data = {
-            "id": competition.current_meme.id,
-            "num_memes": competition.num_memes,
-            "ctr": competition.meme_ctr,
-        }
-        send_channel_message(competition.name, "next_meme", data)
+        send_next_meme(competition)
+
         return Response(status=status.HTTP_200_OK)
     else:
         return Response(
@@ -306,12 +233,7 @@ def advance_competition(request, comp_name):
             {"detail": "You cannot advance a competition that hasn't started"},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
-
-    # disabled while timer might fail
-    # only manually advance the competition is the timer hasnt already started
-    # if competition.timer_active and is_broker_connected():
-    #     return Response(status=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS)
-
+    
     do_advance_competition(competition.id)
 
     return Response(status=status.HTTP_200_OK)
@@ -355,27 +277,8 @@ def cancel_competition(request, comp_name):
 
     Participant.objects.filter(competition=competition).update(ready=False)
     # alert the channel that the competition has been cancelled
-    send_channel_message(competition.name, "competition_cancelled")
+    send_channel_message(competition.name, "competitionCancelled")
     return Response(status=status.HTTP_200_OK)
 
 
-@api_view(["POST"])
-@authentication_classes([SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def readyup_participant(request, part_id):
-    participant = get_object_or_404(Participant, id=part_id, user=request.user)
-    if participant.competition.finished:
-        return Response(
-            {"detail": "The competition has already finished."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
 
-    participant.ready = True
-    participant.save()
-
-    send_channel_message(
-        participant.competition.name,
-        "participant_ready",
-        {"is_ready": True, "part_id": participant.id},
-    )
-    return Response(status=status.HTTP_200_OK)

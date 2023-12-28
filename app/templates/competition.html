@@ -1,9 +1,13 @@
 {% extends "base.html" %}
+{% load static %}
 {% load competition_tags %}
+
 {% block content %}
 <div id="button-div"><button class="btn btn-light emoji-button" onclick="clickButton()">🦀</button></div>
 <div id="crabs"></div>
 <script>
+	const csrfToken = "{{csrf_token}}";
+	
 	var released = false;
 	function clickButton() {
 		if(released) {
@@ -35,13 +39,15 @@
 		{% comp_finished top_meme competition %}
 	</div>
 </div>
+<script src="{% static 'js/sockets.js' cache 6004800 %}"></script>
+
 <script>
 	$(document).ready(function() {
 		var x = getRandomNumber(0, self.innerWidth);
 		var y = getRandomNumber(0, self.innerHeight);
 		$('#button-div').css('left', x+'px')
 		$('#button-div').css('top', y+'px')
-		connectWebSocket()
+		connectWebSocket("{{websocket_scheme}}", "{{competition.name}}")
 	})
 	function sleep(ms) {
 		return new Promise(resolve => setTimeout(resolve, ms));
@@ -107,282 +113,7 @@
 		prevColour = 'danger';
 		snackbar.addClass("show");
 	}
-	// ------------------------ WEB SOCKETS -----------------------------------	
-
-	const csrfToken = "{{csrf_token}}";
-	const compFinished = "{{competition.finished}}"
-	// Open websocket connection
-	var socket = null; // Declare the socket variable outside the function
-	function connectWebSocket() {
-		socket = new WebSocket(
-			"{{websocket_scheme}}://" +
-			window.location.host +
-			"/{{websocket_scheme}}/competitions/{{ competition.name }}/participant/{{ participant.id }}/"
-		);
-
-		socket.onopen = function (event) {
-			console.log("Websocket connection opened.");
-		};
-
-		// Handle received messages
-		socket.onmessage = function (event) {
-			var message = JSON.parse(event.data);
-			console.log(message);
-
-			var command = message.command;
-			
-			switch(command) {
-				case 'user_joined':
-					doUserJoined(message.data);
-					break;
-				case 'meme_uploaded':
-					doMemeUploaded(message.data);
-					break;
-				case 'competition_cancelled':
-					doCompetitionCancelled();
-					break;
-				case 'next_meme':
-					doNextMeme(message.data);
-					break;
-				case 'competition_results':
-					doCompetitionResults(message.data);
-					break;
-				case 'update_emoji':
-					createEmoji(message.data);
-					break;
-				case 'update_shame':
-					showSnackbar(message.data, 'danger');
-					break;
-				case 'update_button':
-					showSnackbar(message.data + ' let the crabs out', 'danger');
-					unleashTheCrabs();
-					break;	
-				case 'do_tiebreaker':
-					$('#tiebreaker_votes').text('0');
-					doTieBreaker(message.data);
-					break;	
-				case 'meme_voted':
-					$("#num_votes").text(message.data);
-					$('#tiebreaker_votes').text(message.data);
-					break;
-				case 'participant_ready':
-					doParticipantReady(message.data);
-					break;
-				case 'timer_start':
-					doTimerStarted();
-					break;
-			}
-		};
-
-		socket.onclose = function (event) {
-			console.log("Websocket connection closed")
-			switch(event.code) {
-				case 3000:
-					showSnackError('You have been disconnected. Refresh the page to reconnect.')
-					break;
-				case 1000:
-				// normal socket close
-					break;
-				case 1001:
-				// tab was closed
-					break;
-				default:
-					showSnackError('You have been disconnected ¯\\_(ツ)_/¯ Try refreshing the page to reconnect.')
-			}
-		};
-
-		socket.onerror = function (error) {
-			console.log("Websocket error")
-			showSnackError("Something bad happened. Try refreshing the page.")
-		};
-	}
-
-	function doTimerStarted() {
-		$('#comp-timer').css('display','')
-		$('#comp-info-card').css('display', 'none')
-		startTimer()
-	}
-
-	function doParticipantReady(data) {
-		const partId = data.part_id;
-		const isReady = data.is_ready;
 	
-		// Find the <i> element corresponding to the participant by data-participant-id
-		const iconElement = $(`#icon-${partId}`);
-	
-		// Update the icon based on the is_ready status
-		if (isReady) {
-			iconElement.removeClass('bi-x-circle-fill text-danger').addClass('bi-check-circle-fill text-success');
-		} else {
-			iconElement.removeClass('bi-check-circle-fill text-success').addClass('bi-x-circle-fill text-danger');
-		}
-	}
-	
-
-	function doUserJoined(data) {
-		var participantName = data.name;
-		const participantId = data.id;
-		const numParticipants = data.num_participants;
-		if (
-			$("#participants").find(`li[data-participant-id="${participantId}"]`).length === 0
-		) {
-			$("#participants").prepend(`
-				<li class="list-group-item" data-participant-id="${participantId}">
-					<div class="d-flex justify-content-center align-items-center">
-						<span style="text-align:center; width:100%">
-							<a target="_blank" style="width:100%" class="btn btn-outline-dark" href="/user/${data.user_id}">${participantName.slice(0, 9) + (participantName.length > 9 ? '...' : '')}</a>
-						</span>
-						<span style="text-align:end">
-							<i id="icon-${participantId }" class="m-3 bi bi-x-circle-fill text-danger"></i>
-						</span>
-					</div>
-				</li>
-			`);
-		}
-		$('#num-participants').text(`(${numParticipants})`);
-
-		if (Math.random() < 0.05) {
-			showSnackbar(`Oh look, ${participantName} is here!`, 'success')
-		} else if (Math.random() < 0.05) {
-			showSnackbar(`Look who showed up, it's ${participantName}`, 'success')
-		} else if (Math.random() < 0.05) {
-			showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`, 'success')
-		} else {
-			showSnackbar(`${participantName} joined`, 'success');
-		}
-	}
-	function doCompetitionResults(results) {
-		// switch out the timer for the info card
-		$('#comp-timer').css('display','none')
-		$('#comp-info-card').css('display', '')
-		// disable the ready up button
-        $('#readyup-btn').prop('disabled', true);		
-		$("#comp-started").css('display', 'none');
-		$("#comp-waiting").css('display', 'none');
-		$("#comp-tiebreaker").css('display', 'none');
-		$("#comp-finished").css('display', '');
-
-		$("#next-meme-btn").css('display', 'none');
-		showSnackbar('Competition has finished', 'info')
-
-		if (results) {
-			html = `
-				<div class="row item-header">
-					<h5 class="card-title">${results.participant}</h5>
-					<h6 class="card-subtitle">Score: ${results.score}</h6>
-				</div>
-				<div class="row meme-item-body">
-					<div class="winning-container">
-						<img src="/competition/{{ competition.name }}/memes/${results.id}"
-								alt="Meme Image"
-								class="card-img-top">
-					</div>
-				</div>
-			`;
-
-			$('#winning-meme').html(html);
-			for (const [key, value] of Object.entries(results.statistics)) {
-				$(`#${key}`).text(value);
-			}
-		}
-	}
-	function doCompetitionCancelled() {
-		window.location.reload();
-		// just reload the page lol ez fix
-		/*$("#comp-started").css('display', 'none');
-		$("#comp-finished").css('display', 'none');
-		$("#comp-tiebreaker").css('display', 'none');
-		$("#comp-waiting").css('display', '');
-
-		$('input[name="vote"]').prop('checked', false);
-		$("#num_votes").text('0');
-		$("#current-meme-image").attr('src', '');
-		$("#tiebreaker-images").empty()
-		showSnackbar('Competition cancelled', 'info');*/
-	}
-
-	function doTieBreaker(tiebreakMemes) {
-		$("#comp-started").css('display', 'none');
-		$("#comp-tiebreaker").css('display', '');
-		$("#num_votes").text('0');
-		$('#tiebreaker-images').empty()
-
-		// make sure the form is enabled lol
-		$('#vote-form')[0].reset();
-		// renable the buttons
-		$('.vote-radio').prop('disabled', false)
-		// switch out the timer for the info card
-		$('#comp-timer').css('display','none')
-		$('#comp-info-card').css('display', '')
-
-		tiebreakMemes.forEach((meme) => {
-			var html = `
-				<div 
-					class="tiebreaker-image-div d-flex" 
-					onclick="tiebreakerClick(event)"
-				>
-					<img 
-						id="${meme.id}" 
-						src="/competition/{{ competition.name }}/memes/${meme.id }" 
-						alt="Dank Meme" 
-						class="tiebreaker-image" 
-					/>
-				</div>
-				`
-			$('#tiebreaker-images').append(html)
-		})
-		showSnackbar('TIEBREAKER TIME!!!!!!!', 'warning')
-	}
-
-	function doNextMeme(data) {
-		// make sure the form is enabled lol
-		$('#vote-form')[0].reset();
-		// renable the buttons
-		$('.vote-radio').prop('disabled', false)
-		// switch out the timer for the info card
-		$('#comp-timer').css('display','none')
-		$('#comp-info-card').css('display', '')
-
-		const memeId = data.id;
-		const memeCtr = data.ctr;
-		const numMemes = data.num_memes
-
-		// update all participants to not be ready (except the host)
-		$('.list-group-item').each(function() {
-			const participantId = $(this).data('participant-id');
-			const iconElement = $(`#icon-${participantId}`);
-			iconElement.removeClass('bi-check-circle-fill text-success').addClass('bi-x-circle-fill text-danger');
-		});
-		// enable the ready button
-        $('#readyup-btn').prop('disabled', false)
-
-		$("#comp-started").css('display', '');
-		$("#comp-waiting").css('display', 'none');
-		$('input[name="vote"]').prop('checked', false);
-		$("#num_votes").text('0');
-		$('#meme-ctr').text(`Meme ${memeCtr}/${numMemes}`);
-
-		
-		$(".tiebreaker-image").attr("src", "");
-		$(".square-image").attr("src", "");
-		$("#current-meme-image").attr('src', `/competition/{{competition.name}}/memes/${memeId}`)
-
-		showSnackbar(`Time to Vote (${memeCtr}/${numMemes})`, 'success');
-
-		// Disable the next meme button for 3 seconds after advancing
-		// hopefully this will avoid accidental clicks
-		$('#next-meme-btn').prop("disabled", true);
-		setTimeout(function() {
-			$("#next-meme-btn").prop("disabled", false);
-		}, 3000);
-		$("#vote-form :input").prop('readonly', false);
-
-	}
-	function doMemeUploaded(data) {
-		const num_uploaders = data.num_uploaders;
-		const num_memes = data.num_memes;
-		const text = `${num_memes} meme${num_memes != 1 ? 's' : ''} submitted by ${num_uploaders} ${num_uploaders != 1 ? 'people' : 'person'}`
-		$("#num_memes").text(text);
-	}
 </script>
+
 {% endblock content %}

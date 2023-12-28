@@ -28,6 +28,7 @@ REST_FRAMEWORK = {
 # Application definition
 INSTALLED_APPS = [
     "app",
+    "api",
     "channels",
     "daphne",
     "mathfilters",
@@ -121,14 +122,6 @@ TIME_ZONE = "Australia/Sydney"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 ASGI_APPLICATION = "MemeComp.asgi.application"
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("", 6379)],
-#         },
-#     },
-# }
 
 # TODO - implement logging lol
 # LOGGING = {
