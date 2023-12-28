@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
 {% load competition_tags %}
-
 {% block content %}
 <div id="button-div"><button class="btn btn-light emoji-button" onclick="clickButton()">🦀</button></div>
 <div id="crabs"></div>
@@ -23,6 +22,10 @@
 		}
 	}
 </script>
+<script src="{% static 'js/sockets.js' cache 6004800 %}"></script>
+<script src="{% static 'js/ajaxApi.js' cache 6004800 %}"></script>
+<script src="{% static 'js/eventTriggers.js' cache 6004800 %}"></script>
+
 <div id="snackbar"></div>
 <div class="text-center g-0 mb-4">
 	<div id="card-container" class="row m-2">
@@ -37,7 +40,9 @@
 		{% comp_finished top_meme competition %}
 	</div>
 </div>
-<script src="{% static 'js/sockets.js' cache 6004800 %}"></script>
+
+
+
 
 <script>
 	$(document).ready(function() {

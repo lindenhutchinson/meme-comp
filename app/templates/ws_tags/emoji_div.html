@@ -6,32 +6,27 @@
     <button class="btn btn-light emoji-button e-btn">&#128169</button>
 </div>
 <script>
-    $(document).on('createEmoji', (e, data) => {
-        createEmoji(data);
-    })
 
+    function emojiButtonClicked() {
+        var $this = $(this);
+        const emojiText = $this.text();
+        sendEmoji(emojiText);
+        const fillDiv = $('#fill-div');
+        fillDiv.css('background-color', 'black');
+        fillDiv.addClass('div-fill');
+        $('.emoji-button').attr('disabled', true);
+
+        emojiTimeout = setTimeout(function () {
+            fillDiv.removeClass('div-fill');
+            $('.emoji-button').attr('disabled', false);
+            fillDiv.css('background-color', 'white');
+            emojiTimeout = 0;
+        }, 2000); // Adjust the cooldown duration as desired
+    }
      var emojiTimeout;
     $(document).ready(function () {
-        $(".e-btn").on('click', function () {
-            var $this = $(this);
-            const emojiText = $this.text();
-            sendEmoji(emojiText);
-            const fillDiv = $('#fill-div');
-            fillDiv.css('background-color', 'black');
-            fillDiv.addClass('div-fill');
-            $('.emoji-button').attr('disabled', true);
+        $(".e-btn").on('click',emojiButtonClicked);
 
-            emojiTimeout = setTimeout(function () {
-                fillDiv.removeClass('div-fill');
-                $('.emoji-button').attr('disabled', false);
-                fillDiv.css('background-color', 'white');
-                emojiTimeout = 0;
-            }, 2000); // Adjust the cooldown duration as desired
-        });
-        $('input[type=radio][name=vote]').on('change', function () {
-            const memeId = $(this).data('meme-id');
-            submitVote(memeId);
-        });
     });
 
     const EMOJI_TIMEOUT_THRESHOLD = 10;
@@ -73,6 +68,7 @@
 
     function sendEmoji(emojiText) {
         if (checkEmojiCtr()) {
+            console.log('sending emoji');
             // send emoji via socket rather than via request
             socket.send(JSON.stringify({
                 'command': 'send_emoji',
@@ -107,22 +103,7 @@
             }).appendTo('#emoji-container');
         }
         // the event trigger needs to be repeated after the elements are created
-        $(".e-btn").on('click', function () {
-            var $this = $(this);
-            const emojiText = $this.text();
-            sendEmoji(emojiText);
-            const fillDiv = $('#fill-div');
-            fillDiv.css('background-color', 'black');
-            fillDiv.addClass('div-fill');
-            $('.emoji-button').attr('disabled', true);
-
-            emojiTimeout = setTimeout(function () {
-                fillDiv.removeClass('div-fill');
-                $('.emoji-button').attr('disabled', false);
-                fillDiv.css('background-color', 'white');
-                emojiTimeout = 0;
-            }, 2000); // Adjust the cooldown duration as desired
-        });
+        $(".e-btn").on('click', emojiButtonClicked);
     }
     /**
      * Generates a random number within the specified range.

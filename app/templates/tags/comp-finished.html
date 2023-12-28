@@ -31,24 +31,3 @@
         </div>
     </div>
 </div>
-
-
-<script>
-    $(document).on('competitionFinished', (e, data) => {
-        console.log('Competition has finished');
-        $('#comp-timer').css('display', 'none');
-        $('#comp-info-card').css('display', '');
-        $("#comp-started").css('display', 'none');
-        $("#comp-waiting").css('display', 'none');
-        $("#comp-tiebreaker").css('display', 'none');
-        $("#comp-finished").css('display', '');
-
-        $("#next-meme-btn").css('display', 'none');
-        showSnackbar('Competition has finished', 'info')
-
-        $('#winning-meme').html(data.winner_html);
-        $('#comp-results').html(data.results_html);
-
-
-    });
-</script>

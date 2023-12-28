@@ -8,10 +8,9 @@ function connectWebSocket(wsScheme, compName) {
 
     // Handle received messages
     socket.onmessage = function (event) {
-        var message = JSON.parse(event.data);
+        const message = JSON.parse(event.data);
+        const command = message.command;
         console.log(message);
-
-        var command = message.command;
         $(document).trigger(command, message.data);
 
         switch (command) {

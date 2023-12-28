@@ -48,7 +48,7 @@
                         <button id="start-comp-btn"
                                 class="btn btn-success"
                                 style="width:100%"
-                                onclick="startCompetition()"
+                                onclick="startCompetition('{{competition.name}}')"
                                 {% if competition.started %}disabled{% endif %}>
                             {% if competition.started %}
                                 Competition started
@@ -58,7 +58,7 @@
                         </button>
                         <button id="cancel-comp-btn"
                                 class="btn btn-danger"
-                                onclick="cancelCompetition()"
+                                onclick="cancelCompetition('{{competition.name}}')"
                                 {% if not competition.started %}disabled{% endif %}>
                             <i class="bi bi-x-square"></i>
                         </button>
@@ -66,19 +66,9 @@
                     <p>
                         <button id="next-meme-btn"
                                 class="btn btn-primary mx-auto mt-3 col-6"
-                                onclick="advanceCompetition()"
+                                onclick="advanceCompetition('{{competition.name}}')"
                                 {% if not competition.started or competition.finished %}style="display:none"{% endif %}>
                             Next meme
-                        </button>
-                    </p>
-                {% else %}
-                    <p>
-                        <button id="readyup-btn"
-                                class="btn btn-success mx-auto mt-3 col-6"
-                                onclick="readyUp()"
-                                style="width:100%"
-                                {% if competition.finished or participant.ready %}disabled{% endif %}>
-                            Ready
                         </button>
                     </p>
                 {% endif %}
@@ -88,38 +78,6 @@
 </div>
 
 <script>
-    $(document).on('participantJoined', (e, data) => {
-        const participantLi = data.participant_html
-        $('#participants').prepend(participantLi);
-
-        const numParticipants = data.num_participants;
-        const participantName = data.participant_name;
-    
-        $('#num-participants').text(`(${numParticipants})`);
-
-        if (Math.random() < 0.05) {
-            showSnackbar(`Oh look, ${participantName} is here!`, 'success')
-        } else if (Math.random() < 0.05) {
-            showSnackbar(`Look who showed up, it's ${participantName}`, 'success')
-        } else if (Math.random() < 0.05) {
-            showSnackbar(`A wizard is never late, ${participantName} arrives precisely when they mean to`, 'success')
-        } else {
-            showSnackbar(`${participantName} joined`, 'success');
-        }
-    });
-
-    $(document).on('memeUploaded', (e, data) => {
-        const num_uploaders = data.num_uploaders;
-        const num_memes = data.num_memes;
-        const text = `${num_memes} meme${num_memes != 1 ? 's' : ''} submitted by ${num_uploaders} ${num_uploaders != 1 ? 'people' : 'person'}`
-        $("#num_memes").text(text);
-    });
-
-    $(document).on('competitionCancelled', (e, data) => {
-        console.log('Competiton has been cancelled');
-        window.location.reload();
-    })
-
     function toggleShowParticipants() {
 		const box = $('.participants-box');
 		if(box.hasClass('collapse')) {
@@ -140,71 +98,6 @@
 		showSnackbar("Competition URL has been copied", 'primary');
 	}
 
-    	// load next meme via AJAX
-	function advanceCompetition() {
-		$.ajax({
-			url: "{% url 'advance_competition' competition.name %}",
-			type: "POST",
-			data: {},
-			beforeSend: function (xhr) {
-				xhr.setRequestHeader("X-CSRFToken", csrfToken);
-			},
-			success: function (response) {
-			},
-			error: function (xhr, status, error) {
-				showSnackbar('Unable to advance competition', 'danger');
-			}
-		});
-	}
-    	// restart the competition via AJAX
-	function cancelCompetition() {
-		var cancelCheck = 'Are you sure you want to cancel the competition? This will erase all votes.'
-
-		if(!confirm(cancelCheck)) {
-			return
-		}
-		$.ajax({
-			url: "{% url 'cancel_competition' competition.name %}",
-			type: "POST",
-			data: {},
-			beforeSend: function (xhr) {
-				xhr.setRequestHeader("X-CSRFToken", csrfToken);
-			},
-			success: function (response) {
-				// Handle success response
-				// Update necessary elements
-				$('#start-comp-btn').attr('disabled', false);
-				$('#cancel-comp-btn').attr('disabled', true);
-				$('#start-comp-btn').text('Start Competition');
-				$("#next-meme-btn").css('display', 'none');
-
-			},
-			error: function (xhr, status, error) {
-				showSnackbar('Unable to cancel competition', 'danger');
-			}
-		});
-	}
-    	// Start competition via AJAX
-	function startCompetition() {
-		$.ajax({
-			url: "{% url 'start_competition' competition.name %}",
-			type: "POST",
-			data: {},
-			beforeSend: function (xhr) {
-				xhr.setRequestHeader("X-CSRFToken", csrfToken);
-			},
-			success: function (response) {
-				// Handle success response
-				// Update necessary elements
-				$('#start-comp-btn').attr('disabled', true);
-				$('#cancel-comp-btn').attr('disabled', false);
-				$('#start-comp-btn').text('Competition started');
-				$("#next-meme-btn").css('display', 'inline');
-			},
-			error: function (xhr, status, error) {
-				showSnackbar(xhr.responseJSON.detail, 'danger')
-			}
-		});
-	}
+	
 
 </script>
