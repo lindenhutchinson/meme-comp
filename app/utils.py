@@ -1,3 +1,4 @@
+import enum
 import re
 from django.contrib.auth import get_user_model
 import random
@@ -6,7 +7,7 @@ from django.db.models import Sum
 from django.db import transaction
 
 from api.ws_actions import send_competition_finished, send_next_meme, send_channel_message
-from .models import Competition, SeenMeme, Meme, Participant
+from .models import Competition, SeenMeme, Meme, Participant, CompetitionLog
 
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -22,41 +23,7 @@ from django.conf import settings
 import redis
 from contextlib import contextmanager
 
-@contextmanager
-def redis_lock(lock_key, timeout=60):
-    redis_client = redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
-    lock = redis_client.lock(lock_key, timeout=timeout)
 
-    acquired = lock.acquire(blocking=True)
-    try:
-        yield acquired
-    finally:
-        if acquired:
-            lock.release()
-
-def is_broker_connected():
-    """
-    Check if any Celery workers are running.
-
-    Returns:
-        bool: True if there are active workers, False otherwise.
-    """
-    try:
-        # Create a Celery instance
-        app = Celery('your_project_name')
-
-        # Connect to the Celery broker
-        app.config_from_object('django.conf:settings', namespace='CELERY')
-
-        # Inspect active workers
-        inspector = app.control.inspect()
-        active_workers = inspector.active()
-
-        return bool(active_workers)
-    except Exception as e:
-        # Handle exceptions if any (e.g., Celery not configured, connection issues)
-        print(f"An error occurred: {e}")
-        return False
 
 def redirect_and_flash_error(request, error):
     messages.error(request, error)
@@ -135,6 +102,16 @@ def set_next_meme_for_competition(competition_id):
 #     return results
 
 
+
+
+def create_competition_log(competition, user, event):
+    CompetitionLog.objects.create(
+        competition=competition,
+        user=user,
+        event=event
+    )
+
+
 def get_top_memes(comp_name):
     # Get the competition instance
     competition = Competition.objects.get(name=comp_name)
@@ -177,11 +154,7 @@ def check_emoji_text(text):
         return False
 
 
-def convert_to_localtime(utctime):
-    fmt = "%A %d %b - %I:%M%p"
-    utc = utctime.replace(tzinfo=pytz.UTC)
-    localtz = utc.astimezone(timezone.get_current_timezone())
-    return localtz.strftime(fmt)
+
 
 
 def num_votes_for_round(competition):
@@ -206,6 +179,7 @@ def do_advance_competition(competition_id):
     competition.refresh_from_db()
     if competition.current_meme:
         send_next_meme(competition)
+
     else:
         top_memes = get_top_memes(competition.name)
         if len(top_memes) == 1:

@@ -7,3 +7,4 @@ class AppConfig(AppConfig):
 
     def ready(self):
         import app.models
+        import app.signals

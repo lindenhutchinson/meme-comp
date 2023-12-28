@@ -70,3 +70,14 @@ To run celery:
 ## Contributing
 
 Contributions are welcome! If you have any suggestions, bug reports, or feature requests, please open an issue or submit a pull request.
+
+
+
+## todo - competition event log
+# new model
+# CompetitionEvent
+ competition_id, 
+ timestamp, 
+ user who performed the action
+
+ 

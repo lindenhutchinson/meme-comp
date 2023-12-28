@@ -3,7 +3,9 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404, HttpResponse
 
 from api.ws_actions import send_participant_joined
+from app.models.competition_log import CompetitionLog
 from .utils import (
+    create_competition_log,
     generate_random_string,
 )
 from .forms import (
@@ -113,6 +115,8 @@ def lobby(request):
                     name=user.username, user=user, competition=competition
                 )
                 if created:
+                    create_competition_log(competition, request.user, CompetitionLog.CompActions.CREATE)
+
                     return redirect("competition", comp_name=competition.name)
 
         elif "join" in request.POST:
@@ -130,6 +134,8 @@ def lobby(request):
                     )
                     if created:
                         send_participant_joined(competition, participant)
+                        create_competition_log(competition, request.user, CompetitionLog.CompActions.JOIN)
+
                     else:
                         messages.warning(
                             request, "You have already joined this competition."

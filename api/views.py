@@ -14,15 +14,14 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from api.ws_actions import send_meme_uploaded, send_next_meme
 from app.utils import (
+    create_competition_log,
     do_advance_competition,
-    is_broker_connected,
     num_votes_for_round,
-    redis_lock,
     send_shame_message,
     set_next_meme_for_competition,
 )
 from .ws_actions import send_channel_message
-from app.models import Meme, Competition, Vote, Participant, SeenMeme
+from app.models import Meme, Competition, Vote, Participant, SeenMeme, CompetitionLog
 from .serializers import MemeSerializer
 import time
 from django.db import transaction
@@ -122,6 +121,8 @@ def meme_upload(request, comp_name):
                 )
 
         send_meme_uploaded(competition)
+        create_competition_log(competition, competition.owner, CompetitionLog.CompActions.UPLOAD)
+
         return Response(meme_list, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -155,14 +156,15 @@ def meme_vote(request, comp_name):
         user=request.user,
         defaults={"score": score, "started_at": competition.round_started_at},
     )
-    if not created:
+    if created:
+        create_competition_log(competition, request.user, CompetitionLog.CompActions.VOTE)
+    else:
         vote.score = score
         vote.save()
 
     round_votes = num_votes_for_round(competition)
 
     send_channel_message(competition.name, "memeVoted", round_votes)
-
     return Response({"success": True}, status=status.HTTP_204_NO_CONTENT)
 
 
@@ -196,6 +198,7 @@ def start_competition(request, comp_name):
         competition.started = True
         competition.save()
         send_next_meme(competition)
+        create_competition_log(competition, request.user, CompetitionLog.CompActions.START)
 
         return Response(status=status.HTTP_200_OK)
     else:
@@ -228,6 +231,7 @@ def advance_competition(request, comp_name):
         )
 
     do_advance_competition(competition.id)
+    create_competition_log(competition, request.user, CompetitionLog.CompActions.ADVANCE)
 
     return Response(status=status.HTTP_200_OK)
 
@@ -271,4 +275,6 @@ def cancel_competition(request, comp_name):
     Participant.objects.filter(competition=competition).update(ready=False)
     # alert the channel that the competition has been cancelled
     send_channel_message(competition.name, "competitionCancelled")
+    create_competition_log(competition, request.user, CompetitionLog.CompActions.CANCEL)
+
     return Response(status=status.HTTP_200_OK)
