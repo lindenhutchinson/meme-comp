@@ -4,9 +4,10 @@ import random
 import string
 from django.db.models import Sum
 from django.db import transaction
+
+from api.ws_actions import send_competition_finished, send_next_meme, send_channel_message
 from .models import Competition, SeenMeme, Meme, Participant
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+
 from django.contrib import messages
 from django.shortcuts import redirect
 import pytz
@@ -62,12 +63,6 @@ def redirect_and_flash_error(request, error):
     return redirect("home")
 
 
-# todo - add signals to model changes and use this
-def send_channel_message(comp_name, command, data=None):
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        comp_name, {"type": "send_update", "data": data, "command": command}
-    )
 
 
 def generate_random_string(length):
@@ -200,3 +195,30 @@ def num_votes_for_round(competition):
         .distinct()
     )
     return votes_updated_before_competition.count()
+
+
+def do_advance_competition(competition_id):
+    competition = Competition.objects.get(id=competition_id)
+
+    competition.participants.update(ready=False)
+    # attempt to get a random next meme for the competition
+    competition = set_next_meme_for_competition(competition.id)
+    competition.refresh_from_db()
+    if competition.current_meme:
+        send_next_meme(competition)
+    else:
+        top_memes = get_top_memes(competition.name)
+        if len(top_memes) == 1:
+            top_meme = Meme.objects.get(id=top_memes[0]["id"])
+        else:
+            top_meme = random.choice(top_memes)
+            top_meme = Meme.objects.get(id=top_meme["id"])
+
+        competition.winning_meme = top_meme
+        competition.finished = True
+        competition.save()
+        send_competition_finished(competition)
+
+    # competition has been advanced, toggle the timer inactive
+    competition.timer_active = False
+    competition.save()

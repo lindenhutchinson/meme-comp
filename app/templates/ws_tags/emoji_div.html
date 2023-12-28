@@ -6,6 +6,10 @@
     <button class="btn btn-light emoji-button e-btn">&#128169</button>
 </div>
 <script>
+    $(document).on('createEmoji', (e, data) => {
+        createEmoji(data);
+    })
+
      var emojiTimeout;
     $(document).ready(function () {
         $(".e-btn").on('click', function () {

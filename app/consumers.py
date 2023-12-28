@@ -55,7 +55,7 @@ class CompetitionConsumer(AsyncWebsocketConsumer):
                     {
                         "type": "send_update",
                         "data": emoji_text,
-                        "command": "update_emoji",
+                        "command": "updateEmoji",
                     },
                 )
         elif command == "the_button":

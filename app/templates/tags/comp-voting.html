@@ -1,6 +1,8 @@
 {% load websocket_tags %}
 <div id="comp-started" class="col text-center" 
-{% if not competition.started or not competition.current_meme%}style="display:none" {% endif %}>
+{% if not competition.started or not competition.current_meme %}
+    style="display:none" 
+    {% endif %}>
     <div class="vote-container">
         <div class="card shadow" style="width:100%">
             <div class="card-header">
@@ -18,11 +20,11 @@
 
                         </div>
                         <h4>
-                            Total votes: 
+                            Total votes:
                             <span id="num_votes">
-                            {% if competition.current_meme %}
+                                {% if competition.current_meme %}
                                 {{ competition.current_meme.num_votes }}
-                            {% endif %}
+                                {% endif %}
                             </span>
                         </h4>
                     </div>
@@ -65,8 +67,10 @@
             <div class="g-0 image-zoom">
                 <div id="emoji"></div>
 
-                <img id="current-meme-image" {% if competition.started and competition.current_meme %}
-                    src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}" {% endif %}
+                <img id="current-meme-image" 
+                {% if competition.started and competition.current_meme %}
+                    src="/competition/{{ competition.name }}/memes/{{ competition.current_meme.id }}"
+                     {% endif %}
                     alt="Current Meme" class="current-meme" onclick="toggleZoom(event)" onmouseleave="zoomOut(event)" />
 
             </div>
@@ -75,13 +79,17 @@
 </div>
 
 <script>
+    $(document).on('memeVoted', (e, data) => {
+        $("#num_votes").text(data);
+    });
+
     $(document).on('nextMeme', (e, data) => {
         console.log('advancing to next meme');
 
         // reset the page
         $('#vote-form')[0].reset();
         $('.vote-radio').prop('disabled', false)
-        $('#comp-timer').css('display','none')
+        $('#comp-timer').css('display', 'none')
         $('#comp-info-card').css('display', '')
         $("#comp-started").css('display', '');
         $("#comp-waiting").css('display', 'none');
@@ -101,7 +109,7 @@
         // Disable the next meme button for 3 seconds after advancing
         // hopefully this will avoid accidental clicks
         $('#next-meme-btn').prop("disabled", true);
-        setTimeout(function() {
+        setTimeout(function () {
             $("#next-meme-btn").prop("disabled", false);
         }, 3000);
         $("#vote-form :input").prop('readonly', false);
@@ -153,7 +161,7 @@
             }));
         }
     }
-    
+
     function sendEmoji(emojiText) {
         if (checkEmojiCtr()) {
             // send emoji via socket rather than via request

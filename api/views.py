@@ -1,7 +1,6 @@
 import os
 import random
 from django.conf import settings
-from django.urls import reverse
 from rest_framework.decorators import (
     api_view,
     authentication_classes,
@@ -15,23 +14,20 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from api.ws_actions import send_meme_uploaded, send_next_meme
 from app.utils import (
+    do_advance_competition,
     is_broker_connected,
     num_votes_for_round,
     redis_lock,
     send_shame_message,
     set_next_meme_for_competition,
-    send_channel_message,
 )
+from .ws_actions import send_channel_message
 from app.models import Meme, Competition, Vote, Participant, SeenMeme
 from .serializers import MemeSerializer
 import time
-from app.tasks import do_advance_competition
 from django.db import transaction
 from django.db.utils import OperationalError
 import sqlite3
-
-
-
 
 
 @api_view(["DELETE"])
@@ -131,12 +127,10 @@ def meme_upload(request, comp_name):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @api_view(["POST"])
 @authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def meme_vote(request, comp_name):
-
     competition = get_object_or_404(Competition, name=comp_name)
     participant = get_object_or_404(
         Participant, user=request.user, competition=competition
@@ -144,7 +138,7 @@ def meme_vote(request, comp_name):
     score = request.data.get("vote", 0)
     try:
         score = int(score)
-        #( todo - set change this to settings values)
+        # ( todo - set change this to settings values)
         if score < 0 or score > 5:
             raise ValueError
     except Exception as e:
@@ -153,7 +147,6 @@ def meme_vote(request, comp_name):
             {"detail": "Bad Request"},
             status=status.HTTP_400_BAD_REQUEST,
         )
-
 
     vote, created = Vote.objects.get_or_create(
         meme=competition.current_meme,
@@ -168,8 +161,8 @@ def meme_vote(request, comp_name):
 
     round_votes = num_votes_for_round(competition)
 
-    send_channel_message(competition.name, "meme_voted", round_votes)
-    
+    send_channel_message(competition.name, "memeVoted", round_votes)
+
     return Response({"success": True}, status=status.HTTP_204_NO_CONTENT)
 
 
@@ -233,7 +226,7 @@ def advance_competition(request, comp_name):
             {"detail": "You cannot advance a competition that hasn't started"},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
-    
+
     do_advance_competition(competition.id)
 
     return Response(status=status.HTTP_200_OK)
@@ -279,6 +272,3 @@ def cancel_competition(request, comp_name):
     # alert the channel that the competition has been cancelled
     send_channel_message(competition.name, "competitionCancelled")
     return Response(status=status.HTTP_200_OK)
-
-
-
