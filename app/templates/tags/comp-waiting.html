@@ -1,3 +1,4 @@
+{% load websocket_tags %}
 <div id="comp-waiting" class="col" {% if competition.started or competition.finished %}style="display:none" {% endif %}>
     <div class="card shadow">
         <div class="card-header">
@@ -29,17 +30,8 @@
                 <i class="ms-auto bi bi-lock-fill"></i><input class="form-check-input" type="checkbox" id="delete-safety" checked>
             </div>    
             <div class="row mt-3 mx-2 pt-2" id="submitted-memes-container" style="height:475px; overflow-y:scroll">
-                {% for meme in participant.memes.all %}
-                <div id="meme-{{ meme.id }}" class="meme col-md-4 col-sm-6 col-12 mb-4">
-                    <div class="card image-card">
-                        <div class="image-container">
-                            <img src="{% if not competition.started %}{% url 'serve_file' competition.name meme.id %}{% endif %}" alt="One of your dank memes" class="square-image d-block" />
-                        </div>
-                        <div class="card-details">
-                            <button type="button" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="{{ meme.id }}">Delete</button>
-                        </div>
-                    </div>
-                </div>
+                {% for meme in participant.ordered_memes %}
+                    {% meme_image_div meme %}
                 {% endfor %}
             </div>
         </div>

@@ -5,14 +5,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('app', '0009_competition_winning_meme_alter_meme_user_and_more'),
-    ]
+    dependencies = [("app", "0009_competition_winning_meme_alter_meme_user_and_more")]
 
     operations = [
         migrations.AlterField(
-            model_name='vote',
-            name='score',
-            field=models.FloatField(),
-        ),
+            model_name="vote", name="score", field=models.FloatField()
+        )
     ]

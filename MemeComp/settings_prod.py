@@ -54,9 +54,9 @@ CHANNEL_LAYERS = {
                     "db": REDIS_DB,
                     "password": REDIS_PASSWORD,
                 }
-            ],
+            ]
         },
-    },
+    }
 }
 
 

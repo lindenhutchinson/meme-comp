@@ -1,0 +1,10 @@
+<div id="meme-{{meme.id}}" class="meme col-md-4 col-sm-6 col-12 mb-4">
+    <div class="card image-card">
+        <div class="image-container">
+            <img src="{% url 'serve_file' meme.competition.name meme.id %}" alt="One of your dank memes" class="square-image d-block" />
+        </div>
+        <div class="card-details">
+            <button type="button" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="{{meme.id}}">Delete</button>
+        </div>
+    </div>
+</div>

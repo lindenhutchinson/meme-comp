@@ -1,5 +1,6 @@
 from django.urls import include, path
 from . import views
+
 urlpatterns = [
     path("competition/<str:comp_name>/upload", views.meme_upload, name="meme_upload"),
     path("meme/<int:meme_id>", views.meme_delete, name="meme_delete"),

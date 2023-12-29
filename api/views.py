@@ -6,15 +6,15 @@ from rest_framework.decorators import (
     authentication_classes,
     permission_classes,
 )
+from django.template.loader import render_to_string
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
-from api.ws_actions import send_meme_uploaded, send_next_meme
+from api.ws_actions import send_meme_uploaded, send_next_meme, create_competition_log
 from app.utils import (
-    create_competition_log,
     do_advance_competition,
     num_votes_for_round,
     send_shame_message,
@@ -72,7 +72,7 @@ def meme_delete(request, meme_id):
     meme.delete()
     # Update total memes count
     send_meme_uploaded(competition)
-
+    create_competition_log(competition, request.user, CompetitionLog.CompActions.DELETE)
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -104,7 +104,7 @@ def meme_upload(request, comp_name):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        meme_list = []
+        meme_list_html = []
         for img in request.FILES.getlist("image"):
             meme = Meme.objects.create(
                 image=img,
@@ -113,7 +113,10 @@ def meme_upload(request, comp_name):
                 user=request.user,
             )
             if meme:
-                meme_list.append(meme.id)
+                meme_html = render_to_string(
+                    "ws_tags/meme_image_div.html", {"meme": meme}
+                )
+                meme_list_html.append(meme_html)
             else:
                 return Response(
                     {"detail": "Error uploading meme"},
@@ -121,9 +124,13 @@ def meme_upload(request, comp_name):
                 )
 
         send_meme_uploaded(competition)
-        create_competition_log(competition, competition.owner, CompetitionLog.CompActions.UPLOAD)
+        create_competition_log(
+            competition, request.user, CompetitionLog.CompActions.UPLOAD
+        )
 
-        return Response(meme_list, status=status.HTTP_201_CREATED)
+        return Response(
+            {"memes_html": "".join(meme_list_html)}, status=status.HTTP_201_CREATED
+        )
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -144,10 +151,7 @@ def meme_vote(request, comp_name):
             raise ValueError
     except Exception as e:
         send_shame_message(competition.name, request.user.username)
-        return Response(
-            {"detail": "Bad Request"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        return Response({"detail": "Bad Request"}, status=status.HTTP_400_BAD_REQUEST)
 
     vote, created = Vote.objects.get_or_create(
         meme=competition.current_meme,
@@ -157,15 +161,18 @@ def meme_vote(request, comp_name):
         defaults={"score": score, "started_at": competition.round_started_at},
     )
     if created:
-        create_competition_log(competition, request.user, CompetitionLog.CompActions.VOTE)
+        # only create the log the first time the user votes
+        create_competition_log(
+            competition, request.user, CompetitionLog.CompActions.VOTE
+        )
+        # likewise - only send the channel update the first time as well
+        round_votes = num_votes_for_round(competition)
+        send_channel_message(competition.name, "memeVoted", round_votes)
+        return Response({"success": True}, status=status.HTTP_201_CREATED)
     else:
         vote.score = score
         vote.save()
-
-    round_votes = num_votes_for_round(competition)
-
-    send_channel_message(competition.name, "memeVoted", round_votes)
-    return Response({"success": True}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"success": True}, status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])
@@ -192,13 +199,12 @@ def start_competition(request, comp_name):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-    competition = set_next_meme_for_competition(competition.id)
+    competition = set_next_meme_for_competition(competition)
     competition.refresh_from_db()
     if competition.current_meme:
         competition.started = True
         competition.save()
         send_next_meme(competition)
-        create_competition_log(competition, request.user, CompetitionLog.CompActions.START)
 
         return Response(status=status.HTTP_200_OK)
     else:
@@ -230,8 +236,7 @@ def advance_competition(request, comp_name):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-    do_advance_competition(competition.id)
-    create_competition_log(competition, request.user, CompetitionLog.CompActions.ADVANCE)
+    do_advance_competition(competition)
 
     return Response(status=status.HTTP_200_OK)
 

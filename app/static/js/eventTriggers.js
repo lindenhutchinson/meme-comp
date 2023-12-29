@@ -94,30 +94,16 @@ $(document).on('updateEmoji', (e, data) => {
 });
 
 $(document).on('memeDeleted', (e, data) => {
+    const memeId = data;
     const memesContainer = $('#submitted-memes-container')
     memesContainer.find(`[id="meme-${memeId}"]`).remove()
 
 });
 
 $(document).on('memeSubmitted', (e, data) => {
-    // todo - replace with html from ws data
-    const id_list = data;
-    var memes = $("#submitted-memes-container").find('.meme');
-    for (i = 0; i < id_list.length; i++) {
-        var id = id_list[i];
+    // display the memes body div
+    $('#memes-body').css('display', '');
 
-        element = `
-            <div id="meme-${id}" class="meme col-md-4 col-sm-6 col-12 mb-4">
-                <div class="card image-card">
-                    <div class="image-container">
-                        <img src="/competition/{{competition.name}}/memes/${id}" alt="One of your dank memes" class="square-image d-block" />
-                    </div>
-                    <div class="card-details">
-                        <button type="button" class="btn btn-sm btn-danger delete-button" onclick="deleteMeme(this)" data-meme-id="${id}">Delete</button>
-                    </div>
-                </div>
-            </div>
-        `
-        $('#submitted-memes-container').prepend(element);
-    }
+    // add the uploaded memes to the page
+    $('#submitted-memes-container').prepend(data.memes_html);
 })

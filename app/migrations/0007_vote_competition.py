@@ -7,14 +7,19 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('app', '0006_vote_created_at_vote_started_at_vote_updated_at_and_more'),
+        ("app", "0006_vote_created_at_vote_started_at_vote_updated_at_and_more")
     ]
 
     operations = [
         migrations.AddField(
-            model_name='vote',
-            name='competition',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='votes', to='app.competition'),
+            model_name="vote",
+            name="competition",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="votes",
+                to="app.competition",
+            ),
             preserve_default=False,
-        ),
+        )
     ]

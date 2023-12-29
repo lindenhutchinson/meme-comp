@@ -9,7 +9,7 @@
     <a href="{% url 'competition' competition.name %}" class="btn btn-sm btn-primary back-btn">Back to Competition</a>
     <h1 class="d-flex justify-content-center pb-4">{{competition.theme}}</h1>
     <div id="meme-grid" class="row mt-3">
-        {% for meme in competition.top_memes %}
+        {% for meme in competition.ordered_memes %}
         <div class="col-md-4 col-sm-6 col-12 mb-4"
             data-score="{{ meme.avg_score }}">
             <div class="image-card">

@@ -48,7 +48,7 @@ class Competition(models.Model):
         self.save()
 
     @property
-    def top_memes(self):
+    def ordered_memes(self):
         return (
             self.memes.filter(competition=self)
             .annotate(vote_count=Count("votes"), total=Sum("votes__score"))
@@ -59,18 +59,18 @@ class Competition(models.Model):
         )
 
     @property
-    def is_tie(self):
-        top_meme = self.top_memes.first()
-        if top_meme:
-            return len(self.top_memes.filter(vote_score=top_meme.real_avg_score)) > 1
-        return False
+    def top_memes(self):
+        top_meme = self.ordered_memes.first()
+        return self.ordered_memes.filter(vote_score=top_meme.vote_score)
 
     @property
-    def tying_memes(self):
-        top_meme = self.top_memes.first()
+    def is_tie(self):
+        top_meme = self.ordered_memes.first()
         if top_meme:
-            return self.top_memes.filter(vote_score=top_meme.real_avg_score).values()
-        return []
+            return (
+                len(self.ordered_memes.filter(vote_score=top_meme.real_avg_score)) > 1
+            )
+        return False
 
     @property
     def num_memes(self):

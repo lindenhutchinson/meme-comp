@@ -2,6 +2,19 @@ from django.urls import reverse_lazy
 from django.template.loader import render_to_string
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from app.models.competition_log import CompetitionLog
+
+
+def create_competition_log(competition, user, event):
+    comp_log = CompetitionLog.objects.create(
+        competition=competition, user=user, event=event
+    )
+    send_channel_message(
+        competition.name,
+        "eventUpdated",
+        {"label": comp_log.label, "timestamp": comp_log.timestamp_label},
+    )
+
 
 # todo - add signals to model changes and use this
 def send_channel_message(comp_name, command, data=None):
@@ -9,6 +22,7 @@ def send_channel_message(comp_name, command, data=None):
     async_to_sync(channel_layer.group_send)(
         comp_name, {"type": "send_update", "data": data, "command": command}
     )
+
 
 def send_next_meme(competition):
     competition.refresh_from_db()
@@ -25,6 +39,9 @@ def send_next_meme(competition):
             "num_memes": competition.num_memes,
             "ctr": competition.meme_ctr,
         },
+    )
+    create_competition_log(
+        competition, competition.owner, CompetitionLog.CompActions.ADVANCE
     )
 
 
@@ -55,6 +72,9 @@ def send_participant_joined(competition, participant):
             "participant_html": participant_html,
         },
     )
+    create_competition_log(
+        competition, participant.user, CompetitionLog.CompActions.JOIN
+    )
 
 
 def send_competition_finished(competition):
@@ -68,4 +88,7 @@ def send_competition_finished(competition):
         competition.name,
         "competitionFinished",
         {"winner_html": winner_html, "results_html": results_html},
+    )
+    create_competition_log(
+        competition, competition.winning_meme.user, CompetitionLog.CompActions.WON
     )

@@ -2,18 +2,10 @@ from django.shortcuts import render, redirect
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404, HttpResponse
 
-from api.ws_actions import send_participant_joined
+from api.ws_actions import send_participant_joined, create_competition_log
 from app.models.competition_log import CompetitionLog
-from .utils import (
-    create_competition_log,
-    generate_random_string,
-)
-from .forms import (
-    CompetitionForm,
-    JoinCompetitionForm,
-    LoginForm,
-    UserForm,
-)
+from .utils import generate_random_string
+from .forms import CompetitionForm, JoinCompetitionForm, LoginForm, UserForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
@@ -115,7 +107,9 @@ def lobby(request):
                     name=user.username, user=user, competition=competition
                 )
                 if created:
-                    create_competition_log(competition, request.user, CompetitionLog.CompActions.CREATE)
+                    create_competition_log(
+                        competition, request.user, CompetitionLog.CompActions.CREATE
+                    )
 
                     return redirect("competition", comp_name=competition.name)
 
@@ -134,8 +128,6 @@ def lobby(request):
                     )
                     if created:
                         send_participant_joined(competition, participant)
-                        create_competition_log(competition, request.user, CompetitionLog.CompActions.JOIN)
-
                     else:
                         messages.warning(
                             request, "You have already joined this competition."
@@ -169,8 +161,6 @@ def lobby(request):
             "join_competition_form": join_competition_form,
         },
     )
-
-
 
 
 @login_required
@@ -256,9 +246,9 @@ def user_page(request, id):
     meme_library = Meme.objects.filter(user=user, competition__finished=True)
 
     # Calculate the average score for each meme and annotate it to the queryset
-    meme_library = meme_library.annotate(average_score=Coalesce(Avg("votes__score"), 0.0)).order_by(
-        "-average_score"
-    )
+    meme_library = meme_library.annotate(
+        average_score=Coalesce(Avg("votes__score"), 0.0)
+    ).order_by("-average_score")
 
     # Prefetch related fields to reduce database queries
     meme_library = meme_library.select_related("competition", "participant")

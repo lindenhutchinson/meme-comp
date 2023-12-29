@@ -12,9 +12,7 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        ("auth", "0012_alter_user_first_name_max_length"),
-    ]
+    dependencies = [("auth", "0012_alter_user_first_name_max_length")]
 
     operations = [
         migrations.CreateModel(
@@ -125,9 +123,7 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "users",
                 "abstract": False,
             },
-            managers=[
-                ("objects", django.contrib.auth.models.UserManager()),
-            ],
+            managers=[("objects", django.contrib.auth.models.UserManager())],
         ),
         migrations.CreateModel(
             name="Competition",

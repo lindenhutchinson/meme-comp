@@ -5,14 +5,12 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('app', '0010_alter_vote_score'),
-    ]
+    dependencies = [("app", "0010_alter_vote_score")]
 
     operations = [
         migrations.AddField(
-            model_name='competition',
-            name='tiebreaker',
+            model_name="competition",
+            name="tiebreaker",
             field=models.BooleanField(default=False),
-        ),
+        )
     ]

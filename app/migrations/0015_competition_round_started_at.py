@@ -4,14 +4,12 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [
-        ("app", "0014_competition_timer_active"),
-    ]
+    dependencies = [("app", "0014_competition_timer_active")]
 
     operations = [
         migrations.AddField(
             model_name="competition",
             name="round_started_at",
             field=models.DateTimeField(default=None, null=True),
-        ),
+        )
     ]

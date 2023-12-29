@@ -119,16 +119,12 @@ function startCompetition(compName) {
             processData: false,
             contentType: false,
             success: function (response) {
-                // Handle success response
-                // Clear the input field
                 $('#image').val('');
-                // Load submitted memes
                 if (Math.random() < 0.01) {
                     showSnackbar("lol that's a good one", "success");
                 } else {
                     showSnackbar('Meme uploaded', 'success');
                 }
-                $('#memes-body').css('display', '');
                 $(document).trigger('memeSubmitted', response);
             },
             error: function (xhr, status, error) {

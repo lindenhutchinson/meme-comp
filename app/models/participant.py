@@ -21,6 +21,10 @@ class Participant(models.Model):
         return self.memes.count()
 
     @property
+    def ordered_memes(self):
+        return self.memes.order_by("-created_at")
+
+    @property
     def top_meme(self):
         sorted_memes = sorted(
             self.memes.all(), key=lambda meme: meme.avg_score, reverse=True

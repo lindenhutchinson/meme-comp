@@ -1,35 +1,24 @@
-import enum
 import re
 from django.contrib.auth import get_user_model
 import random
 import string
-from django.db.models import Sum
-from django.db import transaction
 
-from api.ws_actions import send_competition_finished, send_next_meme, send_channel_message
-from .models import Competition, SeenMeme, Meme, Participant, CompetitionLog
+from api.ws_actions import (
+    send_competition_finished,
+    send_next_meme,
+    send_channel_message,
+)
+from .models import Competition, SeenMeme, Meme, CompetitionLog
 
 from django.contrib import messages
 from django.shortcuts import redirect
-import pytz
 from django.utils import timezone
 from datetime import datetime
-from celery import Celery
-
-import redis
-from contextlib import contextmanager
-
-from django.conf import settings
-import redis
-from contextlib import contextmanager
-
 
 
 def redirect_and_flash_error(request, error):
     messages.error(request, error)
     return redirect("home")
-
-
 
 
 def generate_random_string(length):
@@ -52,10 +41,7 @@ def get_current_user(request):
     return None
 
 
-def set_next_meme_for_competition(competition_id):
-    # Get the competition
-    competition = Competition.objects.get(id=competition_id)
-
+def set_next_meme_for_competition(competition):
     # Get the list of all memes for the competition
     all_memes = competition.memes.all()
 
@@ -77,39 +63,10 @@ def set_next_meme_for_competition(competition_id):
         SeenMeme.objects.create(meme=random_meme, competition=competition)
     else:
         competition.current_meme = None
-        
+
     competition.round_started_at = datetime.now(tz=timezone.get_current_timezone())
     competition.save()
     return competition
-
-
-# def get_top_meme(competition_name):
-#     # Get the competition instance
-#     competition = Competition.objects.get(name=competition_name)
-
-#     # Aggregate the total vote scores for each meme in the competition
-#     memes = Meme.objects.filter(competition=competition)
-
-#     sorted_memes = sorted(memes, key=lambda meme: meme.total_score/(len(meme.votes.all()) or 1), reverse=True)
-#     meme = sorted_memes[0]
-#     score = round(meme.total_score / (len(meme.votes.all()) or 1), 2)
-
-#     results = {
-#         'id':meme.id,
-#         'participant':meme.participant.name,
-#         'score': score
-#     }
-#     return results
-
-
-
-
-def create_competition_log(competition, user, event):
-    CompetitionLog.objects.create(
-        competition=competition,
-        user=user,
-        event=event
-    )
 
 
 def get_top_memes(comp_name):
@@ -117,14 +74,11 @@ def get_top_memes(comp_name):
     competition = Competition.objects.get(name=comp_name)
 
     # get the memes in order of their avg scores
-    memes = competition.top_memes
+    memes = competition.ordered_memes
     meme = memes.first()
-    tying_memes = memes.filter(vote_score=meme.vote_score)
 
-    return [
-        {"id": m.id, "participant": m.participant.name, "score": round(m.vote_score, 2)}
-        for m in tying_memes
-    ]
+    # return all memes that tied with the top score
+    return memes.filter(vote_score=meme.vote_score)
 
 
 def send_shame_message(comp_name, username):
@@ -154,14 +108,11 @@ def check_emoji_text(text):
         return False
 
 
-
-
-
 def num_votes_for_round(competition):
     competition.refresh_from_db()
     # Get the votes updated before the competition's round_started_at timestamp
-    # the competition was last updated when the current_meme was set at the start of this round.   
-    
+    # the competition was last updated when the current_meme was set at the start of this round.
+
     votes_updated_before_competition = (
         competition.votes.filter(updated_at__gt=competition.round_started_at)
         .values("user_id")
@@ -170,23 +121,29 @@ def num_votes_for_round(competition):
     return votes_updated_before_competition.count()
 
 
-def do_advance_competition(competition_id):
-    competition = Competition.objects.get(id=competition_id)
+def get_random_object_from_query(obj_class, query):
+    pks = query.values_list("pk", flat=True)
+    random_pk = random.choice(pks)
+    return obj_class.objects.get(pk=random_pk)
 
-    competition.participants.update(ready=False)
+
+def do_advance_competition(competition):
     # attempt to get a random next meme for the competition
-    competition = set_next_meme_for_competition(competition.id)
+    competition = set_next_meme_for_competition(competition)
     competition.refresh_from_db()
-    if competition.current_meme:
-        send_next_meme(competition)
 
+    if competition.current_meme:
+        # if we were able to set the next meme,
+        # the competition hasnt finished yet
+        send_next_meme(competition)
     else:
-        top_memes = get_top_memes(competition.name)
-        if len(top_memes) == 1:
-            top_meme = Meme.objects.get(id=top_memes[0]["id"])
+        # if no current_meme exists, the competition is finished
+        if competition.top_memes.count() == 1:
+            # if only one meme has the top score, it is the winner
+            top_meme = competition.top_memes.first()
         else:
-            top_meme = random.choice(top_memes)
-            top_meme = Meme.objects.get(id=top_meme["id"])
+            # otherwise, resolve tiebreakers randomly
+            top_meme = get_random_object_from_query(Meme, competition.top_memes)
 
         competition.winning_meme = top_meme
         competition.finished = True

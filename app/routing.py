@@ -6,5 +6,5 @@ websocket_urlpatterns = [
     re_path(
         r"competitions/(?P<competition_name>\w+)/$",
         consumers.CompetitionConsumer.as_asgi(),
-    ),
+    )
 ]

@@ -6,9 +6,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ("app", "0001_initial"),
-    ]
+    dependencies = [("app", "0001_initial")]
 
     operations = [
         migrations.AddField(
@@ -47,8 +45,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={
-                "unique_together": {("competition", "meme")},
-            },
+            options={"unique_together": {("competition", "meme")}},
         ),
     ]

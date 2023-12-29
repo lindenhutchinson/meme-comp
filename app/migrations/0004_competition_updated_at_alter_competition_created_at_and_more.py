@@ -6,24 +6,26 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('app', '0003_competition_finished_alter_vote_meme'),
-    ]
+    dependencies = [("app", "0003_competition_finished_alter_vote_meme")]
 
     operations = [
         migrations.AddField(
-            model_name='competition',
-            name='updated_at',
+            model_name="competition",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True),
         ),
         migrations.AlterField(
-            model_name='competition',
-            name='created_at',
+            model_name="competition",
+            name="created_at",
             field=models.DateTimeField(auto_now_add=True),
         ),
         migrations.AlterField(
-            model_name='seenmeme',
-            name='competition',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='seen_memes', to='app.competition'),
+            model_name="seenmeme",
+            name="competition",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="seen_memes",
+                to="app.competition",
+            ),
         ),
     ]
