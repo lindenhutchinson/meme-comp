@@ -1,5 +1,8 @@
 {% load static %}
 <script src="{% static 'js/emojis.js' cache 6004800 %}"></script>
+<div id="emoji-fill-div"></div>
+<button title="Refresh your emoji choices" onclick="createEmojiBtns()" id="refresh-emojis"
+    class="btn btn-sm btn-dark"><i class="bi bi-arrow-clockwise"></i></button>
 <div id="emoji-container">
     <button class="btn btn-light emoji-button e-btn">&#128514</button>
     <button class="btn btn-light emoji-button e-btn">&#128076</button>
@@ -11,7 +14,7 @@
         var $this = $(this);
         const emojiText = $this.text();
         sendEmoji(emojiText);
-        const fillDiv = $('#fill-div');
+        const fillDiv = $('#emoji-fill-div');
         fillDiv.css('background-color', 'black');
         fillDiv.addClass('div-fill');
         $('.emoji-button').attr('disabled', true);
@@ -185,7 +188,7 @@
 		align-items: center;
 		margin: 15px;
 	}
-	#fill-div {
+	#emoji-fill-div {
 		border-radius:30px;
 		width: 100px;
 		height: 10px;

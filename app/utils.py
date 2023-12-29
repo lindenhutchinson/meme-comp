@@ -14,7 +14,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.utils import timezone
 from datetime import datetime
-
+from MemeComp.celery import app
 
 def redirect_and_flash_error(request, error):
     messages.error(request, error)
@@ -69,18 +69,6 @@ def set_next_meme_for_competition(competition):
     return competition
 
 
-def get_top_memes(comp_name):
-    # Get the competition instance
-    competition = Competition.objects.get(name=comp_name)
-
-    # get the memes in order of their avg scores
-    memes = competition.ordered_memes
-    meme = memes.first()
-
-    # return all memes that tied with the top score
-    return memes.filter(vote_score=meme.vote_score)
-
-
 def send_shame_message(comp_name, username):
     messages = [
         f"{username} thinks they're a hackerman.",
@@ -127,7 +115,18 @@ def get_random_object_from_query(obj_class, query):
     return obj_class.objects.get(pk=random_pk)
 
 
-def do_advance_competition(competition):
+def revoke_competition_timer(competition):
+    if competition.timer_task_id:
+        # we need to cancel the timer task and clear the timer task id
+        app.control.revoke(competition.timer_task_id)
+        competition.timer_task_id = None
+        competition.save()
+
+def run_advance_competition(competition):
+    # if we're advancing the comp and the timer is currently running
+    # revoke it!
+    revoke_competition_timer(competition)
+
     # attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition)
     competition.refresh_from_db()
@@ -149,7 +148,3 @@ def do_advance_competition(competition):
         competition.finished = True
         competition.save()
         send_competition_finished(competition)
-
-    # competition has been advanced, toggle the timer inactive
-    competition.timer_active = False
-    competition.save()

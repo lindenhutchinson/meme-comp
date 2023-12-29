@@ -1,0 +1,40 @@
+<div id="fill-div"></div>
+
+
+<script>
+    var barTimeout;
+
+    function startTimer() {
+        const timeoutSecs = "{{timeout}}";
+        const barDiv = $("#fill-div");
+        barDiv.stop(true, true);        
+        barDiv.css({
+            'background-color':'black',
+            'display': ''
+        });
+        barDiv.animate({ width: '100%' }, {
+            duration: timeoutSecs * 1000,
+            easing: 'linear',
+            complete: function () {
+                barDiv.css({
+                    'width': '0px',
+                    'background-color': 'black',
+                    'display':'none'
+                });
+                barTimeout = 0;
+            }
+        });
+    }
+</script>
+
+<style>
+    #fill-div {
+        border-radius: 30px;
+        width: 0px;
+        height: 10px;
+        background-color: black;
+        border: none;
+        position: relative;
+        overflow: hidden;
+    }
+</style>

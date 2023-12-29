@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from api.ws_actions import send_meme_uploaded, send_next_meme, create_competition_log
 from app.utils import (
-    do_advance_competition,
+    run_advance_competition,
     num_votes_for_round,
     send_shame_message,
     set_next_meme_for_competition,
@@ -153,6 +153,11 @@ def meme_vote(request, comp_name):
         send_shame_message(competition.name, request.user.username)
         return Response({"detail": "Bad Request"}, status=status.HTTP_400_BAD_REQUEST)
 
+    if not competition.current_meme:
+        # if the current meme doesnt exist
+        # that probably means the user clicked the vote button right as the comp finished
+        return Response({"detail": "Too late"}, status=status.HTTP_417_EXPECTATION_FAILED)
+    
     vote, created = Vote.objects.get_or_create(
         meme=competition.current_meme,
         participant=participant,
@@ -236,7 +241,7 @@ def advance_competition(request, comp_name):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-    do_advance_competition(competition)
+    run_advance_competition(competition)
 
     return Response(status=status.HTTP_200_OK)
 

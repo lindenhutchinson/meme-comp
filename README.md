@@ -57,7 +57,7 @@ Access the app in your browser at <http://localhost:8000>.
 
 To run celery:
 
-    celery -A MemeComp worker -l info -E -Q memes -c 1 --without-mingle -O fair -P solo
+    celery -A MemeComp worker -l info -E -Q voting_timer_queue -c 1 --without-mingle -O fair -P solo
 
 ## Usage
 
@@ -70,14 +70,3 @@ To run celery:
 ## Contributing
 
 Contributions are welcome! If you have any suggestions, bug reports, or feature requests, please open an issue or submit a pull request.
-
-
-
-## todo - competition event log
-# new model
-# CompetitionEvent
- competition_id, 
- timestamp, 
- user who performed the action
-
- 

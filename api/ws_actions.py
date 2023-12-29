@@ -4,7 +4,6 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from app.models.competition_log import CompetitionLog
 
-
 def create_competition_log(competition, user, event):
     comp_log = CompetitionLog.objects.create(
         competition=competition, user=user, event=event
@@ -22,7 +21,6 @@ def send_channel_message(comp_name, command, data=None):
     async_to_sync(channel_layer.group_send)(
         comp_name, {"type": "send_update", "data": data, "command": command}
     )
-
 
 def send_next_meme(competition):
     competition.refresh_from_db()
@@ -43,6 +41,9 @@ def send_next_meme(competition):
     create_competition_log(
         competition, competition.owner, CompetitionLog.CompActions.ADVANCE
     )
+
+    # whenever the next meme is started, we need to start the voting timer
+
 
 
 def send_meme_uploaded(competition):

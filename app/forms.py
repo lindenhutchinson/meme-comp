@@ -16,10 +16,15 @@ class LoginForm(forms.Form):
 
 class CompetitionForm(forms.ModelForm):
     theme = forms.CharField(max_length=100, required=True)
-
+    with_timer = forms.BooleanField(label="Enable Vote Timer")
+    timer_timeout = forms.IntegerField(
+        label="Seconds allowed for Voting",
+        min_value=0, 
+        max_value=60,
+        help_text="Only required if timer is enabled")
     class Meta:
         model = Competition
-        fields = ["theme"]
+        fields = ["theme", "with_timer", "timer_timeout"]
 
 
 class JoinCompetitionForm(forms.Form):

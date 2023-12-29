@@ -32,3 +32,7 @@ def comp_tiebreaker(competition):
 @register.inclusion_tag("tags/timer.html")
 def comp_timer(time_limit):
     return {"time_limit": time_limit}
+
+@register.inclusion_tag("tags/timer-bar-div.html")
+def timer_bar_div(timeout):
+    return {"timeout": timeout}

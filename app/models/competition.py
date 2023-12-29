@@ -16,6 +16,8 @@ from django.db.models import (
 from django.db.models.functions import Coalesce
 from django.db.models import Case, When
 
+from app.tasks import timer_advance_competition
+
 SUITABLY_HIGH_NUMBER = 99999999
 
 
@@ -24,7 +26,7 @@ class Competition(models.Model):
     theme = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    round_started_at = models.DateTimeField(default=None, null=True)
+    round_started_at = models.DateTimeField(default=None, null=True, blank=True)
     started = models.BooleanField(default=False)
     owner = models.ForeignKey(
         "User", on_delete=models.CASCADE, related_name="created_competition"
@@ -32,6 +34,8 @@ class Competition(models.Model):
     current_meme = models.ForeignKey(
         "Meme", null=True, on_delete=models.SET_NULL, related_name="current", blank=True
     )
+    __original_current_meme = None
+
     winning_meme = models.ForeignKey(
         "Meme",
         null=True,
@@ -41,7 +45,36 @@ class Competition(models.Model):
     )
     tiebreaker = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
-    timer_active = models.BooleanField(default=False)
+
+    timer_task_id = models.CharField(max_length=765, unique=True, null=True, blank=True)
+    with_timer = models.BooleanField(default=False)
+    timer_timeout = models.PositiveIntegerField(default=15, blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super(Competition, self).__init__(*args, **kwargs)
+        self.__original_current_meme = self.current_meme
+
+    def save(self, force_insert=False, force_update=False, *args, **kwargs):
+
+        if self.with_timer:
+            # if current_meme is set and it is different to the previous current_meme
+            # start the voting timer
+            if self.current_meme and self.current_meme != self.__original_current_meme:
+                timer_task = timer_advance_competition.apply_async(
+                    args=[self.id], 
+                    countdown=self.timer_timeout, 
+                    expiration=60,
+                    queue="voting_timer_queue"
+                )
+                self.timer_task_id = timer_task.task_id
+            # if we dont have a current meme but we still have a timer
+            # that timer must be revoked
+            elif not self.current_meme and self.timer_task_id:
+                from app.utils import revoke_competition_timer
+                revoke_competition_timer(self)
+
+        super(Competition, self).save(force_insert, force_update, *args, **kwargs)
+        self.__original_current_meme = self.current_meme
 
     def start_competition(self):
         self.started = True

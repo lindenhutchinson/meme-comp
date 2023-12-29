@@ -87,6 +87,8 @@ $(document).on('nextMeme', (e, data) => {
     }, 3000);
     $("#vote-form :input").prop('readonly', false);
 
+    // reset the timer
+    startTimer();
 });
 
 $(document).on('updateEmoji', (e, data) => {

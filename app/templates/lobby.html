@@ -7,26 +7,16 @@
             <div class="card-header">
                 <ul class="nav nav-tabs card-header-tabs">
                     <li class="nav-item">
-                        <a class="nav-link active" data-bs-toggle="tab" href="#create">Create Competition</a>
+                        <a class="nav-link active" data-bs-toggle="tab" href="#join">Join Competition</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="tab" href="#join">Join Competition</a>
+                        <a class="nav-link" data-bs-toggle="tab" href="#create">Create Competition</a>
                     </li>
                 </ul>
             </div>
             <div class="card-body">
                 <div class="tab-content">
-                    <div class="tab-pane container active" id="create">
-                        <form method="post" name="create">
-                            {% csrf_token %}
-                            <div class="form-group mb-3">
-                                <label for="theme">Theme:</label>
-                                <input type="text" name="theme" id="theme" class="form-control" required />
-                            </div>
-                            <button type="submit" name="create" class="btn btn-primary">Create</button>
-                        </form>
-                    </div>
-                    <div class="tab-pane container" id="join">
+                    <div class="tab-pane container active" id="join">
                         <form method="post" name="join">
                             {% csrf_token %}
                             <div class="form-group mb-3">
@@ -34,6 +24,23 @@
                                 <input type="text" name="name" id="name" class="form-control" required />
                             </div>
                             <button type="submit" name="join" class="btn btn-primary">Join</button>
+                        </form>
+                    </div>
+                    <div class="tab-pane container" id="create">
+                        <form method="post" name="create">
+                            {% csrf_token %}
+                            <div class="form-group mb-3">
+                                <label for="theme">Theme:</label>
+                                <input type="text" name="theme" id="theme" class="form-control" required />
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <label class="form-check-label" for="with_timer">Voting Timer Enabled</label>
+                                <input class="form-check-input" type="checkbox" name="with_timer" id="with_timer">
+                              </div>
+                            <div class="form-group mb-3">
+                                <label for="timer_timeout">Voting Timeout (seconds)</label>
+                                <input type="number" name="timer_timeout" id="timer_timeout" class="form-control" min="1" max="60" placeholder="15">
+                            <button type="submit" name="create" class="btn btn-primary">Create</button>
                         </form>
                     </div>
                 </div>
@@ -65,8 +72,8 @@
 </div>
 <script>
     $(document).ready(function () {
-        // Hide the "join" pane on page load
-        $("#join").hide();
+        // Hide the "create" pane on page load
+        $("#create").hide();
 
         // Add a click event listener to each nav link
         $(".nav-link").click(function () {
