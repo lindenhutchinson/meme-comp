@@ -26,7 +26,6 @@
 <script src="{% static 'js/ajaxApi.js' cache 6004800 %}"></script>
 <script src="{% static 'js/eventTriggers.js' cache 6004800 %}"></script>
 
-<div id="snackbar"></div>
 <div class="text-center g-0 mb-4">
 	<div id="card-container" class="row m-2">
 		{% comp_card request.user participant competition %}
@@ -46,8 +45,8 @@
 	$(document).ready(function() {
 		var x = getRandomNumber(0, self.innerWidth);
 		var y = getRandomNumber(0, self.innerHeight);
-		$('#button-div').css('left', x+'px')
-		$('#button-div').css('top', y+'px')
+		$('#button-div').css('left', x+'px');
+		$('#button-div').css('top', y+'px');
 		connectWebSocket("{{websocket_scheme}}", "{{competition.name}}")
 	})
 	function sleep(ms) {
@@ -74,46 +73,7 @@
 		}
 	}
 
-	var snackbarTimeout;
-	var prevColour;
-	function showSnackbar(message, colour, timeout=3000) {
-		var snackbar = $("#snackbar");
-		if (snackbarTimeout) {
-			clearTimeout(snackbarTimeout);
-			snackbarTimeout = null;
-			snackbar.removeClass("show");
-		}
-		if (prevColour !== colour) {
-			snackbar.removeClass(`btn-${prevColour}`)
-			prevColour = null;
-		}
-
-		snackbar.text(message);
-		snackbar.addClass(`btn-${colour}`)
-
-		prevColour = colour;
-		snackbar.addClass("show");
-
-		snackbarTimeout = setTimeout(function () {
-			snackbar.removeClass("show");
-		}, timeout); // Adjust the timeout duration as needed
-	}
-
-	function showSnackError(message) {
-		var snackbar = $("#snackbar");
-		if (snackbarTimeout) {
-			clearTimeout(snackbarTimeout);
-			snackbarTimeout = null;
-			snackbar.removeClass("show");
-		}
-
-		snackbar.removeClass(`btn-${prevColour}`)
-		snackbar.text(message);
-		snackbar.addClass(`btn-danger`)
-
-		prevColour = 'danger';
-		snackbar.addClass("show");
-	}
+	
 	
 </script>
 

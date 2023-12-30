@@ -1,5 +1,6 @@
 {% load websocket_tags %}
 
+
 <div 
     id="comp-info-card"
     class="col-lg-3 col-12 text-center mb-2"
@@ -8,40 +9,45 @@
     <div class="card shadow">
         <div class="card-header">
             <h2>{{ competition.theme }}</h2>
-            <small class="card-title">Hosted by {{ competition.owner }}</small>
-        </div>
-        <div class="card-title">
-            <div class="row mx-1 my-3">
-                <div class="input-group" style="z-index:0">
-                    <input id="room-url"
-                            type="text"
-                            class="form-control"
-                            value="ID: {{ competition.name }}"
-                            disabled>
-                    <button class="btn btn-primary" onclick="copyLink()">Copy</button>
-                </div>
+            <small>Hosted by {{ competition.owner }}</small>
+            <div class="input-group my-2" style="z-index:0">
+                <input id="room-url"
+                        type="text"
+                        class="form-control form-control-sm"
+                        value="ID: {{ competition.name }}"
+                        disabled>
+                <button class="btn btn-primary" onclick="copyLink()">
+                    Copy
+                
+                </button>
             </div>
-            <div class="row">
-                <p id="num_memes">
-                    {{ competition.num_memes }} meme{{ competition.num_memes|pluralize }} submitted by {{ competition.num_uploaders }} {{ competition.num_uploaders|pluralize:'person,people' }}
-                </p>
-            </div>
+            <small id="num_memes">
+                {{ competition.num_memes }} meme{{ competition.num_memes|pluralize }} submitted by {{ competition.num_uploaders }} {{ competition.num_uploaders|pluralize:'person,people' }}
+            </small>
         </div>
         <div class="card-body">
-            <div class="row mx-1">
-                <button class="btn btn-light btn-sm d-flex justify-content-center"
+            <!-- event log has been disabled for now -->
+            <!-- will add it back later maybe -->
+            <!-- <div class="row mb-3">
+                {% load competition_tags %}
+                {% event_log_offcanvas competition %}
+            </div> -->
+
+            <div class="row">
+                <button class="toggle-btn btn btn-light btn-sm text-center"
                         type="button"
-                        onclick="toggleShowParticipants()">
+                        onclick="toggleShow('.participants-box')">
                     Participants &nbsp;<span id="num-participants">({{ competition.num_participants }})</span>
                 </button>
-                <div class="overflow-auto participants-box p-1" style="max-height: 200px;">
-                    <ul id="participants" class="list-group">
+                <div class="overflow-auto participants-box p-1 collapse" style="max-height: 200px;">
+                    <ul id="participants" class="list-group text-start">
                         {% for participant in competition.sorted_participants %}
                             {% participant_li participant.id %}
                         {% endfor %}
                     </ul>
                 </div>
             </div>
+
             <div class="row text-center">
                 {% if user == competition.owner %}
                     <div class="d-flex justify-content-between mt-3">
@@ -78,8 +84,8 @@
 </div>
 
 <script>
-    function toggleShowParticipants() {
-		const box = $('.participants-box');
+    function toggleShow(cls) {
+		const box = $(cls);
 		if(box.hasClass('collapse')) {
 			box.removeClass('collapse')
 		} else {

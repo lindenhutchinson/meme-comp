@@ -1,33 +1,14 @@
 {% load websocket_tags %}
 
-<div id="comp-finished" class="col row g-0" {% if not competition.finished %}style="display:none" {% endif %}>
-    <div class="card shadow">
-        <div class="card-header">
-            <div class="card-title">
-                <div class="d-flex justify-content-evenly align-items-center">
-                    <a href="{% url 'competition_memes' competition.name %}" class="btn btn-sm btn-primary">
-                        All Memes
-                    </a>
-                    <h2>Competition Results</h2>
-                    <a href="{% url 'competition_results' competition.name %}" class="btn btn-sm btn-primary">Detailed
-                        Results</a>
-                </div>
-            </div>
+<div id="comp-finished" class="col row" {% if not competition.finished %}style="display:none" {% endif %}>
+        <div id="winning-meme" class="col-lg-6 col-12 min-height-item">
+            {% if competition.winning_meme and competition.finished %}
+            {% winning_meme_div competition %}
+            {% endif %}
         </div>
-        <div class="card-body g-0">
-
-            <div class="row results-container justify-content-center">
-                <div id="winning-meme" class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
-                    {% if competition.winning_meme and competition.finished %}
-                    {% winning_meme_div competition %}
-                    {% endif %}
-                </div>
-                <div id="comp-results" class="shadow col-lg-5 col-12 m-2 meme-item min-height-item">
-                    {% if competition.winning_meme and competition.finished %}
-                    {% comp_results_div competition %}
-                    {% endif %}
-                </div>
-            </div>
+        <div id="comp-results" class="col-lg-6 col-12 min-height-item">
+            {% if competition.winning_meme and competition.finished %}
+            {% comp_results_div competition %}
+            {% endif %}
         </div>
-    </div>
 </div>

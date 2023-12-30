@@ -57,7 +57,7 @@ Access the app in your browser at <http://localhost:8000>.
 
 To run celery:
 
-    celery -A MemeComp worker -l info -E -Q voting_timer_queue -c 1 --without-mingle -O fair -P solo
+    c
 
 ## Usage
 

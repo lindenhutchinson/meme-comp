@@ -1,0 +1,95 @@
+<div class="snackbar-container">
+    <div id="snackbar">
+        <span id="snackbar-message"></span>
+    </div>
+</div>
+
+<script>
+let snackbarTimeout;
+
+function showSnackbar(message, color, autoDismiss = true, timeout = 3000) {
+    const snackbar = $("#snackbar");
+    const snackbarMessage = $("#snackbar-message");
+
+    if (snackbar.hasClass("snack-show")) {
+        closeSnackbar(() => {
+            showNewSnackbar();
+        });
+    } else {
+        showNewSnackbar();
+    }
+
+    function showNewSnackbar() {
+        snackbar.removeClass().addClass(`bg-${color}`);
+        snackbarMessage.text(message);
+
+        snackbar.animate({ 
+            "left": "50%",
+            "opacity": "1"
+         }, {
+            duration: 300,
+            complete: function() {
+                snackbar.addClass("snack-show");
+            },
+        });
+
+        if (autoDismiss) {
+            clearTimeout(snackbarTimeout);
+            snackbarTimeout = setTimeout(() => {
+                closeSnackbar();
+            }, timeout);
+        }
+    }
+}
+
+function closeSnackbar(callback) {
+    const snackbar = $("#snackbar");
+    snackbar.animate({ 
+        "left" :"75%",
+        "opacity":"0" }, {
+        duration: 300,
+        complete: function() {
+            snackbar.removeClass("snack-show");
+            snackbar.css('left', '25%');
+            if (callback) {
+                callback();
+            }
+        },
+    });
+}
+
+$(document).ready(function () {
+    $("#snackbar-close").click(function () {
+        closeSnackbar();
+    });
+});
+</script>
+
+<style>
+    .snackbar-container {
+        width:100%;
+    }
+#snackbar {
+    position: fixed;
+    top: 0;
+    left: 25%;
+    opacity:0;
+    width: 50%; /* Adjust as needed */
+    text-align: center;
+    border-radius: 15px;
+    padding: 8px;
+    z-index: 9999;
+    transform: translate(-50%, 0);
+    margin-top: 7px;
+}
+
+#snackbar.snack-show {
+    left: 50%;
+    opacity: 1;
+}
+
+#snackbar-message {
+    margin-right: 20px; /* Adjust as needed */
+}
+
+</style>

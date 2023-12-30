@@ -8,11 +8,18 @@ def create_competition_log(competition, user, event):
     comp_log = CompetitionLog.objects.create(
         competition=competition, user=user, event=event
     )
-    send_channel_message(
-        competition.name,
-        "eventUpdated",
-        {"label": comp_log.label, "timestamp": comp_log.timestamp_label},
-    )
+    comp_log.save()
+    
+    # updating of events has been disabled for now
+    # unnecessary use of resources, might add it back if/when live chat gets added
+    # log_html = render_to_string(
+    #     "ws_tags/event_log_div.html", {"event": comp_log}
+    # )
+    # send_channel_message(
+    #     competition.name,
+    #     "eventUpdated",
+    #     {"log_html": log_html},
+    # )
 
 
 # todo - add signals to model changes and use this

@@ -1,0 +1,33 @@
+<div class="event-message">
+    <div class="timestamp-text d-flex justify-content-between">
+        <span>{{event.timestamp_label}}</span>
+        <span>{{event.row_number}}</span>
+    </div>
+    <p class="timestamp-text"></p>
+    <p class="label-text">{{event.label}}</p>
+</div>
+
+<style>
+    .timestamp-text {
+        font-size:0.8rem;
+        margin: 0 !important;
+        color: darkgrey;
+    }
+    .label-text {
+        margin: 0 !important;
+        font-size:0.9rem;
+        color: lightgrey;
+
+    }
+    .event-message {
+        background-color:black;
+        border-bottom: 1px solid darkgrey;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        padding: 5px;
+    }
+    .toggle-btn {
+        border: 2px solid darkgrey;
+    }
+
+</style>

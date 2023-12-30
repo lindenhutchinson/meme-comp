@@ -109,3 +109,7 @@ $(document).on('memeSubmitted', (e, data) => {
     // add the uploaded memes to the page
     $('#submitted-memes-container').prepend(data.memes_html);
 })
+
+$(document).on('eventUpdated', (e, data) => {
+    $('#events').prepend(data.log_html);
+})

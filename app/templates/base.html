@@ -26,43 +26,32 @@
     
     </head>
     <body>
+        {% load competition_tags %}
+        {% snackbar %}
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
                 <a class="navbar-brand" href="{% url 'home' %}">MemeComp</a>
-                <button class="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#navbarNav"
-                        aria-controls="navbarNav"
-                        aria-expanded="false"
-                        aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto">
+        
+
+        
+                    <div class="d-flex justify-content-end" style="flex-basis:20%">
+                        <a class="me-3 vote-label" href="{% url 'home' %}">
+                            <i class="bi bi-house"></i>
+                        </a>
                         {% if user.is_authenticated %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'lobby' %}">Lobby</a>
-                            </li>
+                            <a class="vote-label me-3" href="{% url 'user' user.id %}">
+                                <i class="bi bi-person"></i>
+                            </a>
+                            <a class="vote-label me-3" id="logoutButton">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </a>                  
                         {% endif %}
-                    </ul>
-                    <div class="d-flex align-items-center">
-
-                    {% if user.is_authenticated %}
-                            <span class="me-3">
-                                <a class="btn btn-light" href="{% url 'user' user.id %}">{{ user.username }}</a>
-                            </span>
-                            <form style="margin-right:15px" method="post" action="{% url 'logout' %}">
-                                {% csrf_token %}
-                                <button class="btn btn-outline-primary" type="submit">Logout</button>
-                            </form>
-                    {% endif %}
-                    <a style="border-radius:50%" class="btn btn-sm btn-light" href="https://github.com/lindenhutchinson/meme-comp" target="_blank"><i class="bi bi-github"></i></a>
-                </div>
-
-                </div>
+                        <a class="vote-label" href="https://github.com/lindenhutchinson/meme-comp" target="_blank">
+                            <i class="bi bi-github"></i>
+                        </a>
+                    </div>
             </div>
-        </nav>
+        </nav>        
             {% if messages %}
             <div class="container mt-3">
                 <div class="row justify-content-center">
@@ -87,9 +76,11 @@
         </div>
         {% block js %}{% endblock js %}
     </body>
-    <footer class="bg-dark text-light meme-footer">
-        made with ❤️ by linden
+    {% block footer %}
+    <footer class="d-flex justify-content-center align-items-center mb-2">
+
     </footer>
+    {% endblock %}
     <script>
         $(document).ready(function() {
             // Set the timeout duration in milliseconds (e.g., 3000ms for 3 seconds)
@@ -97,6 +88,18 @@
             
             // Find the success message element and fade it out after the timeout duration
             $('.alert').delay(timeoutDuration).fadeOut('slow');
+  
+            $("#logoutButton").click(function () {
+                $.post("{% url 'logout' %}", {'csrfmiddlewaretoken': '{{ csrf_token }}'})
+                    .done(function (data) {
+                        window.location.href = "{% url 'home' %}";
+                    })
+                    .fail(function (xhr, status, error) {
+                        // Handle failure if needed
+                        console.error("Logout failed:", error);
+                    });
+            });
         });
+
     </script>
 </html>

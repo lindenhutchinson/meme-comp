@@ -28,3 +28,8 @@ def emoji_div():
 @register.inclusion_tag("ws_tags/meme_image_div.html")
 def meme_image_div(meme):
     return {"meme": meme}
+
+
+@register.inclusion_tag("ws_tags/event_log_div.html")
+def event_log_div(event):
+    return {"event": event}

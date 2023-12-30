@@ -89,53 +89,80 @@ def home(request):
 
     return render(request, "home.html", {"form": form})
 
-
 @login_required
 def lobby(request):
-    user = request.user
     competition_form = CompetitionForm()
+    
     join_competition_form = JoinCompetitionForm()
+
     if request.method == "POST":
         if "create" in request.POST:
-            competition_form = CompetitionForm(request.POST)
-            if competition_form.is_valid():
-                competition = competition_form.save(commit=False)
-                competition.owner = request.user
-                competition.name = generate_random_string(8)
-                competition.save()
-                _, created = Participant.objects.get_or_create(
-                    name=user.username, user=user, competition=competition
-                )
-                if created:
-                    create_competition_log(
-                        competition, request.user, CompetitionLog.CompActions.CREATE
-                    )
-
-                    return redirect("competition", comp_name=competition.name)
-
+            success = handle_create_competition(request, competition_form)
         elif "join" in request.POST:
-            join_competition_form = JoinCompetitionForm(request.POST)
-            if join_competition_form.is_valid():
-                competition_name = join_competition_form.cleaned_data["name"]
-                try:
-                    competition = Competition.objects.get(name=competition_name)
-                except Competition.DoesNotExist:
-                    messages.error(request, "Invalid competition ID")
-                else:
-                    request.session["competition_id"] = competition.id
-                    participant, created = Participant.objects.get_or_create(
-                        name=user.username, user=user, competition=competition
-                    )
-                    if created:
-                        send_participant_joined(competition, participant)
-                    else:
-                        messages.warning(
-                            request, "You have already joined this competition."
-                        )
+            success = handle_join_competition(request, join_competition_form)
 
-                    return redirect("competition", comp_name=competition.name)
-
+        if success:
+            return success
+    
     participant_list = Participant.objects.filter(user=request.user)
+    competitions = get_user_competitions(participant_list)
+
+    return render(
+        request,
+        "lobby.html",
+        {
+            "competitions": competitions,
+            "competition_form": competition_form,
+            "join_competition_form": join_competition_form,
+        },
+    )
+
+def handle_create_competition(request, competition_form):
+    competition_form = CompetitionForm(request.POST)
+    if competition_form.is_valid():
+        competition = competition_form.save(commit=False)
+        competition.owner = request.user
+        competition.name = generate_random_string(8)
+        competition.save()
+        _, created = Participant.objects.get_or_create(
+            name=request.user.username, user=request.user, competition=competition
+        )
+        if created:
+            create_competition_log(
+                competition, request.user, CompetitionLog.CompActions.CREATE
+            )
+        
+        return redirect("competition", comp_name=competition.name)
+    else:
+        for field, errors in competition_form.errors.items():
+            for error in errors:
+                messages.error(request, f"{field}: {error}")
+
+def handle_join_competition(request, join_competition_form):
+    join_competition_form = JoinCompetitionForm(request.POST)
+    if join_competition_form.is_valid():
+        competition_name = join_competition_form.cleaned_data["name"]
+        try:
+            competition = Competition.objects.get(name=competition_name)
+        except Competition.DoesNotExist:
+            messages.error(request, "Invalid competition ID")
+        else:
+            request.session["competition_id"] = competition.id
+            participant, created = Participant.objects.get_or_create(
+                name=request.user.username, user=request.user, competition=competition
+            )
+            if created:
+                send_participant_joined(competition, participant)
+            else:
+                messages.warning(request, "You have already joined this competition.")
+            return redirect("competition", comp_name=competition.name)
+    else:
+        # Flash form errors
+        for field, errors in join_competition_form.errors.items():
+            for error in errors:
+                messages.error(request, f"{field}: {error}")
+
+def get_user_competitions(participant_list):
     competitions = []
     for participant in participant_list:
         competitions.append(
@@ -152,15 +179,7 @@ def lobby(request):
         reverse=True,
     )
 
-    return render(
-        request,
-        "lobby.html",
-        {
-            "competitions": sorted_comps,
-            "competition_form": competition_form,
-            "join_competition_form": join_competition_form,
-        },
-    )
+    return sorted_comps
 
 
 @login_required

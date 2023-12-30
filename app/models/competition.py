@@ -16,6 +16,8 @@ from django.db.models import (
 from django.db.models.functions import Coalesce
 from django.db.models import Case, When
 
+from django.db.models import F, Window
+from django.db.models.functions import RowNumber
 from app.tasks import timer_advance_competition
 
 SUITABLY_HIGH_NUMBER = 99999999
@@ -48,7 +50,7 @@ class Competition(models.Model):
 
     timer_task_id = models.CharField(max_length=765, unique=True, null=True, blank=True)
     with_timer = models.BooleanField(default=False)
-    timer_timeout = models.PositiveIntegerField(default=15, blank=True)
+    timer_timeout = models.PositiveIntegerField(default=15, blank=True, null=True)
 
     def __init__(self, *args, **kwargs):
         super(Competition, self).__init__(*args, **kwargs)
@@ -79,6 +81,7 @@ class Competition(models.Model):
     def start_competition(self):
         self.started = True
         self.save()
+        
 
     @property
     def ordered_memes(self):
@@ -90,6 +93,17 @@ class Competition(models.Model):
             )
             .order_by("-vote_score")
         )
+
+    @property
+    def ordered_logs(self):
+        
+        sorted_queryset = self.logs.order_by('-created_at').annotate(
+            row_number=Window(
+                expression=RowNumber(),
+                order_by='created_at'  # Replace with the field you are sorting by
+            )
+        )
+        return sorted_queryset
 
     @property
     def top_memes(self):

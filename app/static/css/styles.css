@@ -6,7 +6,9 @@ body {
     color: #FFFFFF;
 }
 .card {
-    background-color:#586fa2;
+    /* background-color:#586fa2; */
+    background-color:#0b162f;
+    
     color: #FFFFFF;
     }
 .card-header {
@@ -202,45 +204,6 @@ body {
     width:100%;
 }
 
-#snackbar {
-    visibility: hidden;
-    min-width: 100%;
-    text-align: center;
-    border-radius: 2px;
-    padding: 16px;
-    position: fixed;
-    z-index: 9999;
-    left: 50%;
-    top: 45px;
-    transform: translateX(-50%);
-    }
-
-#snackbar.show {
-    visibility: visible;
-    animation: fadein 0.5s, fadeout 0.5s 2.5s;
-    }
-
-    @keyframes fadein {
-    from {
-        top: 0;
-        opacity: 0;
-    }
-    to {
-        top: 45px;
-        opacity: 1;
-    }
-}
-
-@keyframes fadeout {
-    from {
-        top: 45px;
-        opacity: 1;
-    }
-    to {
-        top: 0;
-        opacity: 0;
-    }
-}
 
 
 .image-zoom {

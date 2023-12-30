@@ -2,14 +2,12 @@
 <div id="comp-waiting" class="col" {% if competition.started or competition.finished %}style="display:none" {% endif %}>
     <div class="card shadow">
         <div class="card-header">
-            <h4 class="card-title">Memes</h4>
+            <h3 class="card-title mt-1">Upload your memes</h3>
         </div>
-        <div class="row mt-2">
-            <h5 class="card-title">Upload your memes</h5>
-
+        <div class="row mt-3">
             <form id="upload-form" enctype="multipart/form-data" onchange="submitMeme('{{competition.name}}')">
                 {% csrf_token %}
-                <div class="mb-3 row g-0">
+                <div class="row g-0">
                     <div class="col-1">
                         <div id="meme-spinner" class="spinner-border" role="status" style="display:none">
                             <span class="visually-hidden">Loading...</span>
@@ -26,9 +24,13 @@
             </form>
         </div>
         <div id="memes-body" class="card-body" {% if not participant.memes.count %} style="display: none" {% endif%}>  
-            <div class="d-flex align-items-center" title="Confirm before you delete your memes">
-                <i class="ms-auto bi bi-lock-fill"></i><input class="form-check-input" type="checkbox" id="delete-safety" checked>
-            </div>    
+            <div class="ms-4 d-flex justify-content-start align-content-center">
+                <div class="d-flex justify-content-center" title="Confirm before you delete your memes">
+                    <i id="lock-icon" class="bi bi-lock-fill me-1"></i>
+                    <input class="form-check-input" type="checkbox" id="delete-safety" checked>
+                </div> 
+                <label for="delete-safety"><small class="ms-2">Confirm before deleting memes</small></label>
+            </div> 
             <div class="row mt-3 mx-2 pt-2" id="submitted-memes-container" style="height:475px; overflow-y:scroll">
                 {% for meme in participant.ordered_memes %}
                     {% meme_image_div meme %}
@@ -44,6 +46,13 @@
     $('#delete-safety').on('change', function (event) {
         // Toggle the deleteSafety variable based on the checkbox state
         deleteSafety = $(this).is(':checked');
+        var lockIcon = $('#lock-icon')
+        if(deleteSafety) {
+            lockIcon.removeClass('bi-unlock-fill').addClass('bi-lock-fill')
+      
+        } else {
+            lockIcon.addClass('bi-unlock-fill').removeClass('bi-lock-fill')
+        }
 
     });
         

@@ -1,4 +1,6 @@
-<div id="fill-div"></div>
+<div id="fill-container">
+    <div id="fill-div"></div>
+</div>
 
 
 <script>
@@ -9,8 +11,7 @@
         const barDiv = $("#fill-div");
         barDiv.stop(true, true);        
         barDiv.css({
-            'background-color':'black',
-            'display': ''
+            'background-color':'#003cb3',
         });
         barDiv.animate({ width: '100%' }, {
             duration: timeoutSecs * 1000,
@@ -18,8 +19,7 @@
             complete: function () {
                 barDiv.css({
                     'width': '0px',
-                    'background-color': 'black',
-                    'display':'none'
+                    'background-color': '#003cb3',
                 });
                 barTimeout = 0;
             }
@@ -29,12 +29,14 @@
 
 <style>
     #fill-div {
-        border-radius: 30px;
         width: 0px;
         height: 10px;
-        background-color: black;
+        background-color: #003cb3;
         border: none;
         position: relative;
         overflow: hidden;
+    }
+    #fill-container {
+        background-color:white;
     }
 </style>

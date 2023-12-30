@@ -102,122 +102,124 @@
                 </div>
             </div>
         </div>
+
+        <script>
+            // Function to shuffle an array randomly
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+        
+            // Get references to filter and sort controls
+            const filterThemeSelect = document.getElementById('filter-theme');
+            const clearButton = document.getElementById('clear-button');
+            const memeGrid = document.getElementById('meme-grid');
+            const memeItems = Array.from(memeGrid.children);
+        
+            // Populate filter theme select options dynamically
+            const themes = new Set(memeItems.map(item => item.getAttribute('data-competition-theme')));
+            themes.forEach(theme => {
+                const option = document.createElement('option');
+                option.value = theme;
+                option.textContent = theme;
+                filterThemeSelect.appendChild(option);
+            });
+        
+            // Event listener for filter select change
+            filterThemeSelect.addEventListener('change', () => {
+                const selectedTheme = filterThemeSelect.value;
+                memeItems.forEach(item => {
+                    item.style.display = selectedTheme === 'all' || item.getAttribute('data-competition-theme') === selectedTheme
+                        ? 'block'
+                        : 'none';
+                });
+            });
+        
+            // Get references to the sorting buttons
+            const sortScoreAscButton = document.getElementById('sort-score-asc');
+            const sortScoreDescButton = document.getElementById('sort-score-desc');
+        
+            // Event listener for sorting by score (ascending)
+            sortScoreAscButton.addEventListener('click', () => {
+                memeItems.sort((a, b) => {
+                    const aValue = parseFloat(a.getAttribute('data-score'));
+                    const bValue = parseFloat(b.getAttribute('data-score'));
+                    return aValue - bValue;
+                });
+        
+                // Clear the existing meme grid and append sorted memes
+                memeGrid.innerHTML = '';
+                memeItems.forEach(item => memeGrid.appendChild(item));
+            });
+        
+            // Event listener for sorting by score (descending)
+            sortScoreDescButton.addEventListener('click', () => {
+                memeItems.sort((a, b) => {
+                    const aValue = parseFloat(a.getAttribute('data-score'));
+                    const bValue = parseFloat(b.getAttribute('data-score'));
+                    return bValue - aValue;
+                });
+        
+                // Clear the existing meme grid and append sorted memes
+                memeGrid.innerHTML = '';
+                memeItems.forEach(item => memeGrid.appendChild(item));
+            });
+                
+            // Event listener for clear button click
+            clearButton.addEventListener('click', () => {
+                // Reset the form, clearing all filters and sorting
+                filterThemeSelect.value = 'all';
+                // Shuffle the meme items randomly
+                shuffleArray(memeItems);
+                // Clear the existing meme grid and append shuffled memes
+                memeGrid.innerHTML = '';
+                memeItems.forEach((item) => {
+                    item.style.display='block';
+                    memeGrid.appendChild(item);
+                });
+            });
+        // Function to handle image card click
+        function openImageModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const zoomedImage = document.getElementById('zoomedImage');
+        
+            // Set the image source to the clicked image
+            zoomedImage.src = imageSrc;
+        
+            // Show the modal
+            modal.style.display = 'flex';
+        }
+        
+        // Function to close the image modal
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            // Hide the modal
+            modal.style.display = 'none';
+        }
+        
+        // Add click event listeners to image cards
+        const imageCards = document.querySelectorAll('.image-card');
+        
+        imageCards.forEach(imageCard => {
+            imageCard.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent the click from propagating to the overlay
+                const imageSrc = imageCard.querySelector('img').src;
+                openImageModal(imageSrc);
+            });
+        });
+        
+        // Add click event listener to close modal when clicking anywhere off the modal
+        const imageModal = document.getElementById('imageModal');
+        imageModal.addEventListener('click', (e) => {
+            closeImageModal();
+        });
+        </script>
         {% endif %}
     </div>
 </body>
-<script>
-    // Function to shuffle an array randomly
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-    }
 
-    // Get references to filter and sort controls
-    const filterThemeSelect = document.getElementById('filter-theme');
-    const clearButton = document.getElementById('clear-button');
-    const memeGrid = document.getElementById('meme-grid');
-    const memeItems = Array.from(memeGrid.children);
-
-    // Populate filter theme select options dynamically
-    const themes = new Set(memeItems.map(item => item.getAttribute('data-competition-theme')));
-    themes.forEach(theme => {
-        const option = document.createElement('option');
-        option.value = theme;
-        option.textContent = theme;
-        filterThemeSelect.appendChild(option);
-    });
-
-    // Event listener for filter select change
-    filterThemeSelect.addEventListener('change', () => {
-        const selectedTheme = filterThemeSelect.value;
-        memeItems.forEach(item => {
-            item.style.display = selectedTheme === 'all' || item.getAttribute('data-competition-theme') === selectedTheme
-                ? 'block'
-                : 'none';
-        });
-    });
-
-    // Get references to the sorting buttons
-    const sortScoreAscButton = document.getElementById('sort-score-asc');
-    const sortScoreDescButton = document.getElementById('sort-score-desc');
-
-    // Event listener for sorting by score (ascending)
-    sortScoreAscButton.addEventListener('click', () => {
-        memeItems.sort((a, b) => {
-            const aValue = parseFloat(a.getAttribute('data-score'));
-            const bValue = parseFloat(b.getAttribute('data-score'));
-            return aValue - bValue;
-        });
-
-        // Clear the existing meme grid and append sorted memes
-        memeGrid.innerHTML = '';
-        memeItems.forEach(item => memeGrid.appendChild(item));
-    });
-
-    // Event listener for sorting by score (descending)
-    sortScoreDescButton.addEventListener('click', () => {
-        memeItems.sort((a, b) => {
-            const aValue = parseFloat(a.getAttribute('data-score'));
-            const bValue = parseFloat(b.getAttribute('data-score'));
-            return bValue - aValue;
-        });
-
-        // Clear the existing meme grid and append sorted memes
-        memeGrid.innerHTML = '';
-        memeItems.forEach(item => memeGrid.appendChild(item));
-    });
-        
-    // Event listener for clear button click
-    clearButton.addEventListener('click', () => {
-        // Reset the form, clearing all filters and sorting
-        filterThemeSelect.value = 'all';
-        // Shuffle the meme items randomly
-        shuffleArray(memeItems);
-        // Clear the existing meme grid and append shuffled memes
-        memeGrid.innerHTML = '';
-        memeItems.forEach((item) => {
-            item.style.display='block';
-            memeGrid.appendChild(item);
-        });
-    });
-// Function to handle image card click
-function openImageModal(imageSrc) {
-    const modal = document.getElementById('imageModal');
-    const zoomedImage = document.getElementById('zoomedImage');
-
-    // Set the image source to the clicked image
-    zoomedImage.src = imageSrc;
-
-    // Show the modal
-    modal.style.display = 'flex';
-}
-
-// Function to close the image modal
-function closeImageModal() {
-    const modal = document.getElementById('imageModal');
-    // Hide the modal
-    modal.style.display = 'none';
-}
-
-// Add click event listeners to image cards
-const imageCards = document.querySelectorAll('.image-card');
-
-imageCards.forEach(imageCard => {
-    imageCard.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent the click from propagating to the overlay
-        const imageSrc = imageCard.querySelector('img').src;
-        openImageModal(imageSrc);
-    });
-});
-
-// Add click event listener to close modal when clicking anywhere off the modal
-const imageModal = document.getElementById('imageModal');
-imageModal.addEventListener('click', (e) => {
-    closeImageModal();
-});
-</script>
 
 
 {% endblock %}

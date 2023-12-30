@@ -4,6 +4,7 @@ function connectWebSocket(wsScheme, compName) {
 
     socket.onopen = function (event) {
         console.log("Websocket connection opened.");
+        showSnackbar('Connected', 'success');
     };
 
     // Handle received messages
@@ -31,7 +32,7 @@ function connectWebSocket(wsScheme, compName) {
         console.log("Websocket connection closed")
         switch (event.code) {
             case 3000:
-                showSnackError('You have been disconnected. Refresh the page to reconnect.')
+                showSnackbar('You have been disconnected. Refresh the page to reconnect.', 'danger', false)
                 break;
             case 1000:
                 // normal socket close
@@ -40,13 +41,13 @@ function connectWebSocket(wsScheme, compName) {
                 // tab was closed
                 break;
             default:
-                showSnackError('You have been disconnected ¯\\_(ツ)_/¯ Try refreshing the page to reconnect.')
+                showSnackbar('You have been disconnected ¯\\_(ツ)_/¯ Try refreshing the page to reconnect.', 'danger', false)
         }
     };
 
     socket.onerror = function (error) {
         console.log("Websocket error")
-        showSnackError("Something bad happened. Try refreshing the page.")
+        showSnackbar("Something bad happened. Try refreshing the page.", 'danger', false)
     };
 }
 

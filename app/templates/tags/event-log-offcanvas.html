@@ -1,0 +1,27 @@
+
+  {% load websocket_tags %}
+
+  <style>
+    .offcanvas-header {
+        color: black;
+        display:flex;
+        justify-content: center;
+    }
+  </style>
+<button class="btn btn-sm btn-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#event-log-offcanvas" aria-controls="event-log-offcanvas">
+    <i class="bi bi-calendar2-event"></i>
+</button>
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="event-log-offcanvas" aria-labelledby="event-log-offcanvas-label">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="event-log-offcanvas-label">Event Log</h5>
+    </div>
+    <div class="offcanvas-body">
+
+        <ul id="events" class="list-group text-start">
+            {% for event in competition.ordered_logs %}
+                {% event_log_div event %}
+            {% endfor %}
+        </ul>
+    </div>
+</div>
