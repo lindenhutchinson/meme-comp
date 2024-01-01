@@ -12,7 +12,7 @@ console_command = "/code/manage.py shell"
   app = "daphne -p 8000 -b 0.0.0.0 MemeComp.asgi:application"
 
   # Celery worker process
-  celery = "celery -A MemeComp worker -l info -E -Q memes -c 1 --without-mingle -O fair -P solo"
+  celery = "celery -A MemeComp worker -l info -E -c 4 --without-mingle -O fair -P solo"
 
 [env]
   PORT = "8000"
