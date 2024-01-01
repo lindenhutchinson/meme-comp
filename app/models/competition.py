@@ -1,5 +1,7 @@
 import copy
 from datetime import datetime
+import random
+import string
 from django.db import models
 from django.utils import timezone
 from django.db.models import (
@@ -22,6 +24,13 @@ from django.db.models.functions import RowNumber
 from app.tasks import timer_advance_competition
 
 SUITABLY_HIGH_NUMBER = 99999999
+def generate_random_string(length):
+    """Generate a random string up to the given maximum length."""
+    valid_chars = [
+        c for c in string.ascii_letters if c not in ["l", "I", "i", "O", "o"]
+    ]
+    return "".join(random.choice(valid_chars).upper() for _ in range(length))
+
 
 
 class Competition(models.Model):
@@ -68,7 +77,7 @@ class Competition(models.Model):
 
     def save(self, force_insert=False, force_update=False, *args, **kwargs):
         # imported here to avoid circular imports
-        from app.utils import generate_random_string, revoke_competition_timer
+        from app.utils import revoke_competition_timer
         
         if self.pk is None:
             self.name = generate_random_string(8)

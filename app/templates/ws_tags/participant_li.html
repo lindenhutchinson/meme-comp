@@ -1,7 +1,8 @@
-<li class="list-group-item" data-participant-id="{{participant.id}}">
-    <div class="d-flex justify-content-center align-items-center">
-        <span style="text-align:center; width:100%">
-            <a target="_blank" style="width:100%" class="btn btn-sm btn-outline-dark" href="/user/{{participant.user.id}}">{{participant.name|escape|truncatechars:9}}</a>
-        </span>
-    </div>
+<style>
+    a {
+        color: black;
+    }
+</style>
+<li class="list-group-item text-center" data-participant-id="{{participant.id}}">
+    <a target="_blank" style="width:100%" href="/user/{{participant.user.id}}">{{participant.name|escape|truncatechars:9}}</a>
 </li>

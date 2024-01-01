@@ -21,13 +21,6 @@ def redirect_and_flash_error(request, error):
     return redirect("home")
 
 
-def generate_random_string(length):
-    """Generate a random string up to the given maximum length."""
-    valid_chars = [
-        c for c in string.ascii_letters if c not in ["l", "I", "i", "O", "o"]
-    ]
-    return "".join(random.choice(valid_chars) for _ in range(length))
-
 
 def get_current_user(request):
     user_id = request.session.get("user_id")

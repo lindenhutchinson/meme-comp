@@ -1,14 +1,26 @@
 {% load websocket_tags %}
-
+<style>
+    .winner-card {
+        display:flex;
+        flex-basis:70%;
+    }
+    .finished-container {
+        display:flex;
+        flex-direction: row;
+        gap:20px;
+    }
+</style>
 <div id="comp-finished" class="col row" {% if not competition.finished %}style="display:none" {% endif %}>
-        <div id="winning-meme" class="col-lg-6 col-12 min-height-item">
+    <div class="finished-container">
+        <div id="winning-meme" class="winner-card">
             {% if competition.winning_meme and competition.finished %}
             {% winning_meme_div competition %}
             {% endif %}
         </div>
-        <div id="comp-results" class="col-lg-6 col-12 min-height-item">
+        <div id="comp-results">
             {% if competition.winning_meme and competition.finished %}
             {% comp_results_div competition %}
             {% endif %}
         </div>
+    </div>
 </div>

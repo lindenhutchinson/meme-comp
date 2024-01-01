@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404, HttpResponse
 
 from api.ws_actions import send_participant_joined, create_competition_log
 from app.models.competition_log import CompetitionLog
-from .utils import generate_random_string
 from .forms import CompetitionForm, JoinCompetitionForm, LoginForm, UserForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages

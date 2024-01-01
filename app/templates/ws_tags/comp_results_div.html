@@ -8,24 +8,34 @@
         flex: 1;
         flex-direction: column;
         display: flex;
+  
+    }
+    .stats-body {
+        overflow: scroll;
+        height:400px;
     }
 
 </style>
 <div class="card">
-    <div class="card-header p-3">
-        <div class="d-flex justify-content-between align-items-end">
-            <a href="{% url 'competition_memes' competition.name %}" class="vote-label" title="All memes">
-                <i class="bi bi-images"></i>
-            </a>
-            <h4>Honourable Mentions</h4>
-
-            <a href="{% url 'competition_results' competition.name %}" class="vote-label" title="Other results">
-                <i class="bi bi-newspaper"></i>
-            </a>
+    <div class="card-header">
+        <div class="row d-flex align-items-center">
+            <div class="col">
+                <a href="{% url 'competition_memes' competition.name %}" class="vote-label" title="All memes">
+                    <i class="bi bi-images"></i>
+                </a>
+            </div>
+            <div class="col text-center">
+                <h4>Honourable Mentions</h4>
+            </div>
+            <div class="col d-flex justify-content-end">
+                <a href="{% url 'competition_results' competition.name %}" class="vote-label" title="Other results">
+                    <i class="bi bi-newspaper"></i>
+                </a>
+            </div>
         </div>
     </div>
 
-    <div id="mentions" class="card-body meme-item-body mentions">
+    <div id="mentions" class="card-body meme-item-body mentions stats-body">
         <strong class="m-0">Gracious Reviewer</strong>
         <span id="highest_score_given"
             class="mb-3">{{competition.highest_avg_score_given.participant}} gave a

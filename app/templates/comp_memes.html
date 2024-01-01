@@ -1,34 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
-
 <body >
 
     <div id="imageModal" class="image-modal" style="display:none">
         <img id="zoomedImage" class="modal-content" alt="Zoomed Image">
     </div>
-    <a href="{% url 'competition' competition.name %}" class="btn btn-sm btn-primary back-btn">Back to Competition</a>
-    <h1 class="d-flex justify-content-center pb-4">{{competition.theme}}</h1>
-    <div id="meme-grid" class="row mt-3">
-        {% for meme in competition.ordered_memes %}
-        <div class="col-md-4 col-sm-6 col-12 mb-4"
-            data-score="{{ meme.avg_score }}">
-            <div class="image-card">
-                <div class="image-container">
-                    <img 
-                        loading="lazy" 
-                        src="{% url 'serve_file' meme.competition.name meme.id %}" 
-                        alt="A seriously dank meme"
-                        class="square-image d-block" 
-                    />
-                </div>
-                <!-- Display competition theme and score details on mouseover -->
-                <div class="card-details">
-                    <small>Score: {{ meme.avg_score }}</small><br>
-                </div>
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex flex-row align-items-center">
+            <a href="{% url 'competition' competition.name %}" class="vote-label"><i class="bi bi-arrow-return-left"></i></a>
+            <h1 class="d-flex justify-content-center flex-grow-1">{{competition.theme}} Memes</h1>
             </div>
         </div>
-        {% endfor %}
+
+        <div class="card-body">
+            <div id="meme-grid" class="row mt-3">
+                {% for meme in competition.ordered_memes %}
+                <div class="col-md-4 col-sm-6 col-12 mb-4"
+                    data-score="{{ meme.avg_score }}">
+                    <div class="image-card">
+                        <div class="image-container">
+                            <img 
+                                loading="lazy" 
+                                src="{% url 'serve_file' meme.competition.name meme.id %}" 
+                                alt="A seriously dank meme"
+                                class="square-image d-block" 
+                            />
+                        </div>
+                        <!-- Display competition theme and score details on mouseover -->
+                        <div class="card-details">
+                            <small>Score: {{ meme.avg_score }}</small><br>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
+   
+    
 </body>
 
 <script>

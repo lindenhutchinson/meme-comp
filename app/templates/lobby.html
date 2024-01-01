@@ -23,8 +23,9 @@
     }
 
     .list-group {
-        max-height: 300px;
+        max-height: 250px;
         overflow: scroll;
+        border-radius: 10px;
     }
 
     .card-header {
@@ -48,6 +49,12 @@
     h4 {
         margin-bottom: 0;
     }
+    .side-body {
+        display:flex;
+        flex-direction: column;
+        align-items:end;
+        justify-content:end;
+    }
 
     @media (max-width: 768px) {
         .card-group {
@@ -67,7 +74,7 @@
    
         </div>
  
-        <div class="card-body d-flex flex-column align-items-end justify-content-end">
+        <div class="card-body side-body">
             <div class="card-title d-flex flex-grow-1">
                 Ask someone in the competition for the code and enter it below to join.
              </div>
@@ -104,8 +111,8 @@
         <div class="card-header" id="create">
             <h4>Create a Competition</h4>
         </div>
-        <div class="card-body">
-            <form method="post" name="create">
+        <div class="card-body side-body">
+            <form method="post" name="create" style="width:100%">
                 {% csrf_token %}
                 <div class="form-floating mb-3">
                     <input type="text" name="theme" id="theme" class="form-control" required placeholder="Airplane Food"/>
@@ -125,50 +132,4 @@
         </div>
     </div>
 </div>
-<!-- 
-    <div class="col-md-8">
-        <div class="card">
-            <div class="">
-                <ul class="nav nav-tabs">
-                    <li class="nav-item">
-                        <a class="nav-link active" data-bs-toggle="tab" href="#join">Join</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="tab" href="#create">Create</a>
-                    </li>
-                </ul>
-            </div>
-            
-        </div>
-    </div>
-</div>
-<div class="row justify-content-center mt-3">
-    <div class="col-md-8">
-        <div class="card">
-            
-        </div>
-    </div>
-</div>
-<script>
-    $(document).ready(function () {
-        // Hide the "create" pane on page load
-        $("#create").hide();
-
-        // Add a click event listener to each nav link
-        $(".nav-link").click(function () {
-            // Get the href of the clicked nav link
-            var target = $(this).attr("href");
-
-            // Hide all tab panes
-            $(".tab-pane").hide();
-
-            // Show the target tab pane
-            $(target).show();
-
-            // Add the "active" class to the clicked nav link
-            $(".nav-link").removeClass("active");
-            $(this).addClass("active");
-        });
-    });
-</script> -->
 {% endblock content %}

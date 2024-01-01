@@ -1,51 +1,63 @@
 {% extends "base.html" %}
 {% load mathfilters %}
 {% block content %}
-
+<style>
+    .user-card-container {
+        display:flex;
+        gap:20px;
+    }
+    p {
+        flex-grow: 1
+    }
+    .card-header {
+        text-align:center;
+    }
+    h4 {
+        margin-bottom: 0;
+    }
+</style>
 <body>
     <div id="imageModal" class="image-modal" style="display:none">
         <img id="zoomedImage" class="modal-content" alt="Zoomed Image">
     </div>
-    <div id="userContent" class="row results-container justify-content-center mb-4">
-        <h1 style="text-align:center">{{ view_user.username }}</h1>
-        <div class="m-2 results-item shadow">
-            <div class="item-header row text-center">
+    <div class="user-card-container">
+        <div class="card text-center">
+            <div class="card-header">
                 <h4>Statistics</h4>
             </div>
-            <div class="results-item-body row user-stats">
-
+            <div class="card-body d-flex flex-column">
                 <p>Average Meme Rating: <strong>{% if view_user.username == 'linden' %}∞{% else %}{{ view_user.total_avg_vote_received }}{% endif %}</strong></p>
-                <p>Average Rating Given to Others: <strong>{{ view_user.total_avg_vote_given }}</strong></p>
-                <p>Average Rating Given to Self: <strong>{{ view_user.total_avg_vote_received_from_self }}</strong></p>
+                    <p>Average Rating Given to Others: <strong>{{ view_user.total_avg_vote_given }}</strong></p>
+                    <p>Average Rating Given to Self: <strong>{{ view_user.total_avg_vote_received_from_self }}</strong></p>
 
-                <p>Average Voting Time: <strong>{{ view_user.total_avg_voting_time }}</strong> seconds</p>
-                <p>
-                    Total Time Spent Voting: <strong>{% if  view_user.total_voting_time < 60 %}{{ view_user.total_voting_time }}</strong> seconds{% else %}{{ view_user.total_voting_time|div:60|floatformat:0}}</strong> minutes{% endif %}
-                </p>
-                {% if view_user.username == 'linden' %}
-                <p>Number of Meme Comp Platforms: <strong>1</strong></p>
-                {% endif %}
-                <p>Number of Memes Submitted: <strong>{{ view_user.total_memes }}</strong></p>
-                <p>Number of Votes Cast: <strong>{{ view_user.total_votes }}</strong></p>
-                <p>Number of Competitions: <strong>{{ view_user.total_competitions }}</strong></p>
-                <p>Competitions Won: <strong>{{ view_user.competitions_won }}</strong></p>
+                    <p>Average Voting Time: <strong>{{ view_user.total_avg_voting_time }}</strong> seconds</p>
+                    <p>
+                        Total Time Spent Voting: <strong>{% if  view_user.total_voting_time < 60 %}{{ view_user.total_voting_time }}</strong> seconds{% else %}{{ view_user.total_voting_time|div:60|floatformat:0}}</strong> minutes{% endif %}
+                    </p>
+                    {% if view_user.username == 'linden' %}
+                    <p>Number of Meme Comp Platforms: <strong>1</strong></p>
+                    {% endif %}
+                    <p>Number of Memes Submitted: <strong>{{ view_user.total_memes }}</strong></p>
+                    <p>Number of Votes Cast: <strong>{{ view_user.total_votes }}</strong></p>
+                    <p>Number of Competitions: <strong>{{ view_user.total_competitions }}</strong></p>
+                    <p>Competitions Won: <strong>{{ view_user.competitions_won }}</strong></p>
 
-                {% if view_user.highest_rated_user %}
-                    <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} <strong>{{ view_user.highest_rated_user.avg_score|floatformat:2}}</strong></p>
-                {% endif %}
+                    {% if view_user.highest_rated_user %}
+                        <p>Favourite Meme Creator: {{ view_user.highest_rated_user.username }} <strong>{{ view_user.highest_rated_user.avg_score|floatformat:2}}</strong></p>
+                    {% endif %}
 
-                {% comment %} {% if view_user.highest_rated_by %}
-                    <p>Biggest Fan: {{ view_user.highest_rated_by.username }} <strong>{{ view_user.highest_rated_by.avg_score_given|floatformat:2 }}</strong></p>
-                {% endif %} {% endcomment %}
+                    {% comment %} {% if view_user.highest_rated_by %}
+                        <p>Biggest Fan: {{ view_user.highest_rated_by.username }} <strong>{{ view_user.highest_rated_by.avg_score_given|floatformat:2 }}</strong></p>
+                    {% endif %} {% endcomment %}
             </div>
         </div>
-       
-        {% if meme_library %}
-        <div class="m-2 results-item shadow">
-            <div class="item-header row text-center">
-                <h4>Meme Library</h4>
+
+        <div class="card d-flex flex-grow-1">
+            <div class="card-header">
+                <h4>{{ view_user.username }}'s Meme Library</h4>
             </div>
-            <div class="results-item-body row">
+            <div class="card-body">
+                {% if meme_library %}
                 <div id="memeFilters" class="mb-3 d-flex justify-content-evenly align-items-end">
                     <div 
                         class="d-flex flex-column flex-grow-1"
@@ -69,11 +81,7 @@
                     
                     <button id="clear-button" type="flex flex-shrink button" class="btn btn-danger">Clear</button>
                 </div>
-                
-
-
-
-                <!-- Create a scrollable container for meme grid -->
+                    
                 <div id="meme-container" class="overflow-auto">
                     <div id="meme-grid" class="row mt-3">
                         {% for meme in meme_library %}
@@ -100,126 +108,125 @@
                         {% endfor %}
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
-
-        <script>
-            // Function to shuffle an array randomly
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-            }
-        
-            // Get references to filter and sort controls
-            const filterThemeSelect = document.getElementById('filter-theme');
-            const clearButton = document.getElementById('clear-button');
-            const memeGrid = document.getElementById('meme-grid');
-            const memeItems = Array.from(memeGrid.children);
-        
-            // Populate filter theme select options dynamically
-            const themes = new Set(memeItems.map(item => item.getAttribute('data-competition-theme')));
-            themes.forEach(theme => {
-                const option = document.createElement('option');
-                option.value = theme;
-                option.textContent = theme;
-                filterThemeSelect.appendChild(option);
-            });
-        
-            // Event listener for filter select change
-            filterThemeSelect.addEventListener('change', () => {
-                const selectedTheme = filterThemeSelect.value;
-                memeItems.forEach(item => {
-                    item.style.display = selectedTheme === 'all' || item.getAttribute('data-competition-theme') === selectedTheme
-                        ? 'block'
-                        : 'none';
-                });
-            });
-        
-            // Get references to the sorting buttons
-            const sortScoreAscButton = document.getElementById('sort-score-asc');
-            const sortScoreDescButton = document.getElementById('sort-score-desc');
-        
-            // Event listener for sorting by score (ascending)
-            sortScoreAscButton.addEventListener('click', () => {
-                memeItems.sort((a, b) => {
-                    const aValue = parseFloat(a.getAttribute('data-score'));
-                    const bValue = parseFloat(b.getAttribute('data-score'));
-                    return aValue - bValue;
-                });
-        
-                // Clear the existing meme grid and append sorted memes
-                memeGrid.innerHTML = '';
-                memeItems.forEach(item => memeGrid.appendChild(item));
-            });
-        
-            // Event listener for sorting by score (descending)
-            sortScoreDescButton.addEventListener('click', () => {
-                memeItems.sort((a, b) => {
-                    const aValue = parseFloat(a.getAttribute('data-score'));
-                    const bValue = parseFloat(b.getAttribute('data-score'));
-                    return bValue - aValue;
-                });
-        
-                // Clear the existing meme grid and append sorted memes
-                memeGrid.innerHTML = '';
-                memeItems.forEach(item => memeGrid.appendChild(item));
-            });
-                
-            // Event listener for clear button click
-            clearButton.addEventListener('click', () => {
-                // Reset the form, clearing all filters and sorting
-                filterThemeSelect.value = 'all';
-                // Shuffle the meme items randomly
-                shuffleArray(memeItems);
-                // Clear the existing meme grid and append shuffled memes
-                memeGrid.innerHTML = '';
-                memeItems.forEach((item) => {
-                    item.style.display='block';
-                    memeGrid.appendChild(item);
-                });
-            });
-        // Function to handle image card click
-        function openImageModal(imageSrc) {
-            const modal = document.getElementById('imageModal');
-            const zoomedImage = document.getElementById('zoomedImage');
-        
-            // Set the image source to the clicked image
-            zoomedImage.src = imageSrc;
-        
-            // Show the modal
-            modal.style.display = 'flex';
-        }
-        
-        // Function to close the image modal
-        function closeImageModal() {
-            const modal = document.getElementById('imageModal');
-            // Hide the modal
-            modal.style.display = 'none';
-        }
-        
-        // Add click event listeners to image cards
-        const imageCards = document.querySelectorAll('.image-card');
-        
-        imageCards.forEach(imageCard => {
-            imageCard.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent the click from propagating to the overlay
-                const imageSrc = imageCard.querySelector('img').src;
-                openImageModal(imageSrc);
-            });
-        });
-        
-        // Add click event listener to close modal when clicking anywhere off the modal
-        const imageModal = document.getElementById('imageModal');
-        imageModal.addEventListener('click', (e) => {
-            closeImageModal();
-        });
-        </script>
-        {% endif %}
+       
     </div>
 </body>
+<script>
+    // Function to shuffle an array randomly
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
 
+    // Get references to filter and sort controls
+    const filterThemeSelect = document.getElementById('filter-theme');
+    const clearButton = document.getElementById('clear-button');
+    const memeGrid = document.getElementById('meme-grid');
+    const memeItems = Array.from(memeGrid.children);
+
+    // Populate filter theme select options dynamically
+    const themes = new Set(memeItems.map(item => item.getAttribute('data-competition-theme')));
+    themes.forEach(theme => {
+        const option = document.createElement('option');
+        option.value = theme;
+        option.textContent = theme;
+        filterThemeSelect.appendChild(option);
+    });
+
+    // Event listener for filter select change
+    filterThemeSelect.addEventListener('change', () => {
+        const selectedTheme = filterThemeSelect.value;
+        memeItems.forEach(item => {
+            item.style.display = selectedTheme === 'all' || item.getAttribute('data-competition-theme') === selectedTheme
+                ? 'block'
+                : 'none';
+        });
+    });
+
+    // Get references to the sorting buttons
+    const sortScoreAscButton = document.getElementById('sort-score-asc');
+    const sortScoreDescButton = document.getElementById('sort-score-desc');
+
+    // Event listener for sorting by score (ascending)
+    sortScoreAscButton.addEventListener('click', () => {
+        memeItems.sort((a, b) => {
+            const aValue = parseFloat(a.getAttribute('data-score'));
+            const bValue = parseFloat(b.getAttribute('data-score'));
+            return aValue - bValue;
+        });
+
+        // Clear the existing meme grid and append sorted memes
+        memeGrid.innerHTML = '';
+        memeItems.forEach(item => memeGrid.appendChild(item));
+    });
+
+    // Event listener for sorting by score (descending)
+    sortScoreDescButton.addEventListener('click', () => {
+        memeItems.sort((a, b) => {
+            const aValue = parseFloat(a.getAttribute('data-score'));
+            const bValue = parseFloat(b.getAttribute('data-score'));
+            return bValue - aValue;
+        });
+
+        // Clear the existing meme grid and append sorted memes
+        memeGrid.innerHTML = '';
+        memeItems.forEach(item => memeGrid.appendChild(item));
+    });
+        
+    // Event listener for clear button click
+    clearButton.addEventListener('click', () => {
+        // Reset the form, clearing all filters and sorting
+        filterThemeSelect.value = 'all';
+        // Shuffle the meme items randomly
+        shuffleArray(memeItems);
+        // Clear the existing meme grid and append shuffled memes
+        memeGrid.innerHTML = '';
+        memeItems.forEach((item) => {
+            item.style.display='block';
+            memeGrid.appendChild(item);
+        });
+    });
+// Function to handle image card click
+function openImageModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+
+    // Set the image source to the clicked image
+    zoomedImage.src = imageSrc;
+
+    // Show the modal
+    modal.style.display = 'flex';
+}
+
+// Function to close the image modal
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    // Hide the modal
+    modal.style.display = 'none';
+}
+
+// Add click event listeners to image cards
+const imageCards = document.querySelectorAll('.image-card');
+
+imageCards.forEach(imageCard => {
+    imageCard.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent the click from propagating to the overlay
+        const imageSrc = imageCard.querySelector('img').src;
+        openImageModal(imageSrc);
+    });
+});
+
+// Add click event listener to close modal when clicking anywhere off the modal
+const imageModal = document.getElementById('imageModal');
+imageModal.addEventListener('click', (e) => {
+    closeImageModal();
+});
+</script>
 
 
 {% endblock %}
