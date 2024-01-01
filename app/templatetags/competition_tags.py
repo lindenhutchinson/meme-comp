@@ -28,18 +28,14 @@ def comp_finished(top_meme, competition):
     return {"competition": competition, "top_meme": top_meme}
 
 
-@register.inclusion_tag("tags/comp-tiebreaker.html")
-def comp_tiebreaker(competition):
-    return {"competition": competition}
+# @register.inclusion_tag("tags/comp-tiebreaker.html")
+# def comp_tiebreaker(competition):
+#     return {"competition": competition}
 
-
-@register.inclusion_tag("tags/timer.html")
-def comp_timer(time_limit):
-    return {"time_limit": time_limit}
 
 @register.inclusion_tag("tags/timer-bar-div.html")
-def timer_bar_div(timeout, timer_enabled):
-    return {"timeout": timeout, "timer_enabled":timer_enabled}
+def timer_bar_div(competition):
+    return {"competition": competition }
 
 @register.inclusion_tag("tags/event-log-offcanvas.html")
 def event_log_offcanvas(competition):

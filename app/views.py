@@ -233,7 +233,7 @@ def serve_file(request, comp_name, meme_id):
     meme = get_object_or_404(Meme, id=meme_id, competition=competition)
 
     # only the uploader of the meme can access it before the competition has started
-    if not competition.started and meme.participant.user != request.user:
+    if not competition.CompState and meme.participant.user != request.user:
         return HttpResponse("Access Forbidden", status=403)
     try:
         file_data = ContentFile(meme.image.read(), name=meme.image.name)
@@ -256,13 +256,13 @@ def user_page(request, id):
         return HttpResponse("Access Forbidden", status=403)
 
     themes = (
-        user.participants.filter(competition__finished=True)
+        user.participants.filter(competition__state=Competition.CompState.FINISHED)
         .values_list("competition__theme", flat=True)
         .distinct()
     )
 
     # Start with the base queryset for the user's meme library
-    meme_library = Meme.objects.filter(user=user, competition__finished=True)
+    meme_library = Meme.objects.filter(user=user, competition__state=Competition.CompState.FINISHED)
 
     # Calculate the average score for each meme and annotate it to the queryset
     meme_library = meme_library.annotate(

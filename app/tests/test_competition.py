@@ -17,7 +17,7 @@ def fake():
 def competition():
     user = User.objects.create(username=fakes.name())
     return Competition.objects.create(
-        owner=user, theme="Test Theme", name=fakes.name(), started=True, finished=True
+        owner=user, theme="Test Theme", name=fakes.name(),
     )
 
 

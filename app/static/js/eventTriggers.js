@@ -40,9 +40,8 @@ $(document).on('competitionFinished', (e, data) => {
     $('#comp-info-card').css('display', '');
     $("#comp-started").css('display', 'none');
     $("#comp-waiting").css('display', 'none');
-    $("#comp-tiebreaker").css('display', 'none');
     $("#comp-finished").css('display', '');
-
+    $('#start-comp-btn').attr('disabled', true);
     $("#next-meme-btn").css('display', 'none');
     showSnackbar('Competition has finished', 'info')
 
@@ -58,7 +57,7 @@ $(document).on('memeVoted', (e, data) => {
 
 $(document).on('nextMeme', (e, data) => {
     console.log('advancing to next meme');
-
+    $('#start-comp-btn').attr('disabled', true);
     // reset the page
     $('#vote-form')[0].reset();
     $('.vote-radio').prop('disabled', false)

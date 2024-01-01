@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime
 from django.db import models
 from django.utils import timezone
 from django.db.models import (
@@ -24,12 +25,22 @@ SUITABLY_HIGH_NUMBER = 99999999
 
 
 class Competition(models.Model):
+    class CompState(models.TextChoices):
+        UNSTARTED = "unstarted"
+        STARTED = "started"
+        TIEBREAK = "tiebreak"
+        FINISHED = "finished"
+
+    state = models.CharField(
+        default=CompState.UNSTARTED,
+        choices=CompState.choices, 
+        max_length=10
+    )
     name = models.CharField(unique=True, max_length=16)
     theme = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     round_started_at = models.DateTimeField(default=None, null=True, blank=True)
-    started = models.BooleanField(default=False)
     owner = models.ForeignKey(
         "User", on_delete=models.CASCADE, related_name="created_competition"
     )
@@ -45,12 +56,11 @@ class Competition(models.Model):
         related_name="won_competition",
         blank=True,
     )
-    tiebreaker = models.BooleanField(default=False)
-    finished = models.BooleanField(default=False)
 
     timer_task_id = models.CharField(max_length=765, unique=True, null=True, blank=True)
     with_timer = models.BooleanField(default=False)
     timer_timeout = models.PositiveIntegerField(default=15, blank=True, null=True)
+    timer_started_at = models.DateTimeField(default=None, null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super(Competition, self).__init__(*args, **kwargs)
@@ -70,9 +80,9 @@ class Competition(models.Model):
                     args=[self.id], 
                     countdown=self.timer_timeout, 
                     expiration=60,
-                    queue="voting_timer_queue"
                 )
                 self.timer_task_id = timer_task.task_id
+                self.timer_started_at = datetime.now(tz=timezone.get_current_timezone())
             # if we dont have a current meme but we still have a timer
             # that timer must be revoked
             elif not self.current_meme and self.timer_task_id:
@@ -81,11 +91,25 @@ class Competition(models.Model):
 
         super(Competition, self).save(force_insert, force_update, *args, **kwargs)
         self.__original_current_meme = self.current_meme
-
-    def start_competition(self):
-        self.started = True
-        self.save()
         
+
+    @property
+    def started(self):
+        return self.state == self.CompState.STARTED
+
+    @property
+    def unstarted(self):
+        return self.state == self.CompState.UNSTARTED
+    
+    @property
+    def finished(self):
+        return self.state == self.CompState.FINISHED
+
+    @property
+    def timer_started_at_timestamp(self):
+        if self.timer_started_at:
+            return datetime.timestamp(self.timer_started_at)
+        return 0
 
     @property
     def ordered_memes(self):

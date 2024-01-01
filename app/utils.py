@@ -92,6 +92,7 @@ def revoke_competition_timer(competition):
         # we need to cancel the timer task and clear the timer task id
         app.control.revoke(competition.timer_task_id)
         competition.timer_task_id = None
+        competition.timer_started_at = None
         competition.save()
 
 def run_advance_competition(competition, as_task=False):
@@ -114,6 +115,7 @@ def run_advance_competition(competition, as_task=False):
     if not as_task:
         revoke_competition_timer(competition)
 
+    
     # Attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition)
     competition.refresh_from_db()
@@ -123,15 +125,16 @@ def run_advance_competition(competition, as_task=False):
         send_next_meme(competition)
     else:
         # If no current_meme exists, the competition is finished
+
         if competition.top_memes.count() == 1:
             # If only one meme has the top score, it is the winner
             top_meme = competition.top_memes.first()
         else:
             # Otherwise, resolve tiebreakers randomly
             top_meme = get_random_object_from_query(Meme, competition.top_memes)
-
+            
         competition.winning_meme = top_meme
-        competition.finished = True
+        competition.state = Competition.CompState.FINISHED
         competition.save()
         send_competition_finished(competition)
         

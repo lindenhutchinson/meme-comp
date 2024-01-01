@@ -22,9 +22,6 @@ function connectWebSocket(wsScheme, compName) {
                 showSnackbar(message.data + ' let the crabs out', 'danger');
                 unleashTheCrabs();
                 break;
-            case 'timer_start':
-                doTimerStarted();
-                break;
         }
     };
 
@@ -49,10 +46,4 @@ function connectWebSocket(wsScheme, compName) {
         console.log("Websocket error")
         showSnackbar("Something bad happened. Try refreshing the page.", 'danger', false)
     };
-}
-
-function doTimerStarted() {
-    $('#comp-timer').css('display', '')
-    $('#comp-info-card').css('display', 'none')
-    startTimer()
 }

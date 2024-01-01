@@ -18,7 +18,6 @@
                         disabled>
                 <button class="btn btn-primary" onclick="copyLink()">
                     Copy
-                
                 </button>
             </div>
             <small id="num_memes">
@@ -54,17 +53,17 @@
                         <button id="start-comp-btn"
                                 class="btn btn-success"
                                 style="width:100%"
-                                {% if competition.started %}disabled{% endif %}>
-                            {% if competition.started %}
-                                Competition started
+                                {% if not competition.unstarted %}disabled{% endif %}>
+                            {% if competition.unstarted %}
+                                Start competition
                             {% else %}
-                                Start Competition
+                                Competition started
                             {% endif %}
                         </button>
                         <button id="cancel-comp-btn"
                                 class="btn btn-danger"
                                 onclick="cancelCompetition('{{competition.name}}')"
-                                {% if not competition.started %}disabled{% endif %}>
+                                {% if competition.unstarted %}disabled{% endif %}>
                             <i class="bi bi-x-square"></i>
                         </button>
                     </div>
@@ -72,7 +71,7 @@
                         <button id="next-meme-btn"
                                 class="btn btn-primary mx-auto mt-3 col-6"
                                 onclick="advanceCompetition('{{competition.name}}')"
-                                {% if not competition.started or competition.finished %}style="display:none"{% endif %}>
+                                {% if not competition.started %}style="display:none"{% endif %}>
                             Next meme
                         </button>
                     </p>

@@ -71,8 +71,6 @@
 
     function sendEmoji(emojiText) {
         if (checkEmojiCtr()) {
-            console.log('sending emoji');
-            // send emoji via socket rather than via request
             socket.send(JSON.stringify({
                 'command': 'send_emoji',
                 'message': emojiText

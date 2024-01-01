@@ -1,5 +1,5 @@
 {% load websocket_tags %}
-<div id="comp-waiting" class="col" {% if competition.started or competition.finished %}style="display:none" {% endif %}>
+<div id="comp-waiting" class="col" {% if not competition.unstarted %}style="display:none" {% endif %}>
     <div class="card shadow">
         <div class="card-header">
             <h3 class="card-title mt-1">Upload your memes</h3>

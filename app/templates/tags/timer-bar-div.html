@@ -1,31 +1,63 @@
-
-<div id="fill-container"{% if not timer_enabled %}style="display:none"{% endif %}>
+<div id="fill-container" {% if not competition.with_timer %}style="display:none"{% endif %}>
     <div id="fill-div"></div>
 </div>
 
-
 <script>
     var barTimeout;
-    
-    function startTimer() {
-        const timeoutSecs = "{{timeout}}";
+    const startTime = "{{ competition.timer_started_at_timestamp }}";
+    const timeoutSecs = "{{ competition.timer_timeout }}"
+    var passedTime = getTimePassed();
+    var hasRefreshed = 0 < passedTime < timeoutSecs;
+    if(hasRefreshed) {
+        startTimer(true);
+    }
+
+    function startTimer(refreshed=false) {
         const barDiv = $("#fill-div");
-        barDiv.stop(true, true);        
+        barDiv.stop(true, true);
         barDiv.css({
-            'background-color':'#003cb3',
+            'background-color': '#003cb3',
         });
+        var timePassed = getTimePassed();
+        var duration = timeoutSecs
+
+        // recover the timer if the page is refreshed
+        if(refreshed) {
+            if(timePassed) {
+                duration = (timeoutSecs - timePassed)
+                const barRemaining = Math.round((( timePassed) / timeoutSecs) * 100);
+                if(duration > 0) {
+                    barDiv.css({
+                        'width': `${barRemaining}%`
+                    })
+                }
+            }
+        }
         barDiv.animate({ width: '100%' }, {
-            duration: timeoutSecs * 1000,
+            duration: duration * 1000,
             easing: 'linear',
             complete: function () {
                 barDiv.css({
-                    'width': '0px',
+                    'width': '0%',
                     'background-color': '#003cb3',
                 });
                 barTimeout = 0;
             }
         });
+        
     }
+
+    // Function to get the time passed since the timer started
+    function getTimePassed() {
+        if (startTime != '0') {
+            const currentTime = Date.now() / 1000
+            const result = Math.round(currentTime - startTime, 2);            
+            return result;
+        }
+        return 0;
+    }
+
+    // Call startTimer with the initial time if available (for page refresh)
 </script>
 
 <style>
@@ -38,6 +70,6 @@
         overflow: hidden;
     }
     #fill-container {
-        background-color:white;
+        background-color: white;
     }
 </style>

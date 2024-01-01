@@ -103,7 +103,7 @@ class User(AbstractUser):
     @property
     def meme_library(self):
         return (
-            self.memes.all().filter(competition__finished=True).order_by("-created_at")
+            self.memes.all().filter(competition__state="FINISHED").order_by("-created_at")
         )
 
     # Property to get the highest average meme score given by the user.

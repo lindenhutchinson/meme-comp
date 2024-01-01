@@ -28,7 +28,7 @@ from app.utils import (
 def competition():
     user = User.objects.create(username=fake.name())
     return Competition.objects.create(
-        owner=user, theme="Test Theme", started=False, finished=False
+        owner=user, theme="Test Theme", 
     )
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def test_run_advance_competition_not_started(competition, participants, memes, v
 def test_run_advance_competition_started_not_finished(competition, participants, memes, votes):
     # Set up competition data
     competition.current_meme = memes[0]
-    competition.started = True
+    competition.state = Competition.CompState.STARTED
     competition.save()
 
     # Call the function
@@ -133,7 +133,8 @@ def test_run_advance_competition_finished(competition, participants, memes, vote
     # set all memes as seen for this competition
     for meme in memes:
         SeenMeme.objects.create(meme=meme, competition=competition)
-    competition.started = True
+    
+    competition.state = Competition.CompState.STARTED
     competition.save()
 
     # Call the function
