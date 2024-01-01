@@ -1,11 +1,12 @@
-<div id="fill-container">
+
+<div id="fill-container"{% if not timer_enabled %}style="display:none"{% endif %}>
     <div id="fill-div"></div>
 </div>
 
 
 <script>
     var barTimeout;
-
+    
     function startTimer() {
         const timeoutSecs = "{{timeout}}";
         const barDiv = $("#fill-div");
@@ -31,7 +32,7 @@
     #fill-div {
         width: 0px;
         height: 10px;
-        background-color: #003cb3;
+        background-color: 'white';
         border: none;
         position: relative;
         overflow: hidden;

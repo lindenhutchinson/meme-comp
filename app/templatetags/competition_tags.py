@@ -38,8 +38,8 @@ def comp_timer(time_limit):
     return {"time_limit": time_limit}
 
 @register.inclusion_tag("tags/timer-bar-div.html")
-def timer_bar_div(timeout):
-    return {"timeout": timeout}
+def timer_bar_div(timeout, timer_enabled):
+    return {"timeout": timeout, "timer_enabled":timer_enabled}
 
 @register.inclusion_tag("tags/event-log-offcanvas.html")
 def event_log_offcanvas(competition):

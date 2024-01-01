@@ -41,7 +41,7 @@ def memes(fake, competition, participants):
 
         for _ in range(i):
             meme = Meme.objects.create(
-                image="test_image.jpg", competition=competition, participant=participant
+                image="test_image.jpg", competition=competition, participant=participant, user=participant.user
             )
             memes.append(meme)
     return memes
@@ -62,6 +62,7 @@ def votes(fake, memes, participants):
                 competition=meme.competition,
                 score=score,
                 started_at=meme.competition.created_at,
+                user=participant.user
             )
             votes.append(vote)
 

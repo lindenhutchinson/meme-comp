@@ -41,34 +41,6 @@ def get_current_user(request):
     return None
 
 
-def set_next_meme_for_competition(competition):
-    # Get the list of all memes for the competition
-    all_memes = competition.memes.all()
-
-    # Get the list of seen memes for the competition
-    seen_memes = SeenMeme.objects.filter(competition=competition).values_list(
-        "meme", flat=True
-    )
-
-    # Exclude the seen memes from the list of all memes
-    available_memes = all_memes.exclude(id__in=seen_memes)
-
-    # Select a random meme from the available memes
-    if available_memes.exists():
-        random_meme = random.choice(available_memes)
-        # Set the competition's current_meme to the randomly selected meme
-        competition.current_meme = random_meme
-
-        # Create a SeenMeme object for the selected meme and competition
-        SeenMeme.objects.create(meme=random_meme, competition=competition)
-    else:
-        competition.current_meme = None
-
-    competition.round_started_at = datetime.now(tz=timezone.get_current_timezone())
-    competition.save()
-    return competition
-
-
 def send_shame_message(comp_name, username):
     messages = [
         f"{username} thinks they're a hackerman.",
@@ -122,29 +94,81 @@ def revoke_competition_timer(competition):
         competition.timer_task_id = None
         competition.save()
 
-def run_advance_competition(competition):
-    # if we're advancing the comp and the timer is currently running
-    # revoke it!
-    revoke_competition_timer(competition)
+def run_advance_competition(competition, as_task=False):
+    """
+    Run the advancement of a meme competition.
 
-    # attempt to get a random next meme for the competition
+    Parameters:
+        competition (MemeCompetition): The competition object to advance.
+        as_task (bool, optional): Indicates whether this function is running as a Celery task.
+                                  If True, it won't attempt to revoke itself.
+
+    Note:
+        This function advances the competition by setting the next meme, handling competition
+        completion, and sending appropriate notifications.
+
+    Returns:
+        None
+    """
+    # If not running as a task, revoke the competition timer
+    if not as_task:
+        revoke_competition_timer(competition)
+
+    # Attempt to get a random next meme for the competition
     competition = set_next_meme_for_competition(competition)
     competition.refresh_from_db()
 
     if competition.current_meme:
-        # if we were able to set the next meme,
-        # the competition hasnt finished yet
+        # If we were able to set the next meme, the competition hasn't finished yet
         send_next_meme(competition)
     else:
-        # if no current_meme exists, the competition is finished
+        # If no current_meme exists, the competition is finished
         if competition.top_memes.count() == 1:
-            # if only one meme has the top score, it is the winner
+            # If only one meme has the top score, it is the winner
             top_meme = competition.top_memes.first()
         else:
-            # otherwise, resolve tiebreakers randomly
+            # Otherwise, resolve tiebreakers randomly
             top_meme = get_random_object_from_query(Meme, competition.top_memes)
 
         competition.winning_meme = top_meme
         competition.finished = True
         competition.save()
         send_competition_finished(competition)
+        
+
+def set_next_meme_for_competition(competition):
+    """
+    Set the next meme for the given competition.
+
+    Parameters:
+        competition (MemeCompetition): The competition object for which to set the next meme.
+
+    Returns:
+        MemeCompetition: The updated competition object.
+    """
+    # Get the list of all memes for the competition
+    all_memes = competition.memes.all()
+
+    # Get the list of seen memes for the competition
+    seen_memes = SeenMeme.objects.filter(competition=competition).values_list(
+        "meme", flat=True
+    )
+
+    # Exclude the seen memes from the list of all memes
+    available_memes = all_memes.exclude(id__in=seen_memes)
+
+    # Select a random meme from the available memes
+    if available_memes.exists():
+        random_meme = random.choice(available_memes)
+        # Set the competition's current_meme to the randomly selected meme
+        competition.current_meme = random_meme
+
+        # Create a SeenMeme object for the selected meme and competition
+        SeenMeme.objects.create(meme=random_meme, competition=competition)
+    else:
+        competition.current_meme = None
+
+    # Update round start time and save the competition
+    competition.round_started_at = datetime.now(tz=timezone.get_current_timezone())
+    competition.save()
+    return competition

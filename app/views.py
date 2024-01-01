@@ -122,7 +122,7 @@ def handle_create_competition(request, competition_form):
     if competition_form.is_valid():
         competition = competition_form.save(commit=False)
         competition.owner = request.user
-        competition.name = generate_random_string(8)
+        
         competition.save()
         _, created = Participant.objects.get_or_create(
             name=request.user.username, user=request.user, competition=competition

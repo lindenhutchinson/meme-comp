@@ -54,7 +54,6 @@
                         <button id="start-comp-btn"
                                 class="btn btn-success"
                                 style="width:100%"
-                                onclick="startCompetition('{{competition.name}}')"
                                 {% if competition.started %}disabled{% endif %}>
                             {% if competition.started %}
                                 Competition started
@@ -84,6 +83,10 @@
 </div>
 
 <script>
+    $('#start-comp-btn').on('click', () => {
+        startCompetition('{{competition.name}}');
+    })
+
     function toggleShow(cls) {
 		const box = $(cls);
 		if(box.hasClass('collapse')) {

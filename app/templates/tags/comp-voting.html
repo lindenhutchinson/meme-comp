@@ -61,8 +61,7 @@
                 </div>
             </div>
             <div class="g-0 image-zoom">
-                {% timer_bar_div competition.timer_timeout %}
-
+                {% timer_bar_div competition.timer_timeout competition.with_timer %}
                 <div id="emoji"></div>
                 <img id="current-meme-image" 
                 {% if competition.started and competition.current_meme %}

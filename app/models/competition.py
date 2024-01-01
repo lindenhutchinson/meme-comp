@@ -57,7 +57,11 @@ class Competition(models.Model):
         self.__original_current_meme = self.current_meme
 
     def save(self, force_insert=False, force_update=False, *args, **kwargs):
-
+        # imported here to avoid circular imports
+        from app.utils import generate_random_string, revoke_competition_timer
+        
+        if self.pk is None:
+            self.name = generate_random_string(8)
         if self.with_timer:
             # if current_meme is set and it is different to the previous current_meme
             # start the voting timer
@@ -72,8 +76,8 @@ class Competition(models.Model):
             # if we dont have a current meme but we still have a timer
             # that timer must be revoked
             elif not self.current_meme and self.timer_task_id:
-                from app.utils import revoke_competition_timer
                 revoke_competition_timer(self)
+                
 
         super(Competition, self).save(force_insert, force_update, *args, **kwargs)
         self.__original_current_meme = self.current_meme
@@ -217,7 +221,7 @@ class Competition(models.Model):
                     Count("memes") / self.num_memes, output_field=FloatField()
                 ),
                 weighted_score=ExpressionWrapper(
-                    (F("mean_score") - (F("score_stddev")) * F("penalization_factor")),
+                    (F("mean_score")),
                     output_field=FloatField(),
                 ),
             )
@@ -254,8 +258,10 @@ class Competition(models.Model):
                 if p.avg_vote_time > highest_avg:
                     highest_avg = p.avg_vote_time
                     participant = p
-
-            return {"participant": participant.name, "vote_time": round(highest_avg, 2)}
+                    
+            if participant:
+                return {"participant": participant.name, "vote_time": round(highest_avg, 2)}
+            
         return {"participant": "No one", "vote_time": 0.0}
 
     @property
