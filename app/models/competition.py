@@ -110,6 +110,7 @@ class Competition(models.Model):
         if self.timer_started_at:
             return datetime.timestamp(self.timer_started_at)
         return 0
+    
 
     @property
     def ordered_memes(self):

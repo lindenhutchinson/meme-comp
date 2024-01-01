@@ -56,6 +56,8 @@
                                 {% if not competition.unstarted %}disabled{% endif %}>
                             {% if competition.unstarted %}
                                 Start competition
+                            {% elif competition.finished %}
+                                Competition ended 
                             {% else %}
                                 Competition started
                             {% endif %}

@@ -1,18 +1,131 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-    .nav-item {
-        width: 50%;
-        text-align: center;
-        border-radius: 0 !important;
+    .d-flex-center {
+        display: flex;
+        justify-content: center;
     }
-    .nav-tabs {
-        border: 2px solid white;
-        border-top-right-radius: 0.2rem;
-        border-top-left-radius: 0.2rem;
+
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .side-card {
+        flex-basis: 30%;
+        max-width: 300px; /* Set a maximum width for better responsiveness */
+    }
+
+    .main-card {
+        flex-basis: 40%;
+    }
+
+    .list-group {
+        max-height: 300px;
+        overflow: scroll;
+    }
+
+    .card-header {
+        text-align: center;
+    }
+
+    .form-floating {
+        color: rgb(49, 49, 49)
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .card-header {
+        display: flex;
+        align-items: end;
+        justify-content: center;
+    }
+
+    h4 {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+        .card-group {
+            flex-direction: column;
+        }
+        .side-card, .main-card {
+            flex-basis: 100%; /* Set full width for smaller screens */
+            max-width: none; /* Remove max-width for smaller screens */
+        }
     }
 </style>
-<div class="row justify-content-center">
+
+<div class="card-container d-flex justify-content-center">
+    <div class="card side-card">
+        <div class="card-header">
+            <h4 style=>Join a Competition</h4>
+   
+        </div>
+ 
+        <div class="card-body d-flex flex-column align-items-end justify-content-end">
+            <div class="card-title d-flex flex-grow-1">
+                Ask someone in the competition for the code and enter it below to join.
+             </div>
+            <form method="post" name="join" style="width:100%">
+                {% csrf_token %}
+                <div class="form-floating mb-3">
+                    <input type="text" name="name" id="name" class="form-control" required placeholder="123ABC"/>
+                    <label for="name">Competition ID</label>
+
+                </div>
+                <button type="submit" name="join" class="btn btn-primary">Join</button>
+            </form>
+        </div>
+    </div>
+
+    {% if competitions %}
+    <div class="card main-card">
+        <div class="card-header">
+            <h4>Your Competitions</h4>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for competition in competitions %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a><small>{{competition.created_at}}</small>                    
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card side-card">
+        <div class="card-header" id="create">
+            <h4>Create a Competition</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" name="create">
+                {% csrf_token %}
+                <div class="form-floating mb-3">
+                    <input type="text" name="theme" id="theme" class="form-control" required placeholder="Airplane Food"/>
+                    <label for="theme">Theme</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <label class="form-check-label" for="with_timer">Enable Timed Voting</label>
+                    <input class="form-check-input" type="checkbox" name="with_timer" id="with_timer">
+                  </div>
+                <div class="form-floating mb-3">
+                    <input id="{{ form.timer_timeout.id_for_label }}" class="form-control" type="number" min="0" max="60" initial="15" placeholder="15">
+                    <label for="{{ form.timer_timeout.id_for_label }}">Voting Time (seconds)</label>
+                    
+                </div>
+                <button type="submit" name="create" class="btn btn-success">Create</button>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- 
     <div class="col-md-8">
         <div class="card">
             <div class="">
@@ -25,62 +138,14 @@
                     </li>
                 </ul>
             </div>
-            <div class="card-body">
-                <div class="tab-content">
-                    <div class="tab-pane container active" id="join">
-                        <h4 class="text-center">Join a Competition</h4>
-                        <form method="post" name="join">
-                            {% csrf_token %}
-                            <div class="form-group mb-3">
-                                <label for="name">Competition ID:</label>
-                                <input type="text" name="name" id="name" class="form-control" required />
-                            </div>
-                            <button type="submit" name="join" class="btn btn-primary">Join</button>
-                        </form>
-                    </div>
-                    <div class="tab-pane container" id="create">
-                        <h4 class="text-center">Create a Competition</h4>
-                        <form method="post" name="create">
-                            {% csrf_token %}
-                            <div class="form-group mb-3">
-                                <label for="theme">Theme:</label>
-                                <input type="text" name="theme" id="theme" class="form-control" required />
-                            </div>
-                            <div class="form-check form-switch mb-3">
-                                <label class="form-check-label" for="with_timer">Enable Timed Voting</label>
-                                <input class="form-check-input" type="checkbox" name="with_timer" id="with_timer">
-                              </div>
-                            <div class="form-group mb-3">
-                                <label for="{{ form.timer_timeout.id_for_label }}">Voting Time (seconds)</label>
-                                {{ competition_form.timer_timeout }}
-                            </div>
-                            <button type="submit" name="create" class="btn btn-primary">Create</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>
 <div class="row justify-content-center mt-3">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Your Competitions</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    {% if competitions %}
-                    {% for competition in competitions %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        <a href="{% url 'competition' competition.name %}">{{ competition.theme }}</a><small>{{competition.created_at}}</small>                    
-                    </li>
-                    {% endfor %}
-                    {% else %}
-                    <li class="list-group-item">You haven't joined any competitions yet.</li>
-                    {% endif %}
-                </ul>
-            </div>
+            
         </div>
     </div>
 </div>
@@ -105,5 +170,5 @@
             $(this).addClass("active");
         });
     });
-</script>
+</script> -->
 {% endblock content %}
