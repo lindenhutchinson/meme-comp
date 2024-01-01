@@ -143,6 +143,26 @@ function submitMeme(compName) {
     });
 }
 
+function cancelTimer(compName) {
+    $.ajax({
+        // url: "{% url 'meme_upload' comp_name=competition.name %}",
+        url: `/api/competition/${compName}/timer/cancel`,
+        type: "POST",
+        data: {},
+        beforeSend: function (xhr) {
+            xhr.setRequestHeader("X-CSRFToken", csrfToken);
+        },
+        success: function (response) {
+            $('#pause-timer-btn').attr('disabled', true);
+        },
+        error: function (xhr, status, error) {
+            if (xhr.status === 403) {
+                showSnackbar(xhr.responseJSON.detail, 'danger')
+            }
+        }
+    });
+}
+
 function deleteMeme(button) {
     if( deleteSafety ){
         var deleteCheck = 'Are you sure you want to delete that meme?'

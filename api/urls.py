@@ -20,4 +20,9 @@ urlpatterns = [
         views.advance_competition,
         name="advance_competition",
     ),
+    path(
+        "competition/<str:comp_name>/timer/cancel",
+        views.cancel_competition_timer,
+        name="cancel_competition_timer",
+    ),
 ]

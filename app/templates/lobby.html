@@ -53,7 +53,7 @@
         display:flex;
         flex-direction: column;
         align-items:end;
-        justify-content:end;
+        justify-content:space-around;
     }
 
     @media (max-width: 768px) {
@@ -71,12 +71,12 @@
     <div class="card side-card">
         <div class="card-header">
             <h4 style=>Join a Competition</h4>
-   
+
         </div>
  
         <div class="card-body side-body">
             <div class="card-title d-flex flex-grow-1">
-                Ask someone in the competition for the code and enter it below to join.
+                Ask someone in the competition for the ID and enter it below to join.
              </div>
             <form method="post" name="join" style="width:100%">
                 {% csrf_token %}

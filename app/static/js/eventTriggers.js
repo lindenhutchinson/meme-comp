@@ -1,7 +1,7 @@
 // const commandFunctions = {
 //     'participantJoined':participantJoined
 // }
-
+$(document).on('DOMContentLoaded', () => {
 $(document).on('participantJoined', (e, data) => {
     const participantLi = data.participant_html
     $('#participants').prepend(participantLi);
@@ -48,6 +48,8 @@ $(document).on('competitionFinished', (e, data) => {
     $('#winning-meme').html(data.winner_html);
     $('#comp-results').html(data.results_html);
 
+    $('#pause-timer-btn').css('display', 'none');
+    $('#pause-timer-btn').attr('disabled', true);
 
 });
 
@@ -58,6 +60,10 @@ $(document).on('memeVoted', (e, data) => {
 $(document).on('nextMeme', (e, data) => {
     console.log('advancing to next meme');
     $('#start-comp-btn').attr('disabled', true);
+    $('#pause-timer-btn').css('display', '');
+    $('#pause-timer-btn').attr('disabled', false);
+
+
     // reset the page
     $('#vote-form')[0].reset();
     $('.vote-radio').prop('disabled', false)
@@ -112,3 +118,15 @@ $(document).on('memeSubmitted', (e, data) => {
 $(document).on('eventUpdated', (e, data) => {
     $('#events').prepend(data.log_html);
 })
+
+$(document).on('timerCancelled', (e, data) => {
+    const barDiv = $("#fill-div");
+    if(barDiv){
+        barDiv.stop(true, true);
+        barDiv.css('display', 'none');
+    }
+    showSnackbar("Timer paused", "primary");
+    $('#pause-timer-btn').css('display', 'none');
+})
+
+});

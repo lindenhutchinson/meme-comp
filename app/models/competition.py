@@ -29,7 +29,7 @@ def generate_random_string(length):
     valid_chars = [
         c for c in string.ascii_letters if c not in ["l", "I", "i", "O", "o"]
     ]
-    return "".join(random.choice(valid_chars).upper() for _ in range(length))
+    return "".join(random.choice(valid_chars) for _ in range(length))
 
 
 

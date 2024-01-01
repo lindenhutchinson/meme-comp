@@ -1,5 +1,12 @@
 {% load websocket_tags %}
-
+<style>
+    #pause-timer-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+</style>
 
 <div 
     id="comp-info-card"
@@ -32,8 +39,8 @@
                 {% event_log_offcanvas competition %}
             </div> -->
 
-            <div class="row">
-                <button class="toggle-btn btn btn-light btn-sm text-center"
+            <div class="">
+                <button class="toggle-btn btn btn-light btn-sm text-center" style="width:100%"
                         type="button"
                         onclick="toggleShow('.participants-box')">
                     Participants &nbsp;<span id="num-participants">({{ competition.num_participants }})</span>
@@ -53,6 +60,7 @@
                         <button id="start-comp-btn"
                                 class="btn btn-success"
                                 style="width:100%"
+                                onclick="startCompetition('{{competition.name}}')"
                                 {% if not competition.unstarted %}disabled{% endif %}>
                             {% if competition.unstarted %}
                                 Start competition
@@ -69,14 +77,28 @@
                             <i class="bi bi-x-square"></i>
                         </button>
                     </div>
-                    <p>
+                    <div>
                         <button id="next-meme-btn"
                                 class="btn btn-primary mx-auto mt-3 col-6"
                                 onclick="advanceCompetition('{{competition.name}}')"
                                 {% if not competition.started %}style="display:none"{% endif %}>
                             Next meme
                         </button>
-                    </p>
+                    </div>
+                    {% if competition.with_timer %}
+                    <div class="d-flex align-items-center">
+                        <button 
+                            id="pause-timer-btn"
+                            class="btn btn-dark mt-3"
+                            {% if not competition.started %}
+                            style="display:none"
+                            {% endif %}
+                            onclick="cancelTimer('{{competition.name}}')"
+                        >
+                            Pause Timer
+                        </button>
+                    </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -84,10 +106,6 @@
 </div>
 
 <script>
-    $('#start-comp-btn').on('click', () => {
-        startCompetition('{{competition.name}}');
-    })
-
     function toggleShow(cls) {
 		const box = $(cls);
 		if(box.hasClass('collapse')) {

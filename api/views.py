@@ -202,3 +202,16 @@ def cancel_competition(request, comp_name, competition=None):
     create_competition_log(competition, request.user, CompetitionLog.CompActions.CANCEL)
 
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+@with_comp
+@as_comp_owner
+@with_comp_state([Competition.CompState.STARTED])
+def cancel_competition_timer(request, comp_name, competition=None):
+    revoke_competition_timer(competition)
+    send_channel_message(competition.name, "timerCancelled")
+    return Response(status=status.HTTP_200_OK)
+    

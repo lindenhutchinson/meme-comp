@@ -15,6 +15,11 @@
     h4 {
         margin-bottom: 0;
     }
+    #meme-container {
+        overflow-y: scroll;
+        overflow-x: hidden;
+        width:100%;
+    }
 </style>
 <body>
     <div id="imageModal" class="image-modal" style="display:none">
@@ -82,7 +87,7 @@
                     <button id="clear-button" type="flex flex-shrink button" class="btn btn-danger">Clear</button>
                 </div>
                     
-                <div id="meme-container" class="overflow-auto">
+                <div id="meme-container">
                     <div id="meme-grid" class="row mt-3">
                         {% for meme in meme_library %}
                         <div class="col-md-4 col-sm-6 col-12 mb-4"
